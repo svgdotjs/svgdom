@@ -1,0 +1,27 @@
+{
+  "name": "svgdom",
+  "version": "0.0.1",
+  "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
+  "main": "dom.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svgdotjs/svgdom.git"
+  },
+  "keywords": [
+    "svgjs",
+    "dom",
+    "nodejs"
+  ],
+  "author": "Ulrich-Matthias Schäfer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/svgdotjs/svgdom/issues"
+  },
+  "homepage": "https://github.com/svgdotjs/svgdom#readme",
+  "dependencies": {
+    "gl-matrix": "^2.3.2"
+  }
+}
