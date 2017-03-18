@@ -38,22 +38,6 @@ var invent = function(config) {
   return initializer
 }
 
-var extendBase = function() {
-  var modules, methods, key, i
-
-  // Get list of modules
-  modules = [].slice.call(arguments)
-
-  // Get object with extensions
-  methods = modules.pop()
-
-  console.warn(methods)
-  
-  for (i = modules.length - 1; i >= 0; i--)
-    for (key in methods)
-      modules[i][key] = methods[key]
-}
-
 var map = function(map, cb) {
   var arr = []
   map.forEach(function(value, key){
@@ -63,7 +47,7 @@ var map = function(map, cb) {
 }
 
 function htmlEntities(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 var tag = function(node) {
@@ -73,14 +57,14 @@ var tag = function(node) {
     , style = map(node._style, function(value, key) {
         return key + ':' + value
       }).join(';')
-  
-  
+
+
   if(style) attrs.set('style', style)
 
   if(attrs.has('xmlns') && node.dropNameSpace(attrs.get('xmlns'))){
     attrs.delete('xmlns')
   }
-  
+
   attrs = map(attrs, function(value, key) {
     return key + '="' + htmlEntities(value) + '"'
   })
@@ -89,7 +73,8 @@ var tag = function(node) {
 }
 
 function objectToMap(obj) {
-    return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
+  if(obj instanceof Map) return new Map(obj)
+  return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
 }
 
 function mapToAttributeArray(themap) {
@@ -101,25 +86,21 @@ function mapToAttributeArray(themap) {
 function indexOfAttribute(attributes, name){
   for(var i = attributes.length; i--;)
     if(attributes[i].nodeName == name) return i
-    
+
   return -1
 }
 
 function cloneNode(node) {
-  var attrs = {}
-  
-  for(var i in node.attributes)
-    attrs[i] = node.attributes[i]
 
-  var clone = new Node(node.nodeName, {
-    attrs: attrs,
+  var clone = new node.constructor(node.nodeName, {
+    attrs: node.attrs,
     data: node.data
   })
-  
+
   clone.nodeType = node.nodeType
   clone._style = new Map(node._style)
   clone.ownerDocument = null
-  
+
   return clone
 }
 
@@ -130,6 +111,7 @@ var EventTarget = invent({
 })
 
 var Event = invent({
+  name: 'Event',
   create: function(type){
     this.type = type
     this.cancelable = false
@@ -137,9 +119,10 @@ var Event = invent({
 })
 
 var CustomEvent = invent({
+  name: 'CustomEvent',
   create: function(name, props = {}) {
     Event.call(this, name)
-    
+
     this.detail = props.detail || {}
     this.cancelable = props.cancelable || false
   },
@@ -147,6 +130,7 @@ var CustomEvent = invent({
 })
 
 var Node = invent({
+  name: 'Node',
   create: function(name = '', props = {}) {
 
     this.nodeName = name.toLowerCase()
@@ -157,7 +141,7 @@ var Node = invent({
     this.data = props.data || ''
     this._style = new Map()
     this.ownerDocument = null
-    
+
     this.style = new Proxy(this._style, {
       set: function(target, name, value){
         target.set(name, value)
@@ -185,7 +169,7 @@ var Node = invent({
         }, '')
       },
       set: function(text) {
-        this.childNodes = [new TextNode(text)]
+        this.childNodes = [new TextNode('#text', {data:text})]
       }
     },
     firstChild: {
@@ -291,13 +275,14 @@ var Node = invent({
     },
     cloneNode: function(deep) {
       var clone = cloneNode(this)
-    
+
       if(deep) {
-        clone.childNodes = this.childNodes.map(function(el) {
-          return el.cloneNode(deep)
+        this.childNodes.forEach(function(el) {
+          var node = el.cloneNode(deep)
+          clone.appendChild(node)
         })
       }
-      
+
       return clone
     },
     getRootNode: function() {
@@ -335,14 +320,16 @@ var Node = invent({
 })
 
 var TextNode = invent({
-  create: function(text) {
-    Node.call(this, '#text', {data: text})
+  name: 'TextNode',
+  create: function(name, props) {
+    Node.call(this, name, props)
     this.nodeType = 3
   },
   inherit: Node
 })
 
 var AttributeNode = invent({
+  name: 'AttributeNode',
   create: function(name='', value=null) {
     Node.call(this, name)
     this.nodeValue = value
@@ -350,6 +337,7 @@ var AttributeNode = invent({
 })
 
 var Document = invent({
+  name: 'Document',
   create: function(root) {
     Node.call(this, '#document')
     this.nodeType = 9
@@ -370,7 +358,7 @@ var Document = invent({
       return new SVGElement(name)
     },
     createTextNode: function(text) {
-      return new TextNode(text)
+      return new TextNode('#text', {data:text})
     },
     createAttribute: function(name) {
       return new AttributeNode(name)
@@ -412,6 +400,7 @@ extend(Window, Node, {
 })
 
 var SVGElement = invent({
+  name: 'SVGElement',
   create: function(name, props) {
     Node.call(this, name, props)
   },
@@ -419,6 +408,7 @@ var SVGElement = invent({
 })
 
 var SVGPoint = invent({
+  name: 'SVGPoint',
   create: function() {
     this.x = this.y = 0
   },
@@ -454,11 +444,11 @@ var SVGMatrix = invent({
   extend: {
     multiply: function(m) {
       var r = new SVGMatrix()
-      r.a = this.a * m.a + this.c * m.b + this.e * 0 
+      r.a = this.a * m.a + this.c * m.b + this.e * 0
       r.b = this.b * m.a + this.d * m.b + this.f * 0
       r.c = this.a * m.c + this.c * m.d + this.e * 0
       r.d = this.b * m.c + this.d * m.d + this.f * 0
-      r.e = this.a * m.e + this.c * m.f + this.e * 1 
+      r.e = this.a * m.e + this.c * m.f + this.e * 1
       r.f = this.b * m.e + this.d * m.f + this.f * 1
       return r
     },
