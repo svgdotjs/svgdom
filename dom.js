@@ -1,4 +1,6 @@
 matrix = require('gl-matrix').mat2d
+var sizeOf = require('image-size');
+
 
 var extend = function() {
   var modules, methods, key, i
@@ -107,6 +109,27 @@ function cloneNode(node) {
 var EventTarget = invent({
   create: function() {
     this.events = {}
+  },
+  extend: {
+    addEventListener: function(event, listener) {
+      if(typeof listener != 'function') throw new Error('listener has to be a function')
+      ;(this.events[event] = this.events[event] || []).push(listener)
+    },
+    removeEventListener: function(event, listener) {
+      var e
+      event = event.toLowerCase()
+      if(!this.events[event]) return
+      var index = (e = this.events[event]).indexOf(listener)
+      this.events[event] = e.slice(0, index).concat(e.slice(index+1))
+    },
+    dispatchEvent: function(event) {
+      var name = event.type
+      if(!this.events[name]) return
+
+      this.events[name].forEach(function(el) {
+        el(event)
+      })
+    }
   }
 })
 
@@ -132,6 +155,7 @@ var CustomEvent = invent({
 var Node = invent({
   name: 'Node',
   create: function(name = '', props = {}) {
+    EventTarget.call(this)
 
     this.nodeName = name.toLowerCase()
     this.nodeType = 1
@@ -141,6 +165,7 @@ var Node = invent({
     this.data = props.data || ''
     this._style = new Map()
     this.ownerDocument = null
+    this.parentNode = null
 
     this.style = new Proxy(this._style, {
       set: function(target, name, value){
@@ -150,10 +175,8 @@ var Node = invent({
         return target.get(name)
       }
     });
-
-    EventTarget.call(this)
   },
-  inherit: Object,
+  inherit: EventTarget,
   props: {
     attributes: {
       get: function() {
@@ -221,7 +244,7 @@ var Node = invent({
       this.removeAttribute(ns+':'+name)
     },
     getAttribute: function(name) {
-      return this.attrs.get(name)
+      return this.attrs.get(name) || null
     },
     getAttributeNS: function(ns, name) {
       this.getAttribute(ns+':'+name)
@@ -368,35 +391,10 @@ var Document = invent({
 
 var Window = invent({
   create: function() {
-    this.document = new Document('svg')
-    //var body = new Node('body')
-    //this.document.documentElement.appendChild(body)
-    //this.document.body = body
-
     EventTarget.call(this)
-  }
-})
-
-extend(Window, Node, {
-  addEventListener: function(event, listener) {
-    if(typeof listener != 'function') throw new Error('listener has to be a function')
-    this.events[event] = (this.events[event] || []).push(listener)
+    this.document = new Document('svg')
   },
-  removeEventListener: function(event, listener) {
-    var e
-    event = event.toLowerCase()
-    if(!this.events[event]) return
-    var index = (e = this.events[event]).indexOf(listener)
-    this.events[event] = e.slice(0, index).concat(e.slice(index+1))
-  },
-  dispatchEvent: function(event) {
-    var name = event.type
-    if(!this.events[name]) return
-
-    this.events[name].forEach(function(el) {
-      el(event)
-    })
-  }
+  inherit: EventTarget
 })
 
 var SVGElement = invent({
@@ -479,13 +477,63 @@ var SVGMatrix = invent({
   }
 })
 
+var HTMLImageElement  = invent({
+  name: 'HTMLImageElement',
+  create: function(){
+    Node.call(this, 'img')
+    this.width = 0
+    this.height = 0
+    this.naturalWidth = 0
+    this.naturalHeight = 0
+  },
+  inherit: Node,
+  props: {
+    src: {
+      get: function() {
+        return this.attrs.get('src')
+      },
+      set: function(val) {
+        this.attrs.set('src', val)
+        sizeOf(val, function (err, size) {
+          if(err){
+            this.dispatchEvent(new Event('error', this))
+            return
+          }
+
+          this.width = this.naturalWidth = size.width
+          this.height = this.naturalHeight = size.height
+
+          this.dispatchEvent(new Event('load', this))
+        }.bind(this));
+      }
+    },
+    height: {
+      get: function() {
+        return this.attrs.get('height')
+      },
+      set: function(val) {
+        this.attrs.set('height', val)
+      }
+    },
+    height: {
+      get: function() {
+        return this.attrs.get('height')
+      },
+      set: function(val) {
+        this.attrs.set('height', val)
+      }
+    },
+  }
+})
+
 extend(Window, {
   Node: Node,
   SVGElement: SVGElement,
   CustomEvent: CustomEvent,
   Event: Event,
   SVGMatrix: SVGMatrix,
-  SVGPoint: SVGPoint
+  SVGPoint: SVGPoint,
+  Image: HTMLImageElement
 })
 
 module.exports = new Window
