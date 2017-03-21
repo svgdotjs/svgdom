@@ -48,6 +48,19 @@ var map = function(map, cb) {
   return arr
 }
 
+var mapToCss = function(myMap){
+  return map(myMap, function(value, key){
+    if(!value) return false
+    return key + ': ' + value
+  }).filter(function(el){return !!el}).join('; ') || null
+}
+
+var cssToMap = function(css){
+  return new Map(css.split(/\s*;\s*/).filter(function(el){return !!el}).map(function(el){
+    return el.split(/\s*:\s*/)
+  }))
+}
+
 function htmlEntities(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -56,12 +69,12 @@ var tag = function(node) {
 
   var attrs = new Map(node.attrs)
     , name = node.nodeName
-    , style = map(node._style, function(value, key) {
-        return key + ':' + value
-      }).join(';')
+    , style = node.getAttribute('style')
 
-
-  if(style) attrs.set('style', style)
+  attrs.delete('style')
+  if(style){
+    attrs.set('style', style)
+  }
 
   if(attrs.has('xmlns') && node.dropNameSpace(attrs.get('xmlns'))){
     attrs.delete('xmlns')
@@ -77,6 +90,14 @@ var tag = function(node) {
 function objectToMap(obj) {
   if(obj instanceof Map) return new Map(obj)
   return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
+}
+
+function mapToObject(map) {
+  var obj = {}
+  map.forEach(function(value, key) {
+    obj[key] = value
+  })
+  return obj
 }
 
 function mapToAttributeArray(themap) {
@@ -99,11 +120,17 @@ function cloneNode(node) {
     data: node.data
   })
 
+  // clone styles
+  Object.keys(node._style).forEach(function(el){clone._style[el] = node._style })
   clone.nodeType = node.nodeType
-  clone._style = new Map(node._style)
-  clone.ownerDocument = null
 
   return clone
+}
+
+function camelCase(s) { 
+  return s.toLowerCase().replace(/-(.)/g, function(m, g) {
+    return g.toUpperCase()
+  })
 }
 
 var EventTarget = invent({
@@ -138,6 +165,12 @@ var Event = invent({
   create: function(type){
     this.type = type
     this.cancelable = false
+    this.defaultPrevented = false
+  },
+  extend: {
+    preventDefault: function(){
+      this.defaultPrevented = true
+    }
   }
 })
 
@@ -146,35 +179,44 @@ var CustomEvent = invent({
   create: function(name, props = {}) {
     Event.call(this, name)
 
-    this.detail = props.detail || {}
+    this.detail = props.detail || null
     this.cancelable = props.cancelable || false
   },
   inherit: Event
 })
+
+var regex = {
+  // splits a transformation chain
+  transforms:       /\)\s*,?\s*/
+  // split at whitespace and comma
+, delimiter:        /[\s,]+/
+}
+
+// Map matrix array to object
+function arrayToMatrix(a) {
+  return { a: a[0], b: a[1], c: a[2], d: a[3], e: a[4], f: a[5] }
+}
 
 var Node = invent({
   name: 'Node',
   create: function(name = '', props = {}) {
     EventTarget.call(this)
 
-    this.nodeName = name.toLowerCase()
+    this.nodeName = name
     this.nodeType = 1
     this.nodeValue = 0
     this.childNodes = props.childNodes || []
+
+    this._style = props.attrs && props.attrs.style && mapToObject(cssToMap(props.attrs.style)) || {}
+
     this.attrs = objectToMap(props.attrs || {})
     this.data = props.data || ''
-    this._style = new Map()
-    this.ownerDocument = null
-    this.parentNode = null
 
-    this.style = new Proxy(this._style, {
-      set: function(target, name, value){
-        target.set(name, value)
-      },
-      get: function(target, name){
-        return target.get(name)
-      }
-    });
+    this.ownerDocument = props.ownerDocument || null
+    this.parentNode = null
+    this.cnt = 0
+
+    this.style = this.getStyleProxy()
   },
   inherit: EventTarget,
   props: {
@@ -221,33 +263,56 @@ var Node = invent({
     },
     id: {
       get: function() {
-        return this.attributes['id']
+        return this.attrs.get('id')
       },
       set: function(id) {
-        this.attributes['id'] = id
+        this.attrs.set('id', id)
       }
     }
   },
   extend: {
+    getStyleProxy: function(){
+      return new Proxy(this._style, {
+        get: function(target, key) {
+          if(key == 'cssText') {
+            return mapToCss(objectToMap(target))
+          }
+          key = camelCase(key)
+          if(!target[key]) return ''
+          return Reflect.get(target, key)
+        },
+        set: function(target, key, value) {
+          value = value.toString()
+          key = camelCase(key)
+          Reflect.set(target, key, value)
+        }
+      })
+    },
+    setNewStyle: function(obj) {
+      this._style = obj
+      this.style = this.getStyleProxy()
+    },
     setAttribute: function(name, value) {
-      //if(name == 'style') return this.setStyle(value)
+      if(name == 'style') {
+        return this.setNewStyle(mapToObject(cssToMap(value)))
+      }
       this.attrs.set(name, value)
     },
     setAttributeNS: function(ns, name, value) {
-      //this.setAttribute(ns+':'+name, value)
       this.setAttribute(name, value)
     },
     removeAttribute: function(name) {
       this.attrs.delete(name)
     },
     removeAttributeNS: function(ns, name) {
-      this.removeAttribute(ns+':'+name)
+      this.removeAttribute(name)
     },
     getAttribute: function(name) {
+      if(name == 'style') return this.style.cssText
       return this.attrs.get(name) || null
     },
     getAttributeNS: function(ns, name) {
-      this.getAttribute(ns+':'+name)
+      return this.getAttribute(name)
     },
     hasChildNodes: function() {
       return !!this.childNodes.length
@@ -257,7 +322,6 @@ var Node = invent({
         node.parentNode.removeChild(node)
 
       node.parentNode = this
-      node.ownerDocument = this.ownerDocument
 
       this.childNodes.push(node)
       return node
@@ -267,30 +331,30 @@ var Node = invent({
         node.parentNode.removeChild(node)
 
       node.parentNode = this
-      node.ownerDocument = this.ownerDocument
 
       var index = this.childNodes.indexOf(before)
-      if(index == -1) return this.append(node)
+      if(index == -1) return this.appendChild(node)
 
-      this.childNodes = this.childNodes.splice(0, index).concat(node, this.childNodes.splice(index))
+      this.childNodes = this.childNodes.slice(0, index).concat(node, this.childNodes.slice(index))
       return node
     },
     removeChild: function(node) {
+
       node.parentNode = null
-      node.ownerDocument = null
       var index = this.childNodes.indexOf(node)
       if(index == -1) return node
-      this.childNodes = this.childNodes.slice(0, index).concat(this.childNodes.slice(index+1))
+      this.childNodes.splice(index, 1)
+      return node
     },
     getElementsByTagName: function(name) {
       return this.childNodes.reduce(function(last, current) {
-        if(current.nodeName == name.toLowerCase()) last.push(current)
+        if(current.nodeName == name) last.push(current)
         return last.concat(current.getElementsByTagName(name))
       }, [])
     },
     getElementById: function(id) {
       for(var i = this.childNodes.length; i--;) {
-        if(this.childNodes[i].id == id) return id
+        if(this.childNodes[i].id == id) return this.childNodes[i]
         var el = this.childNodes[i].getElementById(id)
         if(el) return el
       }
@@ -332,12 +396,83 @@ var Node = invent({
         x:0,y:0,width:0,height:0
       }
     },
+    getCTM: function() {
+      return this.matrixify()
+    },
+    matrixify: function() {
+      var matrix = (this.getAttribute('transform') || '')
+        // split transformations
+        .split(regex.transforms).slice(0,-1).map(function(str){
+          // generate key => value pairs
+          var kv = str.trim().split('(')
+          return [kv[0], kv[1].split(regex.delimiter).map(function(str){ return parseFloat(str) })]
+        })
+        // merge every transformation into one matrix
+        .reduce(function(matrix, transform){
+
+          if(transform[0] == 'matrix') return matrix.multiply(arrayToMatrix(transform[1]))
+          return matrix[transform[0]].apply(matrix, transform[1])
+
+        }, new SVGMatrix())
+
+      return matrix
+    },
+    getScreenCTM: function() {
+      return this.matrixify()
+    },
     createSVGRect: function() {},
     createSVGMatrix: function() {
       return new SVGMatrix()
     },
     createSVGPoint: function() {
-      return new SVG.Point()
+      return new SVGPoint()
+    },
+    matches: function(selector) {
+      var selectors = selector.split(/[\s,>~]+/)
+      var last = selectors.pop()
+
+      return this.matchSingle(last)
+    },
+    querySelectorAll: function(selector) {
+      var selectors = selector.trim().split(/[\s,>~^]+/)
+      var first = selectors.shift()
+      var ret = []
+
+      if(this.matchSingle(first)) {
+        selector = selector.substr(first.length).trim()
+        if(selector == '') return [this]
+      }
+
+      for(var i = this.childNodes.length; i--;) {
+        ret = ret.concat(this.childNodes[i].querySelectorAll(selector))
+      }
+
+      return ret
+    },
+    matchSingle: function(selector) {
+      if(selector.indexOf('#') == 0 && this.id == selector.slice(1))
+        return true
+
+      var classes = this.attrs.get('class')
+      if(classes && selector.indexOf('.') == 0 && classes.split(/\s+/).indexOf(selector.slice(1)) != -1)
+        return true
+
+      if(selector == this.nodeName)
+        return true
+
+      if(selector == '*')
+        return true
+
+      return false
+    },
+    getComputedTextLength: function() {
+      return (this.attrs.get('font-size')||12) * this.textContent.length * 0.6
+    },
+    getPointAtLength: function() {
+      return new SVGPoint
+    },
+    getTotalLength: function() {
+      return 0
     }
   }
 })
@@ -356,7 +491,8 @@ var AttributeNode = invent({
   create: function(name='', value=null) {
     Node.call(this, name)
     this.nodeValue = value
-  }
+  },
+  inherit: Node
 })
 
 var Document = invent({
@@ -364,7 +500,6 @@ var Document = invent({
   create: function(root) {
     Node.call(this, '#document')
     this.nodeType = 9
-    this.ownerDocument = null
     var root = this.createElement(root)
     this.appendChild(root)
     root.ownerDocument = this
@@ -378,7 +513,7 @@ var Document = invent({
       })
     },
     createElement: function(name) {
-      return new SVGElement(name)
+      return new SVGElement(name, {ownerDocument: this})
     },
     createTextNode: function(text) {
       return new TextNode('#text', {data:text})
@@ -408,13 +543,16 @@ var SVGElement = invent({
 var SVGPoint = invent({
   name: 'SVGPoint',
   create: function() {
-    this.x = this.y = 0
+    this.x = 0
+    this.y = 0
   },
-  matrixTransform: function(m) {
-    var r = new SVGPoint()
-    r.x = m.a * this.x + m.c * this.y + m.e * 1
-    r.y = m.b * this.x + m.d * this.y + m.f * 1
-    return r
+  extend: {
+    matrixTransform: function(m) {
+      var r = new SVGPoint()
+      r.x = m.a * this.x + m.c * this.y + m.e * 1
+      r.y = m.b * this.x + m.d * this.y + m.f * 1
+      return r
+    }
   }
 })
 
@@ -461,9 +599,7 @@ var SVGMatrix = invent({
     },
     toString: function() {
       return 'SVGMatrix'
-    }
-    // not used in svg.js
-    /*,
+    },
     scale: function(scale) {
       return this.multiply(matrixFactory(scale,0,0,scale,0,0))
     },
@@ -473,7 +609,19 @@ var SVGMatrix = invent({
     },
     skew: function(x, y) {
       return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))
-    }*/
+    },
+    skewX: function(x) {
+      return this.skew(x,0)
+    },
+    skewY: function(y) {
+      return this.skew(0,y)
+    },
+    getTotalLength: function() {
+      return 0
+    },
+    getPointAtLength: function() {
+      return new SVGPoint()
+    }
   }
 })
 
@@ -533,7 +681,9 @@ extend(Window, {
   Event: Event,
   SVGMatrix: SVGMatrix,
   SVGPoint: SVGPoint,
-  Image: HTMLImageElement
+  Image: HTMLImageElement,
+  setTimeout: setTimeout,
+  clearTimeout: clearTimeout
 })
 
 module.exports = new Window
