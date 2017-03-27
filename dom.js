@@ -1204,23 +1204,25 @@ var helpers = {
   }
 }
 
-var mlhvqtcsa = 'mlhvqtcsa'.split()
+var mlhvqtcsaz = 'mlhvqtcsaz'.split('')
 
-for(var i = 0, il = mlhvqtcsa.length; i < il; ++i){
-  helpers.handle[mlhvqtcsa[i]] = function(c, p, r, p0) {
-    if(i == 'h') c[0] = c[0] + p.x
-    else if(i == 'v') c[0] = c[0] + p.y
-    else if(i == 'a'){
-      c[5] = c[5] + p.x,
-      c[6] = c[6] + p.y
-    }
-    else
-      for(var j = 0, jl = c.length; j < jl; ++j) {
-        c[j] = c[j] + (j%2 ? p.x : p.y)
+for(var i = 0, il = mlhvqtcsaz.length; i < il; ++i){
+  helpers.handle[mlhvqtcsaz[i]] = (function(i){
+    return function(c, p, p0) {
+      if(i == 'H') c[0] = c[0] + p.x
+      else if(i == 'V') c[0] = c[0] + p.y
+      else if(i == 'A'){
+        c[5] = c[5] + p.x,
+        c[6] = c[6] + p.y
       }
+      else
+        for(var j = 0, jl = c.length; j < jl; ++j) {
+          c[j] = c[j] + (j%2 ? p.y : p.x)
+        }
 
-    this[mlhvqtcsa[i].toUpperCase()](c, p, r, p0)
-  }
+      return helpers.handle[i](c, p, p0)
+    }
+  })(mlhvqtcsaz[i].toUpperCase())
 }
 
 
@@ -1780,38 +1782,5 @@ extend(Window, {
   pageXOffset: 0,
   pageYOffset: 0
 })
-
-var n = new Node('div', {childNodes:[
-  new Node('div', {childNodes:[
-    new Node('div'),
-    new Node('span'),
-    new Node('strong'),
-    new Node('ul')
-  ]}),
-  new Node('span', {childNodes:[
-    new Node('div'),
-    new Node('span'),
-    new Node('strong'),
-    new Node('ul')
-  ]}),
-  new Node('strong', {childNodes:[
-    new Node('div'),
-    new Node('span'),
-    new Node('strong'),
-    new Node('ul')
-  ]}),
-  new Node('ul', {childNodes:[
-    new Node('li'),
-    new Node('li'),
-    new Node('li'),
-    new Node('li')
-  ]}),
-  new Node('div', {childNodes:[
-    new Node('div'),
-    new Node('span'),
-    new Node('strong'),
-    new Node('ul')
-  ]})
-]})
 
 module.exports = new Window
