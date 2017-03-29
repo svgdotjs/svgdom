@@ -1,0 +1,607 @@
+const {invent, extendClass} = require('../utils/objectCreationUtils')
+
+const EventTarget = require('./EventTarget')
+
+const {objectToMap, mapToObject, mapMap, mapToCss, cssToMap} = require('../utils/mapUtils')
+const {fullHex, hexToRGB, camelCase, htmlEntities} = require('../utils/strUtils')
+const pathUtils = require('../utils/pathUtils')
+const {tag, cloneNode} = require('../utils/tagUtils')
+const bbox = require('../utils/bboxUtils')
+const regex = require('../utils/regex')
+
+const QueryNode = require('./QueryNode')
+const SVGPoint = require('./SVGPoint')
+const SVGMatrix = require('./SVGMatrix')
+const Box = require('./Box')
+
+
+// Map matrix array to object
+function arrayToMatrix(a) {
+  return { a: a[0], b: a[1], c: a[2], d: a[3], e: a[4], f: a[5] }
+}
+
+var Node = invent({
+  name: 'Node',
+  create: function(name = '', props = {}) {
+    EventTarget.call(this)
+
+    this.nodeName = name
+    this.nodeType = 1
+    this.nodeValue = 0
+    this.childNodes = []
+
+    this._style = props.attrs && props.attrs.style && mapToObject(cssToMap(props.attrs.style)) || {}
+
+    this.attrs = objectToMap(props.attrs || {})
+    this.data = props.data || ''
+
+    this.ownerDocument = props.ownerDocument || null
+    this.parentNode = null
+    this.cnt = 0
+
+    this.style = this.getStyleProxy()
+
+    if(props.childNodes)
+      for(var i = 0, il = props.childNodes.length; i < il; ++i) {
+        this.appendChild(props.childNodes[i])
+      }
+  },
+  inherit: EventTarget,
+  props: {
+    attributes: {
+      get: function() {
+        return mapToAttributeArray(this.attrs)
+      }
+    },
+    textContent: {
+      get: function() {
+        if (this.nodeType == 3) return this.data
+
+        return this.childNodes.reduce(function(last, current){
+          return last + current.textContent
+        }, '')
+      },
+      set: function(text) {
+        this.childNodes = [new TextNode('#text', {data:htmlEntities(text)})]
+      }
+    },
+    firstChild: {
+      get: function() {
+        return this.childNodes[0] || null
+      }
+    },
+    lastChild: {
+      get: function() {
+        return this.childNodes[this.childNodes.length-1] || null
+      }
+    },
+    nextSibling: {
+      get: function() {
+        return this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this)+1] || null
+      }
+    },
+    previousSibling: {
+      get: function() {
+        return this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this)-1] || null
+      }
+    },
+    innerHTML: {
+      get: function() {
+        if (this.nodeType == 3) return this.data
+        return this.childNodes.reduce(function(last, current){
+          return last + current.outerHTML
+        }, '')
+      },
+      set: function(str) {
+        while(this.firstChild){
+          this.removeChild(this.firstChild)
+        }
+        var nodes = HTMLParser(str, this.ownerDocument)
+        for(var i = 0, il = nodes.length; i < il; ++i) {
+          this.appendChild(nodes[i])
+        }
+      }
+    },
+    outerHTML: {
+      get: function() {
+        if (this.nodeType == 3) return this.data
+        return tag(this)
+      },
+      set: function(str) {
+        var nodes = HTMLParser(str, this.ownerDocument)
+        var lastNode = nodes.pop()
+        this.replaceWith(lastNode)
+        for(var i = 0, il = nodes.length; i < il; ++i) {
+          this.parentNode.insertBefore(nodes[i], lastNode)
+        }
+      }
+    },
+    id: {
+      get: function() {
+        return this.attrs.get('id')
+      },
+      set: function(id) {
+        this.attrs.set('id', id)
+      }
+    }
+  },
+  extend: {
+    getStyleProxy: function(){
+      return new Proxy(this._style, {
+        get: function(target, key) {
+          if(typeof key !== 'string') return Reflect.get(target, key)
+          if(key == 'cssText') {
+            return mapToCss(objectToMap(target))
+          }
+          key = camelCase(key)
+          if(!target[key]) return ''
+          return Reflect.get(target, key)
+        },
+        set: function(target, key, value) {
+          value = hexToRGB(value.toString())
+          key = camelCase(key)
+          Reflect.set(target, key, value)
+        }
+      })
+    },
+    setNewStyle: function(obj) {
+      this._style = hexToRGB(obj)
+      this.style = this.getStyleProxy()
+    },
+    setAttribute: function(name, value) {
+      if(name == 'style') {
+        return this.setNewStyle(mapToObject(cssToMap(value)))
+      }
+      this.attrs.set(name, value)
+    },
+    setAttributeNS: function(ns, name, value) {
+      this.setAttribute(name, value)
+    },
+    removeAttribute: function(name) {
+      this.attrs.delete(name)
+    },
+    removeAttributeNS: function(ns, name) {
+      this.removeAttribute(name)
+    },
+    getAttribute: function(name) {
+      if(name == 'style') return this.style.cssText
+      return this.attrs.get(name) == null ? null : this.attrs.get(name)
+    },
+    getAttributeNS: function(ns, name) {
+      return this.getAttribute(name)
+    },
+    hasChildNodes: function() {
+      return !!this.childNodes.length
+    },
+    appendChild: function(node) {
+      if(node.parentNode)
+        node.parentNode.removeChild(node)
+
+      node.parentNode = this
+
+      this.childNodes.push(node)
+      return node
+    },
+    insertBefore: function(node, before) {
+      if(node.parentNode)
+        node.parentNode.removeChild(node)
+
+      node.parentNode = this
+
+      var index = this.childNodes.indexOf(before)
+      if(index == -1) return this.appendChild(node)
+
+      this.childNodes = this.childNodes.slice(0, index).concat(node, this.childNodes.slice(index))
+      return node
+    },
+    removeChild: function(node) {
+
+      node.parentNode = null
+      var index = this.childNodes.indexOf(node)
+      if(index == -1) return node
+      this.childNodes.splice(index, 1)
+      return node
+    },
+    replacedNode: function(newChild, oldChild) {
+      newChild.parentNode && newChild.parentNode.removeChild(newChild)
+
+      var before = oldChild.nextSibling
+      this.remove(oldChild)
+      this.insertBefore(newChild, before)
+      return oldChild
+    },
+    getElementsByTagName: function(name) {
+      return this.childNodes.reduce(function(last, current) {
+        if(current.nodeName == name) last.push(current)
+        return last.concat(current.getElementsByTagName(name))
+      }, [])
+    },
+    getElementById: function(id) {
+      for(var i = this.childNodes.length; i--;) {
+        if(this.childNodes[i].id == id) return this.childNodes[i]
+        var el = this.childNodes[i].getElementById(id)
+        if(el) return el
+      }
+      return null
+    },
+    cloneNode: function(deep) {
+      var clone = cloneNode(this)
+
+      if(deep) {
+        this.childNodes.forEach(function(el) {
+          var node = el.cloneNode(deep)
+          clone.appendChild(node)
+        })
+      }
+
+      return clone
+    },
+    getRootNode: function() {
+      if(!this.parentNode || this.parentNode.nodeType == 9) return this
+      return this.parentNode.getRootNode()
+    },
+    isDefaultNamespace: function(ns) {
+      return ns == this.attrs.get('xmlns')
+    },
+    isEqualNode: function(node){
+      return node.nodeName == this.nodeName && node.constructor == this.constructor && node.nodeType == this.nodeType
+    },
+    isSameNode(node){
+      return this === node
+    },
+    contains: function(node){
+      if(node == this) return false
+
+      while (node.parentNode){
+        if(node == this) return true
+        node = node.parentNode;
+      }
+      return false
+    },
+    normalize: function(){
+      this.childNodes = this.childNodes.reduce((last, curr) => {
+        var n = last[last.length-1]
+        if(!n) return [curr]
+        if(curr.nodeType == Node.TEXT_NODE) {
+          if(!curr.data) return last
+
+          if(last.nodeType == Node.TEXT_NODE) {
+            n = new TextNode(last + ' ' + curr)
+            curr = []
+          }
+        }
+        last[last.length-1] = n
+        return last.concat(curr)
+      },[])
+    },
+    dropNameSpace: function(ns) {
+      if(this.parentNode){
+        if(this.parentNode.attrs.get('xmlns') == ns) return true
+        return this.parentNode.dropNameSpace(ns)
+      }
+      return false
+    },
+    getBBox: function() {
+      return bbox(this)
+    },
+    getBoundingClientRect: function() {
+      return bbox(this).transform(this.getScreenCTM())
+    },
+    matrixify: function() {
+      var matrix = (this.getAttribute('transform') || '')
+        // split transformations
+        .split(regex.transforms).slice(0,-1).map(function(str){
+          // generate key => value pairs
+          var kv = str.trim().split('(')
+          return [kv[0], kv[1].split(regex.delimiter).map(function(str){ return parseFloat(str) })]
+        })
+        // merge every transformation into one matrix
+        .reduce(function(matrix, transform){
+
+          if(transform[0] == 'matrix') return matrix.multiply(arrayToMatrix(transform[1]))
+          return matrix[transform[0]].apply(matrix, transform[1])
+
+        }, new SVGMatrix())
+
+      return matrix
+    },
+    generateViewBoxMatrix() {
+      var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
+      var width = parseFloat(this.getAttribute('width')) || 0
+      var height = parseFloat(this.getAttribute('height')) || 0
+      var x = parseFloat(this.getAttribute('x')) || 0
+      var y = parseFloat(this.getAttribute('y')) || 0
+
+      // TODO: If no width and height is given, width and height of the outer svg element is used
+      if(!width || !height){
+        return new SVGMatrix().translate(x, y)
+      }
+
+      if(view.length != 4){
+        view = [0, 0, width, height]
+      }
+
+      // first apply x and y if nested, then viewbox scale, then viewBox move
+      return new SVGMatrix().translate(x, y).scale(width/view[2], height/view[3]).translate(-view[0], -view[1])
+    },
+    getCTM: function() {SVG.Doc, SVG.Nested, SVG.Symbol, SVG.Image, SVG.Pattern, SVG.Marker, SVG.ForeignObject, SVG.View
+      var m = this.matrixify()
+
+      var node = this
+      while(node = this.parentNode){
+        if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(node.nodeName) > -1) break
+        m = m.multiply(node.matrixify())
+        if(node.nodeName == '#document') return this.getScreenCTM()
+      }
+
+      return node.generateViewBoxMatrix().multiply(m)
+    },
+    getScreenCTM: function() {
+      var m = this.matrixify()
+
+      if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(this.nodeName) > -1){
+        m = this.generateViewBoxMatrix().multiply(m)
+      }
+
+      if(this.parentNode && this.parentNode.nodeName != '#document'){
+        return this.parentNode.getScreenCTM().multiply(m)
+      }
+
+      return m
+    },
+    createSVGRect: function() {
+      return new Box
+    },
+    createSVGMatrix: function() {
+      return new SVGMatrix()
+    },
+    createSVGPoint: function() {
+      return new SVGPoint()
+    },
+    matches: function(query) {
+
+      if(query.indexOf(',') > -1){
+        var parts = query.split(',')
+        for(var i = 0, il = parts.length; i < il; ++i){
+          if(this.matches(parts[i])) return true
+        }
+        return false
+      }
+
+      query = ['%'].concat(query
+        .trim()
+        .replace(/\s+/g, ' ').replace(/(\w) (\w)/g, '$1%$2')
+        .replace(/[>~+,%]/g, " $& ")
+        .split(/\s+/)
+        )
+        .reduce((l,c,i) => {
+          i % 2 ? l[l.length-1].push(c) : l.push([c])
+          return l
+        }, [])
+
+      return this.matchHelper(query)
+    },
+    matchHelper: function(query) {
+      query = query.slice()
+      var last = query.pop()
+
+      if(!new QueryNode(last[1]).matches(this))
+        return false
+
+      if(!query.length) return true
+
+      if(last[0] == ',') return true
+
+      if(last[0] == '+'){
+        return !!this.previousSibling && this.previousSibling.matchHelper(query)
+      }
+
+      if(last[0] == '>'){
+        return !!this.parentNode && this.parentNode.matchHelper(query)
+      }
+
+      if(last[0] == '~'){
+        var node = this
+        while(node = node.previousSibling){
+          if(node.matchHelper(query))
+            return true
+        }
+        return false
+      }
+
+      if(last[0] == '%'){
+        var node = this
+        while(node = node.parentNode){
+          if(node.matchHelper(query))
+            return true
+        }
+        return false
+      }
+    },
+    querySelectorAll: function(query) {
+      var ret = []
+      for(var i = 0, il = this.childNodes.length; i < il; ++i){
+        if(this.childNodes[i].matches(query)) ret.push(this.childNodes[i])
+        ret = ret.concat(this.childNodes[i].querySelectorAll(query))
+      }
+      return ret
+    },
+    querySelector: function(query) {
+      var ret = []
+      for(var i = 0, il = this.childNodes.length; i < il; ++i){
+        if(this.childNodes[i].matches(query)) ret.push(this.childNodes[i])
+        ret = ret.concat(this.childNodes[i].querySelectorAll(query))
+      }
+      return ret[0] || null
+    },
+    getComputedTextLength: function() {
+      return (this.attrs.get('font-size')||12) * this.textContent.length * 0.6
+    },
+    getPointAtLength: function(len) {
+      return pathUtils.pointAtLength(this.getAttribute('d'), len)
+    },
+    getTotalLength: function() {
+      return pathUtils.length(this.getAttribute('d'))
+    }
+  }
+})
+
+
+extendClass(Node, {
+  ELEMENT_NODE:1
+, ATTRIBUTE_NODE:2
+, TEXT_NODE:3
+, CDATA_SECTION_NODE:4
+, ENTITY_REFERENCE_NODE:5
+, ENTITY_NODE:6
+, PROCESSING_INSTRUCTION_NODE:7
+, COMMENT_NODE:8
+, DOCUMENT_NODE:9
+, DOCUMENT_TYPE_NODE:10
+, DOCUMENT_FRAGMENT_NODE:11
+, NOTATION_NODE:12
+})
+
+const SVGElement = invent({
+  name: 'SVGElement',
+  create: function(name, props) {
+    Node.call(this, name, props)
+  },
+  inherit: Node
+})
+
+const mapToAttributeArray = function(themap) {
+  return mapMap(themap, function(value, key) {
+    return new AttributeNode(key, value)
+  })
+}
+
+const AttributeNode = invent({
+  name: 'AttributeNode',
+  create: function(name='', value=null) {
+    Node.call(this, name)
+    this.nodeValue = value
+  },
+  inherit: Node
+})
+
+var TextNode = invent({
+  name: 'TextNode',
+  create: function(name, props) {
+    Node.call(this, name, props)
+    this.nodeType = 3
+  },
+  inherit: Node
+})
+
+function throwError(msg, col, str) {
+  throw new Error([msg, 'at col.', col, 'in', str].join(' '))
+}
+
+const attrsReg = / (\w+)(?:="(.*?)")?/g
+const HTMLParser = function(str) {
+  var index = 0
+  var matches, attrs, tag, tagName, opened, closed
+  const nodes = []
+  const tagNameReg = /<(\/)?(\w+)(?: .+?)?(\/)?>/g
+
+  while(index < str.length){
+
+    // check if we have some text at start and create TextNode
+    newIndex = str.indexOf('<', index)
+    if(index != newIndex){
+      nodes.push(new TextNode(str.slice(index)))
+      if(newIndex == -1) break
+    }
+
+    // match tag start
+    tag = tagNameReg.exec(str)
+
+    // throw error when this is a closing tag
+    if(tag[1]) throwError('No matching opening tag found for ' + tag[0], tag.index, str)
+
+    // pull tagname from match
+    tagName = tag[2]
+
+    // reset the attribute regex
+    attrsReg.lastIndex = 0
+
+    // match attributes of tag
+    attrs = {}
+    while(matches = attrsReg.exec(tag[0])){
+      attrs[matches[1]] = matches[2] || ''
+    }
+
+    // create node
+    var node = new SVGElement(tagName, {attrs:attrs})
+    nodes.push(node)
+
+    // backup lastIndex of regex for later use
+    index = tagNameReg.lastIndex
+    
+    // if tag is selfclosing we can continue because we are done here
+    if(tag[3]){
+      continue
+    }
+
+
+
+    // reset counter for opened and closed tags
+    opened = 0
+    closed = 0
+
+    // search for closing tag
+    while(matches = tagNameReg.exec(str)){
+      //selfclosing - we did not find anything
+      if(matches[3]) continue
+
+      // we find a potential candidate
+      if(matches[2] == tagName) {
+
+        // its an opening tag
+        if(!matches[1]) {
+          ++opened
+          continue
+        }
+
+        // we did not close all open tags yet
+        if(opened != closed){
+          ++closed
+          continue
+        }
+
+        // all checks passed. That's the tag we are looking for
+        break
+      }
+
+      // increase counters
+      if(matches[1]) {
+        ++closed
+        if(closed > opened) throwError('Closing tag ' + matches[0] + ' was found which was not opened before', matches.index, str)
+      }else{
+        ++opened
+      }
+    }
+
+    if(!matches) throwError('No matching closing tag found for ' + tag[0], str.length, str)
+
+    // create a new parser for content of this tag and append returned children to node
+    var childNodes = HTMLParser(str.slice(index, matches.index))
+    for(var i = 0, il = childNodes.length; i < il; ++i) {
+      node.appendChild(childNodes[i])
+    }
+
+    // update index
+    index = tagNameReg.lastIndex
+
+  }
+
+  return nodes
+}
+
+module.exports = {
+  Node,
+  SVGElement,
+  AttributeNode,
+  TextNode
+}

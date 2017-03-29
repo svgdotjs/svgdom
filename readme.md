@@ -35,7 +35,6 @@ console.log(draw.node.outerHtml)
 Almost all functions of svg.js work properly with svgdom. However there are a few known limitations:
 
 - calculating text length and text bounding boxes is not possible. It would require to load the fontfile and parse the glyphs which is not implemented yet. For the time beeing don't use `text.move()` (you can use `text.attr('y')` instead) and `text.length()`
-- `import()` is not working. It requires an html parser.
 - `SVG.select()` does not support css pseudo classes. However all other features do work.
 
 This issues might be solved in feature releases.
