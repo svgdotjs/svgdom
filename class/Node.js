@@ -9,7 +9,7 @@ const {tag, cloneNode} = require('../utils/tagUtils')
 const bbox = require('../utils/bboxUtils')
 const regex = require('../utils/regex')
 
-const QueryNode = require('./QueryNode')
+const CssQuery = require('./CssQuery')
 const SVGPoint = require('./SVGPoint')
 const SVGMatrix = require('./SVGMatrix')
 const Box = require('./Box')
@@ -324,7 +324,7 @@ var Node = invent({
       // first apply x and y if nested, then viewbox scale, then viewBox move
       return new SVGMatrix().translate(x, y).scale(width/view[2], height/view[3]).translate(-view[0], -view[1])
     },
-    getCTM: function() {SVG.Doc, SVG.Nested, SVG.Symbol, SVG.Image, SVG.Pattern, SVG.Marker, SVG.ForeignObject, SVG.View
+    getCTM: function() {
       var m = this.matrixify()
 
       var node = this
@@ -359,64 +359,7 @@ var Node = invent({
       return new SVGPoint()
     },
     matches: function(query) {
-
-      if(query.indexOf(',') > -1){
-        var parts = query.split(',')
-        for(var i = 0, il = parts.length; i < il; ++i){
-          if(this.matches(parts[i])) return true
-        }
-        return false
-      }
-
-      query = ['%'].concat(query
-        .trim()
-        .replace(/\s+/g, ' ').replace(/(\w) (\w)/g, '$1%$2')
-        .replace(/[>~+,%]/g, " $& ")
-        .split(/\s+/)
-        )
-        .reduce((l,c,i) => {
-          i % 2 ? l[l.length-1].push(c) : l.push([c])
-          return l
-        }, [])
-
-      return this.matchHelper(query)
-    },
-    matchHelper: function(query) {
-      query = query.slice()
-      var last = query.pop()
-
-      if(!new QueryNode(last[1]).matches(this))
-        return false
-
-      if(!query.length) return true
-
-      if(last[0] == ',') return true
-
-      if(last[0] == '+'){
-        return !!this.previousSibling && this.previousSibling.matchHelper(query)
-      }
-
-      if(last[0] == '>'){
-        return !!this.parentNode && this.parentNode.matchHelper(query)
-      }
-
-      if(last[0] == '~'){
-        var node = this
-        while(node = node.previousSibling){
-          if(node.matchHelper(query))
-            return true
-        }
-        return false
-      }
-
-      if(last[0] == '%'){
-        var node = this
-        while(node = node.parentNode){
-          if(node.matchHelper(query))
-            return true
-        }
-        return false
-      }
+      return new CssQuery(query).matches(this)
     },
     querySelectorAll: function(query) {
       var ret = []
@@ -435,13 +378,40 @@ var Node = invent({
       return ret[0] || null
     },
     getComputedTextLength: function() {
-      return (this.attrs.get('font-size')||12) * this.textContent.length * 0.6
+      return this.getBBox().width
     },
     getPointAtLength: function(len) {
       return pathUtils.pointAtLength(this.getAttribute('d'), len)
     },
     getTotalLength: function() {
       return pathUtils.length(this.getAttribute('d'))
+    },
+
+
+    getFontDetails: function() {
+      var node = this
+      var fontSize = null, fontFamily = null
+
+      do{
+        fontSize = node.style.fontSize || node.getAttribute('font-size')
+
+        if(fontSize) break
+      }while(node = node.parentNode)
+
+      node = this
+      do{
+        fontFamily = node.style.fontFamily || node.getAttribute('font-family')
+
+        if(fontFamily) break
+      }while(node = node.parentNode)
+
+      return {
+        fontFamily,
+        fontSize,
+        fontNameMappings: this.ownerDocument.fontNameMappings,
+        fontDir: this.ownerDocument.fontDir,
+        preloaded: this.ownerDocument._preloaded
+      }
     }
   }
 })
@@ -499,7 +469,7 @@ function throwError(msg, col, str) {
 }
 
 const attrsReg = / (\w+)(?:="(.*?)")?/g
-const HTMLParser = function(str) {
+const HTMLParser = function(str, document) {
   var index = 0
   var matches, attrs, tag, tagName, opened, closed
   const nodes = []
@@ -510,7 +480,7 @@ const HTMLParser = function(str) {
     // check if we have some text at start and create TextNode
     newIndex = str.indexOf('<', index)
     if(index != newIndex){
-      nodes.push(new TextNode(str.slice(index)))
+      nodes.push(new TextNode(str.slice(index), {ownerDocument:document}))
       if(newIndex == -1) break
     }
 
@@ -533,12 +503,12 @@ const HTMLParser = function(str) {
     }
 
     // create node
-    var node = new SVGElement(tagName, {attrs:attrs})
+    var node = new SVGElement(tagName, {attrs:attrs, ownerDocument:document})
     nodes.push(node)
 
     // backup lastIndex of regex for later use
     index = tagNameReg.lastIndex
-    
+
     // if tag is selfclosing we can continue because we are done here
     if(tag[3]){
       continue
@@ -586,7 +556,7 @@ const HTMLParser = function(str) {
     if(!matches) throwError('No matching closing tag found for ' + tag[0], str.length, str)
 
     // create a new parser for content of this tag and append returned children to node
-    var childNodes = HTMLParser(str.slice(index, matches.index))
+    var childNodes = HTMLParser(str.slice(index, matches.index), document)
     for(var i = 0, il = childNodes.length; i < il; ++i) {
       node.appendChild(childNodes[i])
     }

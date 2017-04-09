@@ -30,7 +30,8 @@ const cloneNode = function(node) {
 
   var clone = new node.constructor(node.nodeName, {
     attrs: node.attrs,
-    data: node.data
+    data: node.data,
+    ownerDocument: node.ownerDocument
   })
 
   // clone styles

@@ -36,7 +36,7 @@ function camelCase(s) {
 }
 
 function removeQuotes(str){
-  if(str.startsWith('"')){
+  if(str.startsWith('"') || str.startsWith("'")){
     return str.slice(1,-1)
   }
   return str
@@ -46,10 +46,37 @@ function htmlEntities(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const splitNotInBrackets = (str, delimiter) => {
+  var roundBrackets = 0
+    , squareBrackets = 0
+    , lastIndex = 0
+    , split = []
+    , ch, i, il
+
+  for(i = 0, il = str.length; i < il; ++i) {
+    ch = str.charAt(i)
+
+    if(ch == delimiter && !roundBrackets && !squareBrackets){
+      split.push(str.slice(lastIndex, i).trim())
+      lastIndex = i+1
+      continue
+    }
+
+    if(ch == '(') ++roundBrackets
+    else if(ch == ')') --roundBrackets
+    else if(ch == '[') ++squareBrackets
+    else if(ch == ']') --squareBrackets
+  }
+
+  split.push(str.slice(lastIndex).trim())
+  return split
+}
+
 module.exports = {
   fullHex,
   hexToRGB,
   camelCase,
   removeQuotes,
-  htmlEntities
+  htmlEntities,
+  splitNotInBrackets
 }

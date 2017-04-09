@@ -1,7 +1,7 @@
 # svgdom
 
 > Straightforward DOM implementation to make SVG.js run headless on Node.js
- 
+
 This dom implementation was written for svg.js only. It is neither complete nor does it strictly follows the standards.
 It just has enough to make svg.js work on nodejs.
 
@@ -31,14 +31,43 @@ console.log(draw.svg())
 console.log(draw.node.outerHtml)
 ```
 
+## Fonts
+
+In order to calculate bounding boxes for text the font needs to be loaded first. `svgdom` loads `OpenSans-Regular` by default when no font file for the specified font was found.
+The following options must be set in order to load your own fonts:
+
+```js
+const window = require(svgdom)
+    // your font directory
+    .setFontDir('./fonts')
+    // map the font-family to the file
+    .setFontFamilyMappings({'Arial': 'arial.ttf'})
+    // you can preload your fonts to avoid the loading delay
+    // when the font is used the first time
+    .preloadFonts()
+```
+
 ## Limitations
 Almost all functions of svg.js work properly with svgdom. However there are a few known limitations:
 
-- calculating text length and text bounding boxes is not possible. It would require to load the fontfile and parse the glyphs which is not implemented yet. For the time beeing don't use `text.move()` (you can use `text.attr('y')` instead) and `text.length()`
-- `SVG.select()` does not support css pseudo classes. However all other features do work.
-
-This issues might be solved in feature releases.
-
+- font properties like bold, italic... are only supported when you explicitely load that font e.g.
+    ```js
+    window.setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
+    ```
+- `querySelector` only support the following pseudo classes:
+    - `first-child`
+    - `last-child`
+    - `nth-child`
+    - `nth-last-child`
+    - `first-of-type`
+    - `last-of-type`
+    - `nth-of-type`
+    - `nth-last-of-type`
+    - `only-child`
+    - `only-of-type`
+    - `root`
+    - `not`
+    - `matches`
 
 ## Using svgdom in your own projects
 

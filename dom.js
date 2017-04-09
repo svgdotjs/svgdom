@@ -3,7 +3,10 @@ const EventTarget = require('./class/EventTarget')
 const SVGPoint = require('./class/SVGPoint')
 const SVGMatrix = require('./class/SVGMatrix')
 const {SVGElement, Node, TextNode} = require('./class/Node')
-const sizeOf = require('image-size');
+const sizeOf = require('image-size')
+const path = require('path')
+const opentype = require('opentype.js')
+const fontkit = require('fontkit')
 
 var HTMLImageElement  = invent({
   name: 'HTMLImageElement',
@@ -88,22 +91,24 @@ var Document = invent({
     this.appendChild(root)
     root.ownerDocument = this
     this.documentElement = root
+    this._preloaded = {}
   },
   inherit: Node,
   extend: {
     createElementNS: function(ns, name){
       return new SVGElement(name, {
-        attrs: {xmlns: ns}
+        attrs: {xmlns: ns},
+        ownerDocument: this
       })
     },
     createElement: function(name) {
       return new SVGElement(name, {ownerDocument: this})
     },
     createTextNode: function(text) {
-      return new TextNode('#text', {data:text})
+      return new TextNode('#text', {data:text, ownerDocument: this})
     },
     createAttribute: function(name) {
-      return new AttributeNode(name)
+      return new AttributeNode(name, {ownerDocument: this})
     }
   }
 })
@@ -113,7 +118,33 @@ var Window = invent({
     EventTarget.call(this)
     this.document = new Document('svg')
   },
-  inherit: EventTarget
+  inherit: EventTarget,
+  extend: {
+    setFontDir: function(dir) {
+      this.document.fontDir = dir
+      return this
+    },
+    setFontFamilyMappings: function(map) {
+      this.document.fontFamilyMappings = map
+      return this
+    },
+    preloadFonts: function() {
+      var map = this.document.fontFamilyMappings, filename, font
+
+      for(var i in map) {
+        filename = path.join(this.document.fontDir, map[i])
+
+        try{
+          this.document._preloaded[i] = fontkit.openSync(filename)
+        }catch(e){
+          console.warn('Could not load font file for ' + i + '.' + e)
+        }
+      }
+
+      return this
+
+    }
+  }
 })
 
 
