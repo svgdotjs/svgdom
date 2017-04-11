@@ -5,7 +5,6 @@ const SVGMatrix = require('./class/SVGMatrix')
 const {SVGElement, Node, TextNode} = require('./class/Node')
 const sizeOf = require('image-size')
 const path = require('path')
-const opentype = require('opentype.js')
 const fontkit = require('fontkit')
 
 var HTMLImageElement  = invent({

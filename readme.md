@@ -54,7 +54,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
     ```js
     window.setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
     ```
-- `querySelector` only support the following pseudo classes:
+- `querySelector` only supports the following pseudo classes:
     - `first-child`
     - `last-child`
     - `nth-child`
