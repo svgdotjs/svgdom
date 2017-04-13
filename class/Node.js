@@ -386,8 +386,6 @@ var Node = invent({
     getTotalLength: function() {
       return pathUtils.length(this.getAttribute('d'))
     },
-
-
     getFontDetails: function() {
       var node = this
       var fontSize = null, fontFamily = null
@@ -408,7 +406,7 @@ var Node = invent({
       return {
         fontFamily,
         fontSize,
-        fontNameMappings: this.ownerDocument.fontNameMappings,
+        fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
         fontDir: this.ownerDocument.fontDir,
         preloaded: this.ownerDocument._preloaded
       }
