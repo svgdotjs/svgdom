@@ -140,7 +140,7 @@ var Node = invent({
         set: function(target, key, value) {
           value = hexToRGB(value.toString())
           key = camelCase(key)
-          Reflect.set(target, key, value)
+          return Reflect.set(target, key, value)
         }
       })
     },
