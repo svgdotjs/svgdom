@@ -90,7 +90,7 @@ var pathParser = (array) => {
   var i, x0, y0, s, seg, arr
     , x = 0
     , y = 0
-    , paramCnt = { 'M':2, 'L':2, 'H':1, 'V':1, 'C':6, 'S':4, 'Q':4, 'T':2, 'A':7 }
+    , paramCnt = { 'M':2, 'L':2, 'H':1, 'V':1, 'C':6, 'S':4, 'Q':4, 'T':2, 'A':7, 'Z':0 }
 
   array = array
     .replace(regex.numbersWithDots, pathRegReplace) // convert 45.123.123 to 45.123 .123
