@@ -55,7 +55,10 @@ var pathHandlers = {
     return pathHandlers.L([p.x, p.y],p0)
   },
   A: function(c, p, r) {
-    return new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
+    var ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
+    p.x = c[5]
+    p.y = c[6]
+    return ret
   }
 }
 
@@ -169,12 +172,12 @@ var Arc = invent({
 
     var divisor1 = rx*rx*p1_.y*p1_.y
     var divisor2 = ry*ry*p1_.x*p1_.x
-
+    
     var c_ = new Point(
       rx*p1_.y/ry,
       -ry*p1_.x/rx
     ).mul(Math.sqrt(
-      (rx*rx*ry*ry - divisor1 - divisor2) /
+      Math.round((rx*rx*ry*ry - divisor1 - divisor2)*100000)/100000 /
       //-------------------------------//
              (divisor1 + divisor2)
     ))
@@ -265,14 +268,15 @@ var Arc = invent({
         , θ1 = this.theta
         , θ2 = this.theta2
         , angleToTest = [θ01, θ02, (θ01+180), (θ02+180), (θ01-180), (θ02-180)]
-
+        , sweep = this.sweep
+        
       var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
         , points = angleToTest.filter(function(angle) {
-            return angle > θ1 && angle < θ2
+            return (sweep && (angle > θ1 && angle < θ2)) || (!sweep && ((angle < θ1 && angle > -180) || (angle > θ2 && angle < 180)))
           }).map(function(angle) {
             return this.pointAt((angle-θ1)/this.delta)
           }.bind(this)).concat(this.p1, this.p2)
-
+          
       points.forEach(function(p) {
         xMin = Math.min(xMin,p.x)
         xMax = Math.max(xMax,p.x)
