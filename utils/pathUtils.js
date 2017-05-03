@@ -140,7 +140,10 @@ var Move = invent({
     this.p1 = p.clone()
   }, extend: {
     bbox(){ return new Box(this.p1.x, this.p1.y, 0, 0) },
-    length() { return 0 }
+    length() { return 0 },
+    toPath() {
+      return ['M', this.p1.x, this.p1.y].join(' ')
+    }
   }
 })
 
@@ -172,7 +175,7 @@ var Arc = invent({
 
     var divisor1 = rx*rx*p1_.y*p1_.y
     var divisor2 = ry*ry*p1_.x*p1_.x
-    
+
     var c_ = new Point(
       rx*p1_.y/ry,
       -ry*p1_.x/rx
@@ -223,7 +226,7 @@ var Arc = invent({
       var tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
         , sinθ = Math.sin(tInAngle)
         , cosθ = Math.cos(tInAngle)
-        
+
       return new Point(
         this.cosφ * this.rx*cosθ - this.sinφ * this.ry*sinθ + this.c.x,
         this.sinφ * this.rx*cosθ + this.cosφ * this.ry*sinθ + this.c.y
@@ -263,20 +266,35 @@ var Arc = invent({
       return new Arc(this.p1, this.p2, this.rx, this.ry, this.phi, this.arc, this.sweep)
     },
     bbox: function(t) {
+      // arc could be rotated. the min and max values then dont lie on multiples of 90 degress but are shifted by the rotation angle
+      // so we first calculate our 0/90 degree angle
       var θ01 = Math.atan(-this.sinφ/this.cosφ * this.ry/this.rx) * 180/Math.PI
         , θ02 = Math.atan( this.cosφ/this.sinφ * this.ry/this.rx) * 180/Math.PI
         , θ1 = this.theta
         , θ2 = this.theta2
-        , angleToTest = [θ01, θ02, (θ01+180), (θ02+180), (θ01-180), (θ02-180)]
-        , sweep = this.sweep
-        
+
+      if(θ1 < 0) θ1 += 360
+      if(θ2 < 0) θ2 += 360
+      if(θ2 < θ1) {
+        let temp = θ1
+        θ1 = θ2
+        θ2 = temp
+      }
+
+      while(θ01-90 > θ01) θ01 -= 90
+      while(θ01 < θ1) θ01 += 90
+      while(θ02-90 > θ02) θ02 -= 90
+      while(θ02 < θ1) θ02 += 90
+
+      angleToTest = [θ01, θ02, (θ01+90), (θ02+90), (θ01+180), (θ02+180), (θ01+270), (θ02+270)]
+
       var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
         , points = angleToTest.filter(function(angle) {
-            return (sweep && (angle > θ1 && angle < θ2)) || (!sweep && ((angle < θ1 && angle > -180) || (angle > θ2 && angle < 180)))
+            return (angle > θ1 && angle < θ2)
           }).map(function(angle) {
             return this.pointAt((angle-θ1)/this.delta)
           }.bind(this)).concat(this.p1, this.p2)
-          
+
       points.forEach(function(p) {
         xMin = Math.min(xMin,p.x)
         xMax = Math.max(xMax,p.x)
@@ -485,7 +503,13 @@ var Cubic = invent({
         yMax-yMin
       )
 
-    }
+    },
+    toPathFragment: function() {
+      return ['C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y]
+    },
+    toPath: function() {
+      return ['M', this.p1.x, this.p1.y].concat(this.toPathFragment()).join(' ')
+    },
   }
 })
 
@@ -523,11 +547,22 @@ var Line = invent({
     },
     length: function() {
       return this.p2.sub(this.p1).abs()
+    },
+    toPath: function() {
+      return ['M', this.p1.x, this.p1.y, this.p2.x, this.p2.y].join(' ')
     }
   }
 })
 
 const bbox = function(d) {
+
+  console.log('Path bbox requested. Subpath are:')
+  console.log(pathParser(d).map(el => el.toPath()))
+  console.log(pathParser(d).map(el => {
+    var box = el.bbox()
+    return [box.x, box.y, box.width, box.height]
+  }))
+
   return pathParser(d)
     .reduce((l,c) => l == null ? c.bbox() : l.merge(c.bbox()), null)
 }
@@ -569,8 +604,24 @@ const length = function(d) {
     .reduce((l,c) => l+c.length(), 0)
 }
 
+const debug = function(d) {
+
+  var parse = pathParser(d)
+
+  return {
+    fragments: parse.map(el => el.toPath()),
+    bboxs: parse.map(el => {
+      var box = el.bbox()
+      return [box.x, box.y, box.width, box.height]
+    }),
+    bbox: parse.reduce((l,c) => l == null ? c.bbox() : l.merge(c.bbox()), null)
+  }
+
+}
+
 module.exports = {
   bbox,
   pointAtLength,
-  length
+  length,
+  debug
 }
