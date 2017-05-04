@@ -555,14 +555,6 @@ var Line = invent({
 })
 
 const bbox = function(d) {
-
-  console.log('Path bbox requested. Subpath are:')
-  console.log(pathParser(d).map(el => el.toPath()))
-  console.log(pathParser(d).map(el => {
-    var box = el.bbox()
-    return [box.x, box.y, box.width, box.height]
-  }))
-
   return pathParser(d)
     .reduce((l,c) => l == null ? c.bbox() : l.merge(c.bbox()), null)
 }
