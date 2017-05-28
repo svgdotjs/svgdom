@@ -34,8 +34,11 @@ var pathHandlers = {
 
     return ret
   },
-  T: function(c, p, r) {
-    c = [r.x, r.y].concat(c)
+  T: function(c, p, r, p0, reflectionIsPossible) {
+    if(reflectionIsPossible)
+      c = [r.x, r.y].concat(c)
+    else
+      c = [p.x, p.y].concat(c)
     return pathHandlers.Q(c, p, r)
   },
   C: function(c, p, r) {
@@ -47,12 +50,16 @@ var pathHandlers = {
     r.y = reflect.y
     return ret
   },
-  S: function(c, p, r) {
-    c = [r.x, r.y].concat(c)
+  S: function(c, p, r, p0, reflectionIsPossible) {
+    // reflection makes only sense if this command was preceeded by another beziere command (QTSC)
+    if(reflectionIsPossible)
+      c = [r.x, r.y].concat(c)
+    else
+      c = [p.x, p.y].concat(c)
     return pathHandlers.C(c, p, r)
   },
   Z: function(c, p, r, p0) {
-    return pathHandlers.L([p.x, p.y],p0)
+    return pathHandlers.L([p0.x, p0.y], p)
   },
   A: function(c, p, r) {
     var ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
@@ -66,7 +73,7 @@ var mlhvqtcsa = 'mlhvqtcsaz'.split('')
 
 for(var i = 0, il = mlhvqtcsa.length; i < il; ++i){
   pathHandlers[mlhvqtcsa[i]] = (function(i){
-    return function(c, p, r, p0) {
+    return function(c, p, r, p0, reflectionIsPossible) {
       if(i == 'H') c[0] = c[0] + p.x
       else if(i == 'V') c[0] = c[0] + p.y
       else if(i == 'A'){
@@ -78,13 +85,17 @@ for(var i = 0, il = mlhvqtcsa.length; i < il; ++i){
           c[j] = c[j] + (j%2 ? p.y : p.x)
         }
 
-      return pathHandlers[i](c, p, r, p0)
+      return pathHandlers[i](c, p, r, p0, reflectionIsPossible)
     }
   })(mlhvqtcsa[i].toUpperCase())
 }
 
 function pathRegReplace(a, b, c, d) {
   return c + d.replace(regex.dots, ' .')
+}
+
+function isBeziere(obj) {
+  return obj instanceof Cubic
 }
 
 var pathParser = (array) => {
@@ -125,7 +136,8 @@ var pathParser = (array) => {
 
     arr.push(pathHandlers[s].call(null,
         array.slice(index, (index = index + paramCnt[s.toUpperCase()])).map(parseFloat),
-        p, r, p0
+        p, r, p0,
+        isBeziere(arr[arr.length-1])
       )
     )
 
@@ -143,6 +155,9 @@ var Move = invent({
     length() { return 0 },
     toPath() {
       return ['M', this.p1.x, this.p1.y].join(' ')
+    },
+    toPathFragment() {
+      return ['M', this.p1.x, this.p1.y]
     }
   }
 })
@@ -208,12 +223,18 @@ var Arc = invent({
 
     Δθ = (Δθ % (2*Math.PI))
 
-    if( sweep && θ > 0) θ -= 2*Math.PI
-    if(!sweep && θ < 0) θ += 2*Math.PI
+    //if(Δθ < 0) Δθ += 2*Math.PI
+
+    //if( sweep && θ > 0) θ -= 2*Math.PI
+    //if(!sweep && θ < 0) θ += 2*Math.PI
+    
+    if(!sweep && Δθ > 0) Δθ -= 2*Math.PI
+    if( sweep && Δθ < 0) Δθ += 2*Math.PI
 
     this.c = c
     this.theta = θ * 180 / Math.PI
     this.theta2 = (θ + Δθ) * 180 / Math.PI
+    //console.log(this.theta, this.theta2, θ, Δθ)
     this.delta = Δθ * 180 / Math.PI
     this.rx = rx
     this.ry = ry
@@ -226,6 +247,8 @@ var Arc = invent({
       var tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
         , sinθ = Math.sin(tInAngle)
         , cosθ = Math.cos(tInAngle)
+
+      //console.log('pointAt', t, tInAngle)
 
       return new Point(
         this.cosφ * this.rx*cosθ - this.sinφ * this.ry*sinθ + this.c.x,
@@ -273,13 +296,34 @@ var Arc = invent({
         , θ1 = this.theta
         , θ2 = this.theta2
 
-      if(θ1 < 0) θ1 += 360
-      if(θ2 < 0) θ2 += 360
+      //console.log(θ1, θ2)
+
+      if(θ1 < 0 || θ2 < 0) {
+        θ1 += 360
+        θ2 += 360
+      }
+      //if(θ2 < 0) θ2 += 360
       if(θ2 < θ1) {
         let temp = θ1
         θ1 = θ2
         θ2 = temp
+
+        //θ1 += 180
+        //θ2 += 180
       }
+
+      //console.log(this.sweep, this.arc)
+      //
+      //if(this.arc == this.sweep) {
+      //  θ1 += 180
+      //  θ2 += 180
+      //}
+
+      //console.log(θ1, θ2)
+
+      //if(θ2 < θ1) {
+      //  θ2 += 360
+      //}
 
       while(θ01-90 > θ01) θ01 -= 90
       while(θ01 < θ1) θ01 += 90
@@ -290,9 +334,11 @@ var Arc = invent({
 
       var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
         , points = angleToTest.filter(function(angle) {
+            //(angle > θ1 && angle < θ2) && console.log(angle, θ1, θ2)
             return (angle > θ1 && angle < θ2)
           }).map(function(angle) {
-            return this.pointAt((angle-θ1)/this.delta)
+            //console.log(angle-θ1)
+            return this.pointAt(((angle-θ1)%360)/(θ2-θ1))
           }.bind(this)).concat(this.p1, this.p2)
 
       points.forEach(function(p) {
@@ -317,7 +363,7 @@ var Arc = invent({
         this.delta
       )
 
-      return ['A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y].join(' ')
+      return ['A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y]
     },
     toPath: function() {
       var arc = Arc.fromCenterForm(
@@ -550,6 +596,9 @@ var Line = invent({
     },
     toPath: function() {
       return ['M', this.p1.x, this.p1.y, this.p2.x, this.p2.y].join(' ')
+    },
+    toPathFragment: function() {
+      return ['L', this.p2.x, this.p2.y]
     }
   }
 })
@@ -602,6 +651,7 @@ const debug = function(d) {
 
   return {
     fragments: parse.map(el => el.toPath()),
+    fragments2: parse.map(el => el.toPathFragment().join(' ')),
     bboxs: parse.map(el => {
       var box = el.bbox()
       return [box.x, box.y, box.width, box.height]
