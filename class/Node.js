@@ -14,6 +14,8 @@ const SVGPoint = require('./SVGPoint')
 const SVGMatrix = require('./SVGMatrix')
 const Box = require('./Box')
 
+// XMLParser
+const parser = require("sax").parser(true)
 
 // Map matrix array to object
 function arrayToMatrix(a) {
@@ -96,10 +98,10 @@ var Node = invent({
         while(this.firstChild){
           this.removeChild(this.firstChild)
         }
-        var nodes = HTMLParser(str, this.ownerDocument)
-        for(var i = 0, il = nodes.length; i < il; ++i) {
-          this.appendChild(nodes[i])
-        }
+        var nodes = new HTMLParser(str, this)
+        //for(var i = 0, il = nodes.length; i < il; ++i) {
+        //  this.appendChild(nodes[i])
+        //}
       }
     },
     outerHTML: {
@@ -108,12 +110,12 @@ var Node = invent({
         return tag(this)
       },
       set: function(str) {
-        var nodes = HTMLParser(str, this.ownerDocument)
-        var lastNode = nodes.pop()
-        this.replaceWith(lastNode)
-        for(var i = 0, il = nodes.length; i < il; ++i) {
-          this.parentNode.insertBefore(nodes[i], lastNode)
+        var well = new SVGElement('well')
+        new HTMLParser(str, well)
+        for(var i = 0, il = well.childNodes.length; i < il; ++i) {
+          this.parentNode.insertBefore(well.childNodes[i], this)
         }
+        this.parentNode.removeChild(this)
       }
     },
     id: {
@@ -463,109 +465,14 @@ var TextNode = invent({
   inherit: Node
 })
 
-function throwError(msg, col, str) {
-  throw new Error([msg, 'at col.', col, 'in', str].join(' '))
-}
+const HTMLParser = function(str, el) {
+  this.currentTag = el
 
-const attrsReg = / (\w+)(?:="(.*?)")?/g
-const HTMLParser = function(str, document) {
-  var index = 0
-  var matches, attrs, tag, tagName, opened, closed
-  const nodes = []
-  const tagNameReg = /<(\/)?(\w+)(?: .+?)?(\/)?>/g
+  parser.ontext = t => this.currentTag.appendChild(new TextNode('#text', {data:t}))
+  parser.onopentag = node => this.currentTag.appendChild(this.currentTag = new SVGElement(node.name, {attrs: node.attributes}))
+  parser.onclosetag = node => this.currentTag = this.currentTag.parentNode
 
-  while(index < str.length){
-
-    // check if we have some text at start and create TextNode
-    newIndex = str.indexOf('<', index)
-    if(index != newIndex){
-      nodes.push(new TextNode(str.slice(index), {ownerDocument:document}))
-      if(newIndex == -1) break
-    }
-
-    // match tag start
-    tag = tagNameReg.exec(str)
-
-    // throw error when this is a closing tag
-    if(tag[1]) throwError('No matching opening tag found for ' + tag[0], tag.index, str)
-
-    // pull tagname from match
-    tagName = tag[2]
-
-    // reset the attribute regex
-    attrsReg.lastIndex = 0
-
-    // match attributes of tag
-    attrs = {}
-    while(matches = attrsReg.exec(tag[0])){
-      attrs[matches[1]] = matches[2] || ''
-    }
-
-    // create node
-    var node = new SVGElement(tagName, {attrs:attrs, ownerDocument:document})
-    nodes.push(node)
-
-    // backup lastIndex of regex for later use
-    index = tagNameReg.lastIndex
-
-    // if tag is selfclosing we can continue because we are done here
-    if(tag[3]){
-      continue
-    }
-
-
-
-    // reset counter for opened and closed tags
-    opened = 0
-    closed = 0
-
-    // search for closing tag
-    while(matches = tagNameReg.exec(str)){
-      //selfclosing - we did not find anything
-      if(matches[3]) continue
-
-      // we find a potential candidate
-      if(matches[2] == tagName) {
-
-        // its an opening tag
-        if(!matches[1]) {
-          ++opened
-          continue
-        }
-
-        // we did not close all open tags yet
-        if(opened != closed){
-          ++closed
-          continue
-        }
-
-        // all checks passed. That's the tag we are looking for
-        break
-      }
-
-      // increase counters
-      if(matches[1]) {
-        ++closed
-        if(closed > opened) throwError('Closing tag ' + matches[0] + ' was found which was not opened before', matches.index, str)
-      }else{
-        ++opened
-      }
-    }
-
-    if(!matches) throwError('No matching closing tag found for ' + tag[0], str.length, str)
-
-    // create a new parser for content of this tag and append returned children to node
-    var childNodes = HTMLParser(str.slice(index, matches.index), document)
-    for(var i = 0, il = childNodes.length; i < il; ++i) {
-      node.appendChild(childNodes[i])
-    }
-
-    // update index
-    index = tagNameReg.lastIndex
-
-  }
-
-  return nodes
+  parser.write(str)
 }
 
 module.exports = {

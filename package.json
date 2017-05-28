@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
   "main": "dom.js",
   "scripts": {
@@ -24,6 +24,7 @@
   "dependencies": {
     "fontkit": "^1.5.4",
     "gl-matrix": "^2.3.2",
-    "image-size": "^0.5.1"
+    "image-size": "^0.5.1",
+    "sax": "^1.2.2"
   }
 }
