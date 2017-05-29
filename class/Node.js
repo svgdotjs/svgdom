@@ -15,7 +15,7 @@ const SVGMatrix = require('./SVGMatrix')
 const Box = require('./Box')
 
 // XMLParser
-const parser = require("sax").parser(true)
+const sax = require("sax")
 
 // Map matrix array to object
 function arrayToMatrix(a) {
@@ -468,6 +468,7 @@ var TextNode = invent({
 const HTMLParser = function(str, el) {
   this.currentTag = el
 
+  var parser = sax.parser(true)
   parser.ontext = t => this.currentTag.appendChild(new TextNode('#text', {data:t}))
   parser.onopentag = node => this.currentTag.appendChild(this.currentTag = new SVGElement(node.name, {attrs: node.attributes}))
   parser.onclosetag = node => this.currentTag = this.currentTag.parentNode
