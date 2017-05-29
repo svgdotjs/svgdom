@@ -3,7 +3,7 @@ const Box = require('../class/Box')
 const regex = require('./regex')
 const textUtils = require('./textUtils')
 
-const bbox = (node) => {
+const bbox = (node, applyTransformations) => {
 
   if(node.nodeType != 1) return new Box()
 
@@ -31,8 +31,8 @@ const bbox = (node) => {
       var first = node.firstChild
       if(!first) return new Box
       return node.childNodes.slice(1).reduce((last,curr) => {
-        return last.merge(bbox(curr))
-      }, bbox(first))
+        return last.merge(bbox(curr, applyTransformations).transform(curr.getInnerMatrix()))
+      }, bbox(first, applyTransformations).transform(first.getInnerMatrix()))
     case 'circle':
       var r = parseFloat(node.getAttribute('r'))
         , x = parseFloat(node.getAttribute('cx')) - r
@@ -69,7 +69,7 @@ const bbox = (node) => {
     case 'polygon':
 
       var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
-        , points = node.getAttribute('points').split(regex.delimiter).map(parseFloat)
+        , points = node.getAttribute('points').trim().split(regex.delimiter).map(parseFloat)
             .reduce((l,c,i) => {
               i % 2 ? l[l.length-1].push(c) : l.push([c])
               return l

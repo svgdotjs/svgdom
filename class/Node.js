@@ -287,7 +287,7 @@ var Node = invent({
       return bbox(this)
     },
     getBoundingClientRect: function() {
-      return bbox(this).transform(this.getScreenCTM())
+      return bbox(this, true).transform(this.getScreenCTM())
     },
     matrixify: function() {
       var matrix = (this.getAttribute('transform') || '')
@@ -340,16 +340,20 @@ var Node = invent({
       return node.generateViewBoxMatrix().multiply(m)
     },
     getScreenCTM: function() {
-      var m = this.matrixify()
-
-      if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(this.nodeName) > -1){
-        m = this.generateViewBoxMatrix().multiply(m)
-      }
+      var m = this.getInnerMatrix()
 
       if(this.parentNode && this.parentNode.nodeName != '#document'){
         return this.parentNode.getScreenCTM().multiply(m)
       }
 
+      return m
+    },
+    getInnerMatrix: function() {
+      var m = this.matrixify()
+
+      if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(this.nodeName) > -1){
+        m = this.generateViewBoxMatrix().multiply(m)
+      }
       return m
     },
     createSVGRect: function() {
