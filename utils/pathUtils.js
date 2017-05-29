@@ -248,7 +248,7 @@ var Arc = invent({
         , sinθ = Math.sin(tInAngle)
         , cosθ = Math.cos(tInAngle)
 
-      //console.log('pointAt', t, tInAngle)
+      //console.log('pointAt', t, tInAngle, this.delta)
 
       return new Point(
         this.cosφ * this.rx*cosθ - this.sinφ * this.ry*sinθ + this.c.x,
@@ -337,8 +337,10 @@ var Arc = invent({
             //(angle > θ1 && angle < θ2) && console.log(angle, θ1, θ2)
             return (angle > θ1 && angle < θ2)
           }).map(function(angle) {
-            //console.log(angle-θ1)
-            return this.pointAt(((angle-θ1)%360)/(θ2-θ1))
+            //console.log(angle)
+            while(this.theta < angle) angle -= 360
+            return this.pointAt(((angle-this.theta)%360)/(this.delta)) // TODO: replace that call with pointAtAngle
+            //return this.pointAt(((angle-θ1)%360)/(θ2-θ1))
           }.bind(this)).concat(this.p1, this.p2)
 
       points.forEach(function(p) {
@@ -436,6 +438,8 @@ var Cubic = invent({
       var a = 3*(-p1+3*p2-3*p3+p4)
         , b = 6*(p1-2*p2+p3)
         , c = 3*(p2-p1)
+        
+      if(a == 0) return [-c/b].filter(function(el){ return el > 0 && el < 1 })
 
       if(b*b-4*a*c < 0) return []
       if(b*b-4*a*c == 0) return [Math.round((-b/(2*a))*100000)/100000].filter(function(el){ return el > 0 && el < 1 })
