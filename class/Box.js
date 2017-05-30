@@ -25,7 +25,8 @@ const Box = invent({
 , extend: {
     // Merge rect box with another, return a new instance
     merge: function(box) {
-      if(!box.x && !box.y && !box.width && !box.height) return new Box(this)
+      if(box instanceof NoBox) return new Box(this)
+      //if(!box.x && !box.y && !box.width && !box.height) return new Box(this)
       var x = Math.min(this.x, box.x)
         , y = Math.min(this.y, box.y)
 
@@ -62,5 +63,27 @@ const Box = invent({
     }
   }
 })
+
+const NoBox = invent({
+  name:'NoBox',
+  create: function() {
+    this.x = 0
+    this.y = 0
+    this.width = 0
+    this.height = 0
+  }
+, inherit: Box
+, extend: {
+    // NoBox has no valid values so it cant be merged
+    merge: function(box) {
+      return box instanceof NoBox ? new NoBox() : new Box(box)
+    }
+  , transform: function(m) {
+      return new NoBox
+    }
+  }
+})
+
+Box.NoBox = NoBox
 
 module.exports = Box

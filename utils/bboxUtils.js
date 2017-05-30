@@ -1,13 +1,16 @@
 const pathUtils = require('./pathUtils')
 const Box = require('../class/Box')
+const NoBox = require('../class/Box').NoBox
 const regex = require('./regex')
 const textUtils = require('./textUtils')
 
 const bbox = (node, applyTransformations) => {
 
-  if(node.nodeType != 1) return new Box()
+  if(node.nodeType != 1) return new NoBox()
 
   switch(node.nodeName) {
+    case 'defs':
+      return new NoBox()
     case 'rect':
     case 'image':
       return new Box(
@@ -21,18 +24,15 @@ const bbox = (node, applyTransformations) => {
     case 'mask':
     case 'clipPath':
     case 'a':
-    case 'defs':
     case 'glyph':
     case 'altGlyph,':
     case 'missing-glyph':
     case 'marker':
     case 'pattern':
     case 'symbol':
-      var first = node.firstChild
-      if(!first) return new Box
-      return node.childNodes.slice(1).reduce((last,curr) => {
+      return node.childNodes.reduce((last,curr) => {
         return last.merge(bbox(curr, applyTransformations).transform(curr.getInnerMatrix()))
-      }, bbox(first, applyTransformations).transform(first.getInnerMatrix()))
+      }, new NoBox)
     case 'circle':
       var r = parseFloat(node.getAttribute('r'))
         , x = parseFloat(node.getAttribute('cx')) - r
@@ -95,11 +95,11 @@ const bbox = (node, applyTransformations) => {
     case 'tspan':
       //console.warn('itering')
       var boxes = textIterator(node).filter(box => box.x != 0 || box.y != 0 || box.width != 0 || box.height != 0)
-      var first = boxes.pop()
-      if(!first) return new Box
-      return boxes.reduce((last, curr) => last.merge(curr), first)
+      //var first = boxes.pop()
+      //if(!first) return new Box
+      return boxes.reduce((last, curr) => last.merge(curr), new NoBox())
 
-    default: return new Box
+    default: return new NoBox
   }
 }
 
