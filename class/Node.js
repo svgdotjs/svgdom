@@ -471,10 +471,18 @@ var TextNode = invent({
 
 const HTMLParser = function(str, el) {
   this.currentTag = el
+  var ownerDocument = el.ownerDocument
 
   var parser = sax.parser(true)
   parser.ontext = t => this.currentTag.appendChild(new TextNode('#text', {data:t}))
-  parser.onopentag = node => this.currentTag.appendChild(this.currentTag = new SVGElement(node.name, {attrs: node.attributes}))
+  parser.onopentag = node => {
+    var newSvgElement = new SVGElement(node.name, {
+      attrs: node.attributes,
+      ownerDocument: ownerDocument,
+    })
+    this.currentTag.appendChild(newSvgElement)
+    this.currentTag = newSvgElement
+  }
   parser.onclosetag = node => this.currentTag = this.currentTag.parentNode
 
   parser.write(str)
