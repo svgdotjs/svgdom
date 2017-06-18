@@ -474,7 +474,10 @@ const HTMLParser = function(str, el) {
   var ownerDocument = el.ownerDocument
 
   var parser = sax.parser(true)
-  parser.ontext = t => this.currentTag.appendChild(new TextNode('#text', {data:t}))
+  parser.ontext = t => this.currentTag.appendChild(new TextNode('#text', {
+    data: t,
+    ownerDocument: ownerDocument
+  }))
   parser.onopentag = node => {
     var newSvgElement = new SVGElement(node.name, {
       attrs: node.attributes,
