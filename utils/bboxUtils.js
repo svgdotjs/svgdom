@@ -140,7 +140,7 @@ const textIterator = function(node, pos={x:0, y:0}, dx=[0], dy=[0]){
 
       // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
       if(dy.length || dx.length) {
-        for(jl = data.length; j < ij; j++){
+        for(jl = data.length; j < jl; j++){
           boxes.push(textUtils.bbox(data.substr(j, 1), pos.x, pos.y, node.getFontDetails()))
 
           pos.x += dx.shift() || 0
