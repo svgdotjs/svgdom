@@ -38,6 +38,7 @@ var Node = invent({
     this.data = props.data || ''
 
     this.ownerDocument = props.ownerDocument || null
+    this.ownerSVGElement = this.ownerDocument ? this.ownerDocument.documentElement : null
     this.parentNode = null
     this.cnt = 0
 
@@ -75,6 +76,11 @@ var Node = invent({
     lastChild: {
       get: function() {
         return this.childNodes[this.childNodes.length-1] || null
+      }
+    },
+    children: {
+      get: function () {
+        return this.childNodes.filter (function (node) {return node.nodeType === 1});
       }
     },
     nextSibling: {
