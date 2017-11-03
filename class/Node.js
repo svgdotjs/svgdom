@@ -38,7 +38,6 @@ var Node = invent({
     this.data = props.data || ''
 
     this.ownerDocument = props.ownerDocument || null
-    this.ownerSVGElement = this.ownerDocument ? this.ownerDocument.documentElement : null
     this.parentNode = null
     this.cnt = 0
 
@@ -130,6 +129,11 @@ var Node = invent({
       },
       set: function(id) {
         this.attrs.set('id', id)
+      }
+    },
+    ownerSVGElement: {
+      get: function () {
+        return this.ownerDocument ? this.ownerDocument.documentElement : null
       }
     }
   },
