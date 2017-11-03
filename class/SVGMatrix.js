@@ -37,9 +37,16 @@ const SVGMatrix = invent({
     scale: function(scale) {
       return this.multiply(matrixFactory(scale,0,0,scale,0,0))
     },
-    rotate: function(r) {
+    rotate: function(r, x, y) {
       r = r % 360 * Math.PI / 180
-      return this.multiply(matrixFactory(Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0))
+      return this.multiply(matrixFactory(
+        Math.cos(r),
+        Math.sin(r),
+        -Math.sin(r),
+        Math.cos(r),
+        x ? -Math.cos(r) * x + Math.sin(r) * y + x : 0,
+        y ? -Math.sin(r) * x - Math.cos(r) * y + y : 0
+      ))
     },
     skew: function(x, y) {
       return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))
