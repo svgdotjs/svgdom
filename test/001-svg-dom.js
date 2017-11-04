@@ -94,7 +94,7 @@ describe ('svg document', () => {
     assert.equal (bbox1.width.toFixed(3), bbox2.width.toFixed(3));
     assert.equal (bbox1.height.toFixed(3), bbox2.height.toFixed(3));
 
-    circle.setAttribute ('transform', 'rotate (90, -5, -5)');
+    circle.setAttribute ('transform', 'rotate (90, 5, 5)');
 
     var bbox3 = circle.getBBox();
 
