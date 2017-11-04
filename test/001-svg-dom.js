@@ -76,4 +76,71 @@ describe ('svg document', () => {
     // assert(svgDoc.documentElement.ownerSVGElement === svgDoc.documentElement);
   })
 
+  it ('transforms', () => {
+    var rect = svgDoc.querySelector('#rect-1');
+
+    var x = 0, y = 0, width = 10, height = 10;
+
+    var bbox = rect.getBBox();
+
+    assert.equal (bbox.x, x);
+    assert.equal (bbox.y, y);
+    assert.equal (bbox.width, width);
+    assert.equal (bbox.height, height);
+
+    rect.setAttribute ('transform', 'rotate(45)');
+
+    bbox = rect.getBBox();
+
+    assert (bbox.width > width);
+    assert.equal (bbox.width, Math.sqrt (2*width*width));
+    assert (bbox.height > height);
+    assert.equal (bbox.height, Math.sqrt (2*height*height));
+
+    rect.setAttribute ('transform', '');
+
+    var rect2 = svgDoc.querySelector('#rect-2');
+
+    rect2.setAttribute ('transform', 'translate(15, 0)');
+
+    var circle = svgDoc.querySelector('#circle-1');
+
+    bbox = circle.getBBox();
+
+    assert.equal (bbox.x, x);
+    assert.equal (bbox.y, y);
+    assert.equal (bbox.width, width);
+    assert.equal (bbox.height, height);
+
+    circle.setAttribute ('transform', 'translate(15, 0)');
+
+    bbox = circle.getBBox();
+
+    assert.equal (bbox.x, x + 15);
+    assert.equal (bbox.width, width);
+
+    // scales from 0, 0
+    circle.setAttribute ('transform', 'scale(2)');
+
+    bbox = circle.getBBox();
+
+    assert.equal (bbox.x, x);
+    assert.equal (bbox.y, y);
+    assert.equal (bbox.width, width*2);
+    assert.equal (bbox.height, height*2);
+
+    var g = svgDoc.querySelector('#g-1');
+
+    bbox = g.getBBox();
+
+    /*
+    console.log (bbox);
+
+    assert.equal (bbox.x, 0);
+    assert.equal (bbox.y, 0);
+    assert.equal (bbox.width, 25);
+    assert.equal (bbox.height, 10);
+    */
+  })
+
 })

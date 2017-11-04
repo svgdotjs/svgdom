@@ -18,7 +18,7 @@ const bbox = (node, applyTransformations) => {
         parseFloat(node.getAttribute('y')) || 0,
         parseFloat(node.getAttribute('width')) || 0,
         parseFloat(node.getAttribute('height')) || 0
-      )
+      ).transform(node.matrixify());
     case 'svg':
     case 'g':
     case 'mask':
@@ -42,7 +42,7 @@ const bbox = (node, applyTransformations) => {
         x, y,
         2 * r,
         2 * r
-      )
+      ).transform(node.matrixify())
     case 'ellipse':
       var rx = parseFloat(node.getAttribute('rx'))
         , ry = parseFloat(node.getAttribute('ry'))
@@ -53,7 +53,7 @@ const bbox = (node, applyTransformations) => {
         x, y,
         2 * rx,
         2 * ry
-      )
+      ).transform(node.matrixify())
     case 'line':
       var x1 = parseFloat(node.getAttribute('x1'))
       var x2 = parseFloat(node.getAttribute('x2'))
@@ -64,7 +64,7 @@ const bbox = (node, applyTransformations) => {
         Math.min(y1, y2),
         Math.abs(x2-x1),
         Math.abs(y2-y1)
-      )
+      ).transform(node.matrixify())
     case 'polyline':
     case 'polygon':
 
@@ -85,7 +85,7 @@ const bbox = (node, applyTransformations) => {
         xMin, yMin,
         xMax-xMin,
         yMax-yMin
-      )
+      ).transform(node.matrixify())
     case 'path':
       return pathUtils.bbox(node.getAttribute('d'))
     case 'use':
@@ -97,7 +97,7 @@ const bbox = (node, applyTransformations) => {
       var boxes = textIterator(node).filter(box => box.x != 0 || box.y != 0 || box.width != 0 || box.height != 0)
       //var first = boxes.pop()
       //if(!first) return new Box
-      return boxes.reduce((last, curr) => last.merge(curr), new NoBox())
+      return boxes.reduce((last, curr) => last.merge(curr), new NoBox()).transform(node.matrixify())
 
     default: return new NoBox
   }
