@@ -23,7 +23,7 @@ const SVGMatrix = invent({
       return r
     },
     translate: function(x, y) {
-      return this.multiply(matrixFactory(1,0,0,1,x,y))
+      return this.multiply(matrixFactory(1,0,0,1,x,y === undefined ? 0 : y))
     },
     inverse: function() {
       var t = matrix.fromValues(this.a, this.b, this.c, this.d, this.e, this.f)

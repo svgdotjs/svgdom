@@ -174,5 +174,23 @@ describe ('svg document', () => {
     assert.equal (bbox.height, 10);
     */
   })
+<<<<<<< HEAD
+=======
+
+	it ('translateX', () => {
+
+		var rect = svgDoc.querySelector('#rect-1');
+
+		var bbox1 = rect.getBBox();
+
+		rect.setAttribute ('transform', 'translate(15)');
+
+		var bbox2 = rect.getBBox();
+
+		assert.equal (bbox1.x, bbox2.x - 15);
+
+	})
+})
+>>>>>>> 5ab0905... fix: translate (x)
 
 })
