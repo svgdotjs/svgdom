@@ -61,6 +61,16 @@ describe ('svg document', () => {
 
     g.appendChild (circle);
 
+    var text = makeEl.call (svgDoc, 'text', {
+      id: 'text-1',
+      x: 5,
+      y: 5
+    });
+
+    text.appendChild (svgDoc.createTextNode ('TEXT'));
+
+    g.appendChild (text);
+
   })
 
   it ('should have children method for nodes', () => {
@@ -226,6 +236,26 @@ describe ('svg document', () => {
     assert (connectors);
 
     assert.equal (connectors.length, 2);
+  })
+
+  it ('text-anchor should affect bbox', () => {
+
+    var text = svgDoc.querySelector('#text-1');
+
+    assert (text);
+
+    var bbox1 = text.getBBox ();
+
+    text.setAttribute ('text-anchor', 'end');
+
+    var bbox2 = text.getBBox ();
+
+    console.log (bbox1, bbox2)
+
+    assert.equal (bbox1.x, bbox2.x + bbox2.width);
+    assert.equal (bbox1.y, bbox2.y);
+    assert.equal (bbox1.width, bbox2.width);
+
   })
 
 })
