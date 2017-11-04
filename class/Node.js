@@ -470,13 +470,30 @@ const AttributeNode = invent({
   inherit: Node
 })
 
+var CharacterData = invent({
+  name: 'CharacterData',
+  create: function(name, props) {
+    throw "CharacterData cannot be created directly"
+  },
+  inherit: Node
+})
+
 var TextNode = invent({
   name: 'TextNode',
   create: function(name, props) {
     Node.call(this, name, props)
     this.nodeType = 3
   },
-  inherit: Node
+  inherit: CharacterData
+})
+
+var Comment = invent({
+  name: 'Comment',
+  create: function(name, props) {
+    Node.call(this, name, props)
+    this.nodeType = 8
+  },
+  inherit: CharacterData
 })
 
 const HTMLParser = function(str, el) {
@@ -505,5 +522,6 @@ module.exports = {
   Node,
   SVGElement,
   AttributeNode,
-  TextNode
+  TextNode,
+  Comment
 }
