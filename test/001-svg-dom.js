@@ -76,6 +76,22 @@ describe ('svg document', () => {
     // assert(svgDoc.documentElement.ownerSVGElement === svgDoc.documentElement);
   })
 
+  it ('transform: rotate', () => {
+
+    var circle = svgDoc.querySelector('#circle-1');
+
+    var bbox1 = circle.getBBox();
+
+    circle.setAttribute ('transform', 'rotate (90)');
+
+    var bbox2 = circle.getBBox();
+
+    assert.equal (bbox1.width, bbox2.width);
+    assert.equal (bbox1.height, bbox2.height);
+
+  })
+
+
   it ('transforms', () => {
     var rect = svgDoc.querySelector('#rect-1');
 
