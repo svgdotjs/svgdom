@@ -201,4 +201,18 @@ describe ('svg document', () => {
     assert.equal (bbox1.height, bbox2.height*2);
 
   })
+
+  it ('exposed style attribute on attributes enumeration', () => {
+
+    var connector = svgDoc.querySelector('#rect-1');
+
+    assert.equal (connector.getAttribute ('style'), null);
+
+    connector.style.fill = "black";
+
+    assert.equal (connector.getAttribute ('style'), 'fill: black');
+
+    assert (connector.attributes.some (attr => attr.nodeName === 'style'));
+  })
+
 })

@@ -52,7 +52,10 @@ var Node = invent({
   props: {
     attributes: {
       get: function() {
-        return mapToAttributeArray(this.attrs)
+        var attributes = mapToAttributeArray(this.attrs)
+        if (Object.keys (this._style).length)
+          attributes.push (new AttributeNode('style', this.getAttribute ('style')));
+        return attributes;
       }
     },
     textContent: {
