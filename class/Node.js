@@ -408,24 +408,41 @@ var Node = invent({
     },
     getFontDetails: function() {
       var node = this
-      var fontSize = null, fontFamily = null
+      var fontSize = null,
+          fontFamily = null,
+          textAnchor = null,
+          dominantBaseline = null,
+          textContentElements = "text tspan tref textPath altGlyph".split (" ").reduce ((a, el) => (a[el] = true, a), {});
 
       do{
+        // TODO: stop on
+        if(!fontSize)
         fontSize = node.style.fontSize || node.getAttribute('font-size')
-
-        if(fontSize) break
-      }while(node = node.parentNode)
-
-      node = this
-      do{
+        if(!fontFamily)
         fontFamily = node.style.fontFamily || node.getAttribute('font-family')
+        if(!textAnchor)
+          textAnchor = node.style.textAnchor || node.getAttribute('text-anchor')
+        if(!dominantBaseline)
+          dominantBaseline = node.style.dominantBaseline || node.getAttribute('dominant-baseline')
+        // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
+        // TODO: alignment-adjust, baseline-shift
+        /*
+        if(!alignmentBaseline)
+        alignmentBaseline = this.style.alignmentBaseline || this.getAttribute('alignment-baseline')
+        */
 
-        if(fontFamily) break
-      }while(node = node.parentNode)
+      }while(
+        node.parentNode.nodeType === 1
+        && (node.parentNode.nodeName in textContentElements)
+        && (node = node.parentNode)
+      )
 
       return {
         fontFamily,
         fontSize,
+        textAnchor: textAnchor || 'start',
+        // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
+        dominantBaseline: dominantBaseline || 'alphabetical',
         fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
         fontDir: this.ownerDocument.fontDir,
         preloaded: this.ownerDocument._preloaded

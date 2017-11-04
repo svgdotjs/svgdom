@@ -37,7 +37,32 @@ const bbox = function(text, x, y, details) {
   var height = lineHeight/font.unitsPerEm * fontSize
   var width = font.layout(text).glyphs.reduce((last, curr) => last + curr.advanceWidth, 0) / font.unitsPerEm * fontSize
 
-  return new Box(x, y-font.ascent/font.unitsPerEm * fontSize, width, height)
+  // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/text-anchor
+  var xAdjust = 0;
+  if (details.textAnchor === 'end') {
+ xAdjust = -width
+  } else if (details.textAnchor === 'middle') {
+ xAdjust = -width/2
+  }
+
+  // https://www.w3.org/TR/2002/WD-css3-linebox-20020515/
+  // 4.2. Baseline identifiers
+  var yAdjust = font.ascent; // alphabetic
+  if (details.dominantBaseline === 'before-edge' || details.dominantBaseline === 'text-before-edge') {
+    yAdjust = 0
+  } else if (details.dominantBaseline === 'hanging') {
+    yAdjust = font.ascent - font.xHeight - font.capHeight
+  } else if (details.dominantBaseline === 'mathematical') {
+   yAdjust = font.ascent - font.xHeight
+  } else if (details.dominantBaseline === 'middle') {
+    yAdjust = font.ascent - font.xHeight / 2;
+  } else if (details.dominantBaseline === 'central') {
+    yAdjust = font.ascent / 2 + font.descent / 2;
+  } else if (details.dominantBaseline === 'ideographic') {
+    yAdjust = font.ascent + font.descent;
+  }
+
+  return new Box(x + xAdjust, y-yAdjust/font.unitsPerEm * fontSize, width, height)
 }
 
 module.exports = {bbox}
