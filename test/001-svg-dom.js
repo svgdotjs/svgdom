@@ -173,33 +173,32 @@ describe ('svg document', () => {
     */
   })
 
-	it ('translateX', () => {
+  it ('translateX', () => {
 
-		var rect = svgDoc.querySelector('#rect-1');
+    var rect = svgDoc.querySelector('#rect-1');
 
-		var bbox1 = rect.getBBox();
+    var bbox1 = rect.getBBox();
 
-		rect.setAttribute ('transform', 'translate(15)');
+    rect.setAttribute ('transform', 'translate(15)');
 
-		var bbox2 = rect.getBBox();
+    var bbox2 = rect.getBBox();
 
-		assert.equal (bbox1.x, bbox2.x - 15);
+    assert.equal (bbox1.x, bbox2.x - 15);
 
-	})
+  })
 
-	it ('scaleXY', () => {
+  it ('scaleXY', () => {
 
-		var rect = svgDoc.querySelector('#rect-1');
+    var rect = svgDoc.querySelector('#rect-1');
 
-		var bbox1 = rect.getBBox();
+    var bbox1 = rect.getBBox();
 
-		rect.setAttribute ('transform', 'scale(2, 0.5)');
+    rect.setAttribute ('transform', 'scale(2, 0.5)');
 
-		var bbox2 = rect.getBBox();
+    var bbox2 = rect.getBBox();
 
-		assert.equal (bbox1.width, bbox2.width/2);
-		assert.equal (bbox1.height, bbox2.height*2);
+    assert.equal (bbox1.width, bbox2.width/2);
+    assert.equal (bbox1.height, bbox2.height*2);
 
-	})
-
+  })
 })
