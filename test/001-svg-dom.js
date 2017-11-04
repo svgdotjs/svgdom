@@ -98,8 +98,6 @@ describe ('svg document', () => {
 
     var bbox3 = circle.getBBox();
 
-    console.log (bbox3);
-
     assert.equal (bbox1.x.toFixed(3), bbox3.x.toFixed(3));
     assert.equal (bbox1.y.toFixed(3), bbox3.y.toFixed(3));
     assert.equal (bbox1.width, bbox3.width);
