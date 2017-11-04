@@ -215,4 +215,17 @@ describe ('svg document', () => {
     assert (connector.attributes.some (attr => attr.nodeName === 'style'));
   })
 
+  it ('should match [attr^=startsWith] css selector', () => {
+
+    var connector = svgDoc.querySelector('[id^=rect-1]');
+
+    assert (connector);
+
+    var connectors = svgDoc.querySelectorAll ('[id^=rect]');
+
+    assert (connectors);
+
+    assert.equal (connectors.length, 2);
+  })
+
 })

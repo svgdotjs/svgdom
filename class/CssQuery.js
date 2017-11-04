@@ -259,7 +259,8 @@ const CssQueryNode = invent({
       }
 
       for(i = this.attrs.length; i--;){
-        if(!this.attrs[i].matcher(node.getAttribute(this.attrs[i].name))) {
+        var attrValue = node.getAttribute(this.attrs[i].name);
+        if(attrValue === null || !this.attrs[i].matcher(attrValue)) {
           return false
         }
       }
