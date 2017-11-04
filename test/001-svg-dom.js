@@ -174,8 +174,6 @@ describe ('svg document', () => {
     assert.equal (bbox.height, 10);
     */
   })
-<<<<<<< HEAD
-=======
 
 	it ('translateX', () => {
 
@@ -205,7 +203,5 @@ describe ('svg document', () => {
 		assert.equal (bbox1.height, bbox2.height*2);
 
 	})
-})
->>>>>>> 5ab0905... fix: translate (x)
 
 })
