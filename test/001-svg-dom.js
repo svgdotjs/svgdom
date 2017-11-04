@@ -82,12 +82,28 @@ describe ('svg document', () => {
 
     var bbox1 = circle.getBBox();
 
-    circle.setAttribute ('transform', 'rotate (90)');
+    circle.setAttribute ('transform', 'rotate (180)');
 
     var bbox2 = circle.getBBox();
 
-    assert.equal (bbox1.width, bbox2.width);
-    assert.equal (bbox1.height, bbox2.height);
+    // floats!
+    assert (bbox1.x - bbox2.x < 10.001);
+    assert (bbox1.x - bbox2.x >  9.999);
+    assert (bbox1.y - bbox2.y < 10.001);
+    assert (bbox1.y - bbox2.y >  9.999);
+    assert.equal (bbox1.width.toFixed(3), bbox2.width.toFixed(3));
+    assert.equal (bbox1.height.toFixed(3), bbox2.height.toFixed(3));
+
+    circle.setAttribute ('transform', 'rotate (90, -5, -5)');
+
+    var bbox3 = circle.getBBox();
+
+    console.log (bbox3);
+
+    assert.equal (bbox1.x.toFixed(3), bbox3.x.toFixed(3));
+    assert.equal (bbox1.y.toFixed(3), bbox3.y.toFixed(3));
+    assert.equal (bbox1.width, bbox3.width);
+    assert.equal (bbox1.height, bbox3.height);
 
   })
 
