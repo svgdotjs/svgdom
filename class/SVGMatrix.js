@@ -34,8 +34,8 @@ const SVGMatrix = invent({
     toString: function() {
       return 'SVGMatrix'
     },
-    scale: function(scale) {
-      return this.multiply(matrixFactory(scale,0,0,scale,0,0))
+    scale: function(scaleX, scaleY) {
+      return this.multiply(matrixFactory(scaleX,0,0,scaleY === undefined ? scaleX : scaleY,0,0))
     },
     rotate: function(r, x, y) {
       r = r % 360 * Math.PI / 180

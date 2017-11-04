@@ -190,6 +190,21 @@ describe ('svg document', () => {
 		assert.equal (bbox1.x, bbox2.x - 15);
 
 	})
+
+	it ('scaleXY', () => {
+
+		var rect = svgDoc.querySelector('#rect-1');
+
+		var bbox1 = rect.getBBox();
+
+		rect.setAttribute ('transform', 'scale(2, 0.5)');
+
+		var bbox2 = rect.getBBox();
+
+		assert.equal (bbox1.width, bbox2.width/2);
+		assert.equal (bbox1.height, bbox2.height*2);
+
+	})
 })
 >>>>>>> 5ab0905... fix: translate (x)
 
