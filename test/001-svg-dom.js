@@ -181,7 +181,7 @@ describe ('svg document', () => {
 
   wrappedIt ('transform: rotate', () => {
 
-    var circle = svgDoc.querySelector('#circle-1');
+    var circle = svgRoot.querySelector('#circle-1');
 
     var bbox1 = circle.getBBox();
 
@@ -210,7 +210,7 @@ describe ('svg document', () => {
 
 
   wrappedIt ('transforms', () => {
-    var rect = svgDoc.querySelector('#rect-1');
+    var rect = svgRoot.querySelector('#rect-1');
 
     var x = 0, y = 0, width = 10, height = 10;
 
@@ -232,11 +232,11 @@ describe ('svg document', () => {
 
     rect.setAttribute ('transform', '');
 
-    var rect2 = svgDoc.querySelector('#rect-2');
+    var rect2 = svgRoot.querySelector('#rect-2');
 
     rect2.setAttribute ('transform', 'translate(15, 0)');
 
-    var circle = svgDoc.querySelector('#circle-1');
+    var circle = svgRoot.querySelector('#circle-1');
 
     bbox = circle.getBBox();
 
@@ -262,7 +262,7 @@ describe ('svg document', () => {
     assert.equal (bbox.width, width*2);
     assert.equal (bbox.height, height*2);
 
-    var g = svgDoc.querySelector('#g-1');
+    var g = svgRoot.querySelector('#g-1');
 
     bbox = g.getBBox();
 
@@ -278,7 +278,7 @@ describe ('svg document', () => {
 
   wrappedIt ('transform: translateX', () => {
 
-    var rect = svgDoc.querySelector('#rect-1');
+    var rect = svgRoot.querySelector('#rect-1');
 
     var bbox1 = rect.getBBox();
 
@@ -292,7 +292,7 @@ describe ('svg document', () => {
 
   wrappedIt ('transform: scaleXY', () => {
 
-    var rect = svgDoc.querySelector('#rect-1');
+    var rect = svgRoot.querySelector('#rect-1');
 
     var bbox1 = rect.getBBox();
 
@@ -307,7 +307,7 @@ describe ('svg document', () => {
 
   wrappedIt ('exposed style attribute on attributes enumeration', () => {
 
-    var connector = svgDoc.querySelector('#rect-1');
+    var connector = svgRoot.querySelector('#rect-1');
 
     assert.equal (connector.getAttribute ('style'), null);
 
@@ -320,11 +320,11 @@ describe ('svg document', () => {
 
   wrappedIt ('should match [attr^=startsWith] css selector', () => {
 
-    var connector = svgDoc.querySelector('[id^=rect-1]');
+    var connector = svgRoot.querySelector('[id^=rect-1]');
 
     assert (connector);
 
-    var connectors = svgDoc.querySelectorAll ('[id^=rect]');
+    var connectors = svgRoot.querySelectorAll ('[id^=rect]');
 
     assert (connectors);
 
@@ -333,7 +333,7 @@ describe ('svg document', () => {
 
   wrappedIt ('text-anchor should affect bbox', () => {
 
-    var text = svgDoc.querySelector('#text-1');
+    var text = svgRoot.querySelector('#text-1');
 
     assert (text);
 
