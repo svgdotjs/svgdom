@@ -1,3 +1,5 @@
+import puppeteer from 'puppeteer';
+
 import assert from 'assert'
 
 import {DOMParser, XMLSerializer, DOMImplementation} from 'xmldom'
@@ -8,85 +10,176 @@ import fs from 'fs'
 
 var svgString;
 var svgDoc;
+var svgRoot;
 
 function makeEl (nodeName, attrs = {}) {
-  var el = this.createElement (nodeName);
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var el = this.createElementNS (svgNS, nodeName);
   Object.keys (attrs).forEach (attrName => {el.setAttribute (attrName, attrs[attrName])});
   return el;
 }
 
+var browser, page;
+
+var testEnv = process.env.TEST_BROWSER ? 'browser' : 'node';
+
+function wrappedIt (message, testFn) {
+  if (testEnv === 'browser') {
+    return it (message, () => page.evaluate (testFn)); // page.evaluate will return promise
+  }
+  return it (message, testFn);
+}
+
+wrappedIt.skip = function (message, testFn) {
+  return it.skip (message, testFn);
+}
+
+wrappedIt.only = function (message, testFn) {
+  if (testEnv === 'browser') {
+    return it.only (message, () => page.evaluate (testFn)); // page.evaluate will return promise
+  }
+  return it.only (message, testFn);
+}
+
 describe ('svg document', () => {
 
-  beforeEach (() => {
-    svgDoc = new svgdom.constructor ().document;
+  before (async () => {
 
-    svgDoc.documentElement.appendChild (svgDoc.createTextNode ('\n  '));
+    if (testEnv === 'browser') {
 
-    var g = makeEl.call (svgDoc, 'g', {
-      id: 'g-1'
-    });
+      var crConfig = {
+        headless: false, // replace with false to check rendering
+        args: [
+          '--disable-infobars',
+          '--disable-gpu',
+          // '--disable-web-security',
+          // '--user-data-dir'
+        ]
+      };
 
-    svgDoc.documentElement.appendChild (g);
+      if (process.env.CHROMIUM_PATH) {
+        crConfig.executablePath = process.env.CHROMIUM_PATH + "/Contents/MacOS/Chromium";
+      }
 
-    g.appendChild (svgDoc.createTextNode ('\n    '));
+      browser = await puppeteer.launch (crConfig);
+      page = await browser.newPage ();
 
-    var rect = makeEl.call (svgDoc, 'rect', {
-      id: 'rect-1',
-      x: 0,
-      y: 0,
-      width: 10,
-      height: 10
-    });
+      await page.goto(
+        'about:blank',
+        {waitUntil: 'load'}
+      );
 
-    g.appendChild (rect);
+      await page.exposeFunction('assert', (check, message) => {
+        if (!check) throw (message || "Assertion failed");
+      });
 
-    g.appendChild (svgDoc.createTextNode ('\n    '));
+      await page.evaluate (() => {
+        window.assert.equal = function (value1, value2, message) {
+          if (value1 !== value2) throw (message || "Assertion failed");
+        }
+      })
 
-    var rect = makeEl.call (svgDoc, 'rect', {
-      id: 'rect-2',
-      x: 0,
-      y: 0,
-      width: 10,
-      height: 10
-    });
+    }
+  });
 
-    g.appendChild (rect);
+  after (async () => {
+    await setTimeout (10000);
+    browser && browser.close ();
+  })
 
-    var circle = makeEl.call (svgDoc, 'circle', {
-      id: 'circle-1',
-      cx: 5,
-      cy: 5,
-      r: 5
-    });
+  beforeEach (async () => {
 
-    g.appendChild (circle);
+    function prepare () {
 
-    var text = makeEl.call (svgDoc, 'text', {
-      id: 'text-1',
-      x: 5,
-      y: 5
-    });
+      var svgNS = 'http://www.w3.org/2000/svg';
 
-    text.appendChild (svgDoc.createTextNode ('TEXT'));
+      svgRoot.appendChild (svgDoc.createTextNode ('\n  '));
 
-    g.appendChild (text);
+      var g = svgDoc.createElementNS (svgNS, 'g')
+      g.id = 'g-1';
+
+      svgRoot.appendChild (g);
+
+      g.appendChild (svgDoc.createTextNode ('\n    '));
+
+      var rect = svgDoc.createElementNS (svgNS, 'rect')
+      rect.id = 'rect-1';
+      rect.setAttribute ('x', 0);
+      rect.setAttribute ('y', 0);
+      rect.setAttribute ('width', 10);
+      rect.setAttribute ('height', 10);
+
+      g.appendChild (rect);
+
+      g.appendChild (svgDoc.createTextNode ('\n    '));
+
+      rect = svgDoc.createElementNS (svgNS, 'rect')
+      rect.id = 'rect-2';
+      rect.setAttribute ('x', 0);
+      rect.setAttribute ('y', 0);
+      rect.setAttribute ('width', 10);
+      rect.setAttribute ('height', 10);
+
+      g.appendChild (rect);
+
+
+      var circle = svgDoc.createElementNS (svgNS, 'circle')
+      circle.id = 'circle-1';
+      circle.setAttribute ('cx', 5);
+      circle.setAttribute ('cy', 5);
+      circle.setAttribute ('r',  5);
+
+      g.appendChild (circle);
+
+      var text = svgDoc.createElementNS (svgNS, 'text')
+      text.id = 'text-1';
+      text.setAttribute ('x', 5);
+      text.setAttribute ('y', 5);
+
+      text.appendChild (svgDoc.createTextNode ('TEXT'));
+
+      g.appendChild (text);
+
+    }
+
+    if (testEnv === 'browser') {
+      await page.evaluate (() => {
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var svg = window.svgRoot = document.createElementNS (svgNS,'svg');
+        svg.setAttribute ('xmlns:xlink','http://www.w3.org/1999/xlink');
+        svg.setAttribute ('height','400');
+        svg.setAttribute ('width','400');
+        svg.setAttribute ('viewPort','0 0 400 400');
+        svg.setAttribute ('style', 'background-color: #eee');
+
+        document.body.appendChild (svg);
+        window.svgDoc = document;
+      })
+
+      await page.evaluate (prepare);
+    } else {
+      svgDoc = new svgdom.constructor ().document;
+      svgRoot = svgDoc.documentElement;
+
+      prepare ();
+    }
 
   })
 
-  it ('should have children method for nodes', () => {
-    assert(svgDoc.documentElement.children);
+  wrappedIt ('should have children method for nodes', () => {
+    assert(svgRoot.children);
   })
 
-  it ('should have createComment method', () => {
+  wrappedIt ('should have createComment method', () => {
     assert(svgDoc.createComment ('xxx'));
   })
 
-  it ('should have ownerSVGElement property for nodes', () => {
-    assert(svgDoc.documentElement.ownerSVGElement);
-    // assert(svgDoc.documentElement.ownerSVGElement === svgDoc.documentElement);
+  wrappedIt ('should have ownerSVGElement property for nodes', () => {
+    assert(svgRoot.ownerSVGElement);
+    // assert(svgRoot.ownerSVGElement === svgRoot);
   })
 
-  it ('transform: rotate', () => {
+  wrappedIt ('transform: rotate', () => {
 
     var circle = svgDoc.querySelector('#circle-1');
 
@@ -116,7 +209,7 @@ describe ('svg document', () => {
   })
 
 
-  it ('transforms', () => {
+  wrappedIt ('transforms', () => {
     var rect = svgDoc.querySelector('#rect-1');
 
     var x = 0, y = 0, width = 10, height = 10;
@@ -183,7 +276,7 @@ describe ('svg document', () => {
     */
   })
 
-  it ('translateX', () => {
+  wrappedIt ('transform: translateX', () => {
 
     var rect = svgDoc.querySelector('#rect-1');
 
@@ -197,7 +290,7 @@ describe ('svg document', () => {
 
   })
 
-  it ('scaleXY', () => {
+  wrappedIt ('transform: scaleXY', () => {
 
     var rect = svgDoc.querySelector('#rect-1');
 
@@ -212,7 +305,7 @@ describe ('svg document', () => {
 
   })
 
-  it ('exposed style attribute on attributes enumeration', () => {
+  wrappedIt ('exposed style attribute on attributes enumeration', () => {
 
     var connector = svgDoc.querySelector('#rect-1');
 
@@ -225,7 +318,7 @@ describe ('svg document', () => {
     assert (connector.attributes.some (attr => attr.nodeName === 'style'));
   })
 
-  it ('should match [attr^=startsWith] css selector', () => {
+  wrappedIt ('should match [attr^=startsWith] css selector', () => {
 
     var connector = svgDoc.querySelector('[id^=rect-1]');
 
@@ -238,7 +331,7 @@ describe ('svg document', () => {
     assert.equal (connectors.length, 2);
   })
 
-  it ('text-anchor should affect bbox', () => {
+  wrappedIt ('text-anchor should affect bbox', () => {
 
     var text = svgDoc.querySelector('#text-1');
 
