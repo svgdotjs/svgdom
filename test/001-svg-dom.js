@@ -69,11 +69,11 @@ describe ('svg document', () => {
         {waitUntil: 'load'}
       );
 
-      await page.exposeFunction('assert', (check, message) => {
-        if (!check) throw (message || "Assertion failed");
-      });
-
       await page.evaluate (() => {
+        window.assert = function (check, message) {
+          if (!check) throw (message || "Assertion failed");
+        }
+
         window.assert.equal = function (value1, value2, message) {
           if (value1 !== value2) throw (message || "Assertion failed");
         }
