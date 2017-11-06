@@ -185,7 +185,10 @@ describe ('svg document', () => {
   })
 
   wrappedIt ('should have ownerSVGElement property for nodes', () => {
-    assert(svgRoot.ownerSVGElement);
+    // this will not work with documents, embedded into html
+    // but should work with svg docs as media <object>
+    if (svgDoc.documentElement.nodeName === 'svg')
+      assert(svgRoot.ownerSVGElement);
     // assert(svgRoot.ownerSVGElement === svgRoot);
   })
 
