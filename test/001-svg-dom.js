@@ -97,10 +97,15 @@ describe ('svg document', () => {
 
       var g = svgDoc.createElementNS (svgNS, 'g')
       g.id = 'g-1';
+      g.setAttribute ('transform', 'translate(20, 20) scale(10)');
 
       svgRoot.appendChild (g);
 
       g.appendChild (svgDoc.createTextNode ('\n    '));
+
+      var gRect = svgDoc.createElementNS (svgNS, 'g');
+      gRect.setAttribute ('transform', 'translate(15)');
+      g.appendChild (gRect);
 
       var rect = svgDoc.createElementNS (svgNS, 'rect')
       rect.id = 'rect-1';
@@ -108,10 +113,11 @@ describe ('svg document', () => {
       rect.setAttribute ('y', 0);
       rect.setAttribute ('width', 10);
       rect.setAttribute ('height', 10);
+      rect.setAttribute ('fill', '#c63');
 
-      g.appendChild (rect);
+      gRect.appendChild (rect);
 
-      g.appendChild (svgDoc.createTextNode ('\n    '));
+      gRect.appendChild (svgDoc.createTextNode ('\n    '));
 
       rect = svgDoc.createElementNS (svgNS, 'rect')
       rect.id = 'rect-2';
@@ -119,8 +125,9 @@ describe ('svg document', () => {
       rect.setAttribute ('y', 0);
       rect.setAttribute ('width', 10);
       rect.setAttribute ('height', 10);
+      rect.setAttribute ('fill', '#63c');
 
-      g.appendChild (rect);
+      gRect.appendChild (rect);
 
 
       var circle = svgDoc.createElementNS (svgNS, 'circle')
@@ -128,6 +135,7 @@ describe ('svg document', () => {
       circle.setAttribute ('cx', 5);
       circle.setAttribute ('cy', 5);
       circle.setAttribute ('r',  5);
+      circle.setAttribute ('fill', '#6c3');
 
       g.appendChild (circle);
 
@@ -147,9 +155,9 @@ describe ('svg document', () => {
         var svgNS = 'http://www.w3.org/2000/svg';
         var svg = window.svgRoot = document.createElementNS (svgNS,'svg');
         svg.setAttribute ('xmlns:xlink','http://www.w3.org/1999/xlink');
-        svg.setAttribute ('height','400');
+        svg.setAttribute ('height','200');
         svg.setAttribute ('width','400');
-        svg.setAttribute ('viewPort','0 0 400 400');
+        svg.setAttribute ('viewPort','0 0 200 400');
         svg.setAttribute ('style', 'background-color: #eee');
 
         document.body.appendChild (svg);
