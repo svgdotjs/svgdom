@@ -129,6 +129,8 @@ describe ('svg document', () => {
 
       gRect.appendChild (rect);
 
+      var gCircle = svgDoc.createElementNS (svgNS, 'g')
+      g.appendChild (gCircle);
 
       var circle = svgDoc.createElementNS (svgNS, 'circle')
       circle.id = 'circle-1';
@@ -137,7 +139,7 @@ describe ('svg document', () => {
       circle.setAttribute ('r',  5);
       circle.setAttribute ('fill', '#6c3');
 
-      g.appendChild (circle);
+      gCircle.appendChild (circle);
 
       var text = svgDoc.createElementNS (svgNS, 'text')
       text.id = 'text-1';
@@ -190,12 +192,13 @@ describe ('svg document', () => {
   wrappedIt ('transform: rotate', () => {
 
     var circle = svgRoot.querySelector('#circle-1');
+    var g = circle.parentNode;
 
-    var bbox1 = circle.getBBox();
+    var bbox1 = g.getBBox();
 
     circle.setAttribute ('transform', 'rotate (180)');
 
-    var bbox2 = circle.getBBox();
+    var bbox2 = g.getBBox();
 
     // floats!
     assert (bbox1.x - bbox2.x < 10.001);
@@ -207,7 +210,7 @@ describe ('svg document', () => {
 
     circle.setAttribute ('transform', 'rotate (90, 5, 5)');
 
-    var bbox3 = circle.getBBox();
+    var bbox3 = g.getBBox();
 
     assert.equal (bbox1.x.toFixed(3), bbox3.x.toFixed(3));
     assert.equal (bbox1.y.toFixed(3), bbox3.y.toFixed(3));
@@ -231,12 +234,12 @@ describe ('svg document', () => {
 
     rect.setAttribute ('transform', 'rotate(45)');
 
-    bbox = rect.getBBox();
+    bbox = rect.parentNode.getBBox();
 
     assert (bbox.width > width);
-    assert.equal (bbox.width, Math.sqrt (2*width*width));
+    assert.equal (bbox.width.toFixed(3), (Math.sqrt (2*width*width)/2 + width).toFixed(3));
     assert (bbox.height > height);
-    assert.equal (bbox.height, Math.sqrt (2*height*height));
+    assert.equal (bbox.height.toFixed(3), (Math.sqrt (2*height*height)).toFixed(3));
 
     rect.setAttribute ('transform', '');
 
@@ -255,7 +258,7 @@ describe ('svg document', () => {
 
     circle.setAttribute ('transform', 'translate(15, 0)');
 
-    bbox = circle.getBBox();
+    bbox = circle.parentNode.getBBox();
 
     assert.equal (bbox.x, x + 15);
     assert.equal (bbox.width, width);
@@ -263,7 +266,7 @@ describe ('svg document', () => {
     // scales from 0, 0
     circle.setAttribute ('transform', 'scale(2)');
 
-    bbox = circle.getBBox();
+    bbox = circle.parentNode.getBBox();
 
     assert.equal (bbox.x, x);
     assert.equal (bbox.y, y);
@@ -280,7 +283,7 @@ describe ('svg document', () => {
     assert.equal (bbox.x, 0);
     assert.equal (bbox.y, 0);
     assert.equal (bbox.width, 25);
-    assert.equal (bbox.height, 10);
+    assert.equal (bbox.height, 20);
     */
   })
 
@@ -294,7 +297,12 @@ describe ('svg document', () => {
 
     var bbox2 = rect.getBBox();
 
-    assert.equal (bbox1.x, bbox2.x - 15);
+    assert.equal (bbox1.x, bbox2.x, "Translated element should have the same BBox");
+
+    var bbox3 = rect.parentNode.getBBox();
+
+    assert.equal (bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed');
+    assert.equal (bbox1.width, bbox3.width - 15);
 
   })
 
@@ -308,8 +316,12 @@ describe ('svg document', () => {
 
     var bbox2 = rect.getBBox();
 
-    assert.equal (bbox1.width, bbox2.width/2);
-    assert.equal (bbox1.height, bbox2.height*2);
+    assert.equal (bbox1.width, bbox2.width);
+    assert.equal (bbox1.height, bbox2.height);
+
+    var bbox3 = rect.parentNode.getBBox();
+
+    assert.equal (bbox3.width, 20);
 
   })
 
