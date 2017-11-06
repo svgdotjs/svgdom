@@ -344,7 +344,7 @@ var Node = invent({
       var m = this.matrixify()
 
       var node = this
-      while(node = this.parentNode){
+      while(node = node.parentNode){
         if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(node.nodeName) > -1) break
         m = m.multiply(node.matrixify())
         if(node.nodeName == '#document') return this.getScreenCTM()
