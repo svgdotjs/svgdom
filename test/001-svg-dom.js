@@ -360,15 +360,15 @@ describe ('svg document', () => {
 
     assert (text);
 
+    text.setAttribute ('text-anchor', 'start');
+
     var bbox1 = text.getBBox ();
 
     text.setAttribute ('text-anchor', 'end');
 
     var bbox2 = text.getBBox ();
 
-    console.log (bbox1, bbox2)
-
-    assert.equal (bbox1.x, bbox2.x + bbox2.width);
+    assert.equal ("" + bbox1.x, (bbox2.x + bbox2.width).toFixed (0));
     assert.equal (bbox1.y, bbox2.y);
     assert.equal (bbox1.width, bbox2.width);
 
