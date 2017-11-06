@@ -313,9 +313,9 @@ describe ('svg document', () => {
 
     connector.style.fill = "black";
 
-    assert.equal (connector.getAttribute ('style'), 'fill: black');
+    assert (connector.getAttribute ('style').match(/^fill:\s*black\b/));
 
-    assert (connector.attributes.some (attr => attr.nodeName === 'style'));
+    assert ([].some.call (connector.attributes, attr => attr.nodeName === 'style'));
   })
 
   wrappedIt ('should match [attr^=startsWith] css selector', () => {
