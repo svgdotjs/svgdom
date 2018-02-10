@@ -179,6 +179,10 @@ var Node = invent({
     removeAttributeNS: function(ns, name) {
       this.removeAttribute(name)
     },
+    hasAttribute: function(name) {
+      if(name == 'style') return !!this.style.cssText   // TODO check
+      return this.attrs.get(name) != null
+    },
     getAttribute: function(name) {
       if(name == 'style') return this.style.cssText
       return this.attrs.get(name) == null ? null : this.attrs.get(name)
