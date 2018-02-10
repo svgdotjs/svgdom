@@ -115,7 +115,7 @@ var Node = invent({
     outerHTML: {
       get: function() {
         if (this.nodeType == 3) return this.data
-        if (this.nodeType == 11) return this.innerHTML
+        if (this.nodeType == 9 || this.nodeType == 11) return this.innerHTML
         return tag(this)
       },
       set: function(str) {

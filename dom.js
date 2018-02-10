@@ -81,6 +81,66 @@ var CustomEvent = invent({
   inherit: Event
 })
 
+
+// Feature/version pairs that DOMImplementation.hasFeature() returns true for.  It returns false for anything else.
+var supportedFeatures = {
+  'xml': { '': true, '1.0': true, '2.0': true },   // DOM Core
+  'core': { '': true, '2.0': true },               // DOM Core
+  'html': { '': true, '1.0': true, '2.0': true} ,  // HTML
+  'xhtml': { '': true, '1.0': true, '2.0': true} , // HTML
+};
+
+var DOMImplementation = invent({
+  name: 'DOMImplementation',
+  extend: {
+    hasFeature: function hasFeature(feature, version) {
+      var f = supportedFeatures[(feature || '').toLowerCase()];
+      return (f && f[version || '']) || false;
+    },
+
+    createDocumentType: function createDocumentType(qualifiedName, publicId, systemId) {
+      throw new Error("createDocumentType not implemented yet");
+    },
+
+    createDocument: function createDocument(namespace, qualifiedName, doctype) {
+      var doc = new Document();
+
+      if (doctype) {
+        if (doctype.ownerDocument)
+          throw new Error("the object is in the wrong Document, a call to importNode is required");
+        doc.appendChild(doctype);
+      }
+
+      if (qualifiedName)
+        doc.appendChild(doc.createElementNS(namespace, qualifiedName))
+
+      return doc;
+    },
+
+    createHTMLDocument: function createHTMLDocument(titleText) {
+      var d = new Document('html');
+      var root = d.documentElement
+      var head = d.createElement('head');
+      root.appendChild(head);
+      var title = d.createElement('title');
+      head.appendChild(title);
+      title.appendChild(d.createTextNode(titleText));
+      root.appendChild(d.createElement('body'));
+      return d;
+    }
+  }
+})
+
+function getChildByTagName(parent, name) {
+  for (var child = parent.firstChild; child != null; child = child.nextSibling) {
+    if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === name) {
+      return child;
+    }
+  }
+  return null;
+}
+
+
 var Document = invent({
   name: 'Document',
   create: function(root) {
@@ -91,8 +151,29 @@ var Document = invent({
     root.ownerDocument = this
     this.documentElement = root
     this._preloaded = {}
+    this._implementation = new DOMImplementation()
   },
   inherit: Node,
+  props: {
+    implementation: {
+      get: function() {
+        return this._implementation
+      }
+    },
+    body: {
+      get: function() {
+        return getChildByTagName(this.documentElement, 'body')
+      },
+      set: function() {
+        throw new Error("setting body not implemented yet")
+      }
+    },
+    head: {
+      get: function() {
+        return getChildByTagName(this.documentElement, 'head')
+      }
+    }
+  },
   extend: {
     createElementNS: function(ns, name){
       return new SVGElement(name, {
@@ -117,6 +198,8 @@ var Document = invent({
     }
   }
 })
+
+
 
 var Window = invent({
   create: function() {
