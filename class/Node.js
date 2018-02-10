@@ -508,7 +508,7 @@ const mapToAttributeArray = function(themap) {
 const DocumentFragment = invent({
   name: 'DocumentFragment',
   create: function() {
-    Node.call(this, "")
+    Node.call(this, '#document-fragment')
     this.nodeType = 11
   },
   inherit: Node
