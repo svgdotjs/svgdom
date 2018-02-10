@@ -22,8 +22,8 @@ const mapMap = function(map, cb) {
 const mapToCss = function(myMap){
   return mapMap(myMap, function(value, key){
     if(!value) return false
-    return key + ': ' + value
-  }).filter(function(el){return !!el}).join('; ') || null
+    return key + ':' + value
+  }).filter(function(el){return !!el}).join(';') || null
 }
 
 const cssToMap = function(css){
