@@ -2,7 +2,7 @@ const {invent, extend} = require('./utils/objectCreationUtils')
 const EventTarget = require('./class/EventTarget')
 const SVGPoint = require('./class/SVGPoint')
 const SVGMatrix = require('./class/SVGMatrix')
-const {SVGElement, Node, TextNode, Comment} = require('./class/Node')
+const {SVGElement, DocumentFragment, Node, TextNode, Comment} = require('./class/Node')
 const sizeOf = require('image-size')
 const path = require('path')
 const fontkit = require('fontkit')
@@ -99,6 +99,9 @@ var Document = invent({
         attrs: {xmlns: ns},
         ownerDocument: this
       })
+    },
+    createDocumentFragment: function(name) {
+      return new DocumentFragment()
     },
     createElement: function(name) {
       return new SVGElement(name, {ownerDocument: this})

@@ -115,6 +115,7 @@ var Node = invent({
     outerHTML: {
       get: function() {
         if (this.nodeType == 3) return this.data
+        if (this.nodeType == 11) return this.innerHTML
         return tag(this)
       },
       set: function(str) {
@@ -189,6 +190,15 @@ var Node = invent({
       return !!this.childNodes.length
     },
     appendChild: function(node) {
+      if(node.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
+        for(var i = 0, il = node.childNodes.length; i < il; ++i) {
+          node.parentNode = this
+          this.childNodes.push(node.childNodes[i])
+        }
+        node.childNodes.splice(0)
+        return node;
+      }
+
       if(node.parentNode)
         node.parentNode.removeChild(node)
 
@@ -198,6 +208,16 @@ var Node = invent({
       return node
     },
     insertBefore: function(node, before) {
+      if(node.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
+        var index = this.childNodes.indexOf(before)
+        if(index == -1) return this.appendChild(node)
+
+        this.childNodes = this.childNodes.slice(0, index).concat(node.childNodes, this.childNodes.slice(index))
+
+        node.childNodes.splice(0)
+        return node;
+      }
+
       if(node.parentNode)
         node.parentNode.removeChild(node)
 
@@ -481,6 +501,15 @@ const mapToAttributeArray = function(themap) {
   })
 }
 
+const DocumentFragment = invent({
+  name: 'DocumentFragment',
+  create: function() {
+    Node.call(this, "")
+    this.nodeType = 11
+  },
+  inherit: Node
+})
+
 const AttributeNode = invent({
   name: 'AttributeNode',
   create: function(name='', value=null) {
@@ -490,7 +519,7 @@ const AttributeNode = invent({
   inherit: Node
 })
 
-var CharacterData = invent({
+const CharacterData = invent({
   name: 'CharacterData',
   create: function(name, props) {
     throw "CharacterData cannot be created directly"
@@ -498,7 +527,7 @@ var CharacterData = invent({
   inherit: Node
 })
 
-var TextNode = invent({
+const TextNode = invent({
   name: 'TextNode',
   create: function(name, props) {
     Node.call(this, name, props)
@@ -507,7 +536,7 @@ var TextNode = invent({
   inherit: CharacterData
 })
 
-var Comment = invent({
+const Comment = invent({
   name: 'Comment',
   create: function(name, props) {
     Node.call(this, name, props)
@@ -541,6 +570,7 @@ const HTMLParser = function(str, el) {
 module.exports = {
   Node,
   SVGElement,
+  DocumentFragment,
   AttributeNode,
   TextNode,
   Comment
