@@ -194,6 +194,11 @@ var Document = invent({
         return this._implementation
       }
     },
+    compatMode: {
+      get: function() {
+        return 'CSS1Compat' // always be in standards-mode
+      }
+    },
     body: {
       get: function() {
         return getChildByTagName(this.documentElement, 'body')
