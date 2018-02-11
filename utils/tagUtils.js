@@ -4,6 +4,13 @@ const htmlEntities = function(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+var emptyElements = {
+  br: true,
+  hr: true,
+  img: true,
+  link: true
+};
+
 const tag = function(node) {
 
   var attrs = new Map(node.attrs)
@@ -23,7 +30,7 @@ const tag = function(node) {
     return key + '="' + htmlEntities(value) + '"'
   })
 
-  return '<' + [].concat(name, attrs).join(' ') + '>' + node.innerHTML + '</' + name + '>'
+  return '<' + [].concat(name, attrs).join(' ') + '>' + (emptyElements[name] ? "" : node.innerHTML + '</' + name + '>')
 }
 
 const cloneNode = function(node) {
