@@ -7,6 +7,40 @@ const sizeOf = require('image-size')
 const path = require('path')
 const fontkit = require('fontkit')
 
+var HTMLLinkElement  = invent({
+  name: 'HTMLLinkElement',
+  create: function() {
+    Node.call(this, 'link')
+  },
+  inherit: Node,
+  props: {
+    href: {
+      get: function() {
+        return this.attrs.get('href')
+      },
+      set: function(val) {
+        this.attrs.set('href', val)
+      }
+    },
+    rel: {
+      get: function() {
+        return this.attrs.get('rel')
+      },
+      set: function(val) {
+        this.attrs.set('rel', val)
+      }
+    },
+    type: {
+      get: function() {
+        return this.attrs.get('type')
+      },
+      set: function(val) {
+        this.attrs.set('type', val)
+      }
+    },
+  }
+})
+
 var HTMLImageElement  = invent({
   name: 'HTMLImageElement',
   create: function(){
@@ -185,7 +219,14 @@ var Document = invent({
       return new DocumentFragment()
     },
     createElement: function(name) {
-      return new SVGElement(name, {ownerDocument: this})
+      switch (name) {
+        case 'img':
+          return new HTMLImageElement({ownerDocument: this})
+        case 'link':
+          return new HTMLLinkElement({ownerDocument: this})
+        default:
+          return new SVGElement(name, {ownerDocument: this})
+      }
     },
     createTextNode: function(text) {
       return new TextNode('#text', {data:text, ownerDocument: this})
@@ -245,6 +286,7 @@ extend(Window, {
   Event: Event,
   SVGMatrix: SVGMatrix,
   SVGPoint: SVGPoint,
+  HTMLLinkElement: HTMLLinkElement,
   Image: HTMLImageElement,
   HTMLImageElement: HTMLImageElement,
   setTimeout: setTimeout,
