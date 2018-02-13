@@ -1,3 +1,5 @@
+const {decamelize} = require('../utils/strUtils')
+
 const objectToMap = function(obj) {
   if(obj instanceof Map) return new Map(obj)
   return Object.keys(obj).reduce((map, key) => map.set(key, obj[key]), new Map());
@@ -22,7 +24,7 @@ const mapMap = function(map, cb) {
 const mapToCss = function(myMap){
   return mapMap(myMap, function(value, key){
     if(!value) return false
-    return key + ':' + value
+    return decamelize(key) + ':' + value
   }).filter(function(el){return !!el}).join(';') || null
 }
 
