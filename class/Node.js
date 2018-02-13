@@ -58,6 +58,14 @@ var Node = invent({
         return attributes;
       }
     },
+    className: {
+      get: function() {
+        return this.getAttribute('class')
+      },
+      set: function(c) {
+        this.setAttribute('class', c)
+      }
+    },
     textContent: {
       get: function() {
         if (this.nodeType == 3) return this.data
