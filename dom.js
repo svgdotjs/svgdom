@@ -2,7 +2,7 @@ const {invent, extend} = require('./utils/objectCreationUtils')
 const EventTarget = require('./class/EventTarget')
 const SVGPoint = require('./class/SVGPoint')
 const SVGMatrix = require('./class/SVGMatrix')
-const {SVGElement, Node, TextNode} = require('./class/Node')
+const {SVGElement, Node, TextNode, Comment} = require('./class/Node')
 const sizeOf = require('image-size')
 const path = require('path')
 const fontkit = require('fontkit')
@@ -105,6 +105,9 @@ var Document = invent({
     },
     createTextNode: function(text) {
       return new TextNode('#text', {data:text, ownerDocument: this})
+    },
+    createComment: function(text) {
+      return new Comment('#comment', {data:text, ownerDocument: this})
     },
     createAttribute: function(name) {
       return new AttributeNode(name, {ownerDocument: this})

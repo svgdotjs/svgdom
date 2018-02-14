@@ -52,7 +52,10 @@ var Node = invent({
   props: {
     attributes: {
       get: function() {
-        return mapToAttributeArray(this.attrs)
+        var attributes = mapToAttributeArray(this.attrs)
+        if (Object.keys (this._style).length)
+          attributes.push (new AttributeNode('style', this.getAttribute ('style')));
+        return attributes;
       }
     },
     textContent: {
@@ -75,6 +78,11 @@ var Node = invent({
     lastChild: {
       get: function() {
         return this.childNodes[this.childNodes.length-1] || null
+      }
+    },
+    children: {
+      get: function () {
+        return this.childNodes.filter (function (node) {return node.nodeType === 1});
       }
     },
     nextSibling: {
@@ -124,6 +132,11 @@ var Node = invent({
       },
       set: function(id) {
         this.attrs.set('id', id)
+      }
+    },
+    ownerSVGElement: {
+      get: function () {
+        return this.ownerDocument ? this.ownerDocument.documentElement : null
       }
     }
   },
@@ -295,7 +308,7 @@ var Node = invent({
         .split(regex.transforms).slice(0,-1).map(function(str){
           // generate key => value pairs
           var kv = str.trim().split('(')
-          return [kv[0], kv[1].split(regex.delimiter).map(function(str){ return parseFloat(str) })]
+          return [kv[0].trim(), kv[1].split(regex.delimiter).map(function(str){ return parseFloat(str.trim()) })]
         })
         // merge every transformation into one matrix
         .reduce(function(matrix, transform){
@@ -331,7 +344,7 @@ var Node = invent({
       var m = this.matrixify()
 
       var node = this
-      while(node = this.parentNode){
+      while(node = node.parentNode){
         if(['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(node.nodeName) > -1) break
         m = m.multiply(node.matrixify())
         if(node.nodeName == '#document') return this.getScreenCTM()
@@ -395,24 +408,41 @@ var Node = invent({
     },
     getFontDetails: function() {
       var node = this
-      var fontSize = null, fontFamily = null
+      var fontSize = null,
+          fontFamily = null,
+          textAnchor = null,
+          dominantBaseline = null,
+          textContentElements = "text tspan tref textPath altGlyph".split (" ").reduce ((a, el) => (a[el] = true, a), {});
 
       do{
+        // TODO: stop on
+        if(!fontSize)
         fontSize = node.style.fontSize || node.getAttribute('font-size')
-
-        if(fontSize) break
-      }while(node = node.parentNode)
-
-      node = this
-      do{
+        if(!fontFamily)
         fontFamily = node.style.fontFamily || node.getAttribute('font-family')
+        if(!textAnchor)
+          textAnchor = node.style.textAnchor || node.getAttribute('text-anchor')
+        if(!dominantBaseline)
+          dominantBaseline = node.style.dominantBaseline || node.getAttribute('dominant-baseline')
+        // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
+        // TODO: alignment-adjust, baseline-shift
+        /*
+        if(!alignmentBaseline)
+        alignmentBaseline = this.style.alignmentBaseline || this.getAttribute('alignment-baseline')
+        */
 
-        if(fontFamily) break
-      }while(node = node.parentNode)
+      }while(
+        node.parentNode.nodeType === 1
+        && (node.parentNode.nodeName in textContentElements)
+        && (node = node.parentNode)
+      )
 
       return {
         fontFamily,
         fontSize,
+        textAnchor: textAnchor || 'start',
+        // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
+        dominantBaseline: dominantBaseline || 'alphabetical',
         fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
         fontDir: this.ownerDocument.fontDir,
         preloaded: this.ownerDocument._preloaded
@@ -460,13 +490,30 @@ const AttributeNode = invent({
   inherit: Node
 })
 
+var CharacterData = invent({
+  name: 'CharacterData',
+  create: function(name, props) {
+    throw "CharacterData cannot be created directly"
+  },
+  inherit: Node
+})
+
 var TextNode = invent({
   name: 'TextNode',
   create: function(name, props) {
     Node.call(this, name, props)
     this.nodeType = 3
   },
-  inherit: Node
+  inherit: CharacterData
+})
+
+var Comment = invent({
+  name: 'Comment',
+  create: function(name, props) {
+    Node.call(this, name, props)
+    this.nodeType = 8
+  },
+  inherit: CharacterData
 })
 
 const HTMLParser = function(str, el) {
@@ -495,5 +542,6 @@ module.exports = {
   Node,
   SVGElement,
   AttributeNode,
-  TextNode
+  TextNode,
+  Comment
 }

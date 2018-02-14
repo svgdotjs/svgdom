@@ -23,7 +23,7 @@ const SVGMatrix = invent({
       return r
     },
     translate: function(x, y) {
-      return this.multiply(matrixFactory(1,0,0,1,x,y))
+      return this.multiply(matrixFactory(1,0,0,1,x,y === undefined ? 0 : y))
     },
     inverse: function() {
       var t = matrix.fromValues(this.a, this.b, this.c, this.d, this.e, this.f)
@@ -34,12 +34,19 @@ const SVGMatrix = invent({
     toString: function() {
       return 'SVGMatrix'
     },
-    scale: function(scale) {
-      return this.multiply(matrixFactory(scale,0,0,scale,0,0))
+    scale: function(scaleX, scaleY) {
+      return this.multiply(matrixFactory(scaleX,0,0,scaleY === undefined ? scaleX : scaleY,0,0))
     },
-    rotate: function(r) {
+    rotate: function(r, x, y) {
       r = r % 360 * Math.PI / 180
-      return this.multiply(matrixFactory(Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0))
+      return this.multiply(matrixFactory(
+        Math.cos(r),
+        Math.sin(r),
+        -Math.sin(r),
+        Math.cos(r),
+        x ? -Math.cos(r) * x + Math.sin(r) * y + x : 0,
+        y ? -Math.sin(r) * x - Math.cos(r) * y + y : 0
+      ))
     },
     skew: function(x, y) {
       return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))

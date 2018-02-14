@@ -18,7 +18,7 @@ const bbox = (node, applyTransformations) => {
         parseFloat(node.getAttribute('y')) || 0,
         parseFloat(node.getAttribute('width')) || 0,
         parseFloat(node.getAttribute('height')) || 0
-      )
+      );
     case 'svg':
     case 'g':
     case 'mask':
@@ -112,7 +112,7 @@ const textIterator = function(node, pos={x:0, y:0}, dx=[0], dy=[0]){
 
   pos.x = isNaN(x) ? pos.x : x
   pos.y = isNaN(y) ? pos.y : y
-  
+
   var dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num != '').map(parseFloat)
     , dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num != '').map(parseFloat)
     , boxes = []

@@ -4,7 +4,7 @@
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
   "main": "dom.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,10 @@
     "gl-matrix": "^2.3.2",
     "image-size": "^0.5.1",
     "sax": "^1.2.2"
+  },
+  "devDependencies": {
+    "mocha": "^4.0.1",
+    "reify": "^0.12.3",
+    "xmldom": "^0.1.27"
   }
 }
