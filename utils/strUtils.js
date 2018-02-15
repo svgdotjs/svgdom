@@ -29,9 +29,16 @@ const hexToRGB = function(a) {
     ].join(',') + ')'
 }
 
+
+function decamelize(s) {
+  return String(s).replace(/([a-z])([A-Z])/g, function(m, g1, g2) {
+    return g1 + "-" + g2.toLowerCase()
+  })
+}
+
 function camelCase(s) {
-  return s.toLowerCase().replace(/-(.)/g, function(m, g) {
-    return g.toUpperCase()
+  return String(s).replace(/([a-z])-([a-z])/g, function(m, g1, g2) {
+    return g1 + g2.toUpperCase()
   })
 }
 
@@ -76,6 +83,7 @@ module.exports = {
   fullHex,
   hexToRGB,
   camelCase,
+  decamelize,
   removeQuotes,
   htmlEntities,
   splitNotInBrackets
