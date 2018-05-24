@@ -168,8 +168,8 @@ var Arc = invent({
   create: function(p1, p2, rx, ry, φ, arc, sweep) {
     this.p1 = p1.clone()
     this.p2 = p2.clone()
-    this.arc = arc
-    this.sweep = sweep
+    this.arc = arc ? 1 : 0
+    this.sweep = sweep ? 1 : 0
 
     var cosφ = Math.cos(φ/180 * Math.PI)
       , sinφ = Math.sin(φ/180 * Math.PI)
@@ -268,22 +268,15 @@ var Arc = invent({
 
       return ret[0].length() + ret[1].length()
     },
-    splitAt: function(t) {
-      var tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
-
-      var arc1 = this.clone()
-      var arc2 = this.clone()
-
-      arc1.delta = this.delta * t
-      arc2.delta = this.delta * (1-t)
-
-      arc1.p2 = this.pointAt(t)
-      arc2.p1 = this.pointAt(1-t)
-
-      arc1.theta2 = (this.theta + arc1.delta)
-      arc2.theta = (this.theta + arc1.delta)
-
-      return [arc1, arc2]
+    splitAt: function(t) 
+      var absDelta = Math.abs(this.delta)
+      var delta1 = absDelta * t
+      var delta2 = absDelta * (1-t)
+    
+      return [
+        new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
+        new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
+      ]
     },
     clone: function() {
       return new Arc(this.p1, this.p2, this.rx, this.ry, this.phi, this.arc, this.sweep)
@@ -669,5 +662,7 @@ module.exports = {
   bbox,
   pointAtLength,
   length,
-  debug
+  debug,
+  Arc,
+  pathParser
 }
