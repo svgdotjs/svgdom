@@ -157,6 +157,11 @@ var Node = invent({
           if(key == 'cssText') {
             return mapToCss(objectToMap(target))
           }
+          if(key == 'setProperty') {
+            return function(propertyName, value, priority) {
+              Reflect.set(target, propertyName, value)
+            }
+          }
           key = camelCase(key)
           if(!target[key]) return ''
           return Reflect.get(target, key)

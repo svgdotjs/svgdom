@@ -268,7 +268,7 @@ var Arc = invent({
 
       return ret[0].length() + ret[1].length()
     },
-    splitAt: function(t) 
+    splitAt: function(t) {
       var absDelta = Math.abs(this.delta)
       var delta1 = absDelta * t
       var delta2 = absDelta * (1-t)

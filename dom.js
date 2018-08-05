@@ -41,6 +41,32 @@ var HTMLLinkElement  = invent({
   }
 })
 
+var HTMLScriptElement  = invent({
+  name: 'HTMLScriptElement',
+  create: function() {
+    Node.call(this, 'script')
+  },
+  inherit: Node,
+  props: {
+    src: {
+      get: function() {
+        return this.attrs.get('src')
+      },
+      set: function(val) {
+        this.attrs.set('src', val)
+      }
+    },
+    type: {
+      get: function() {
+        return this.attrs.get('type')
+      },
+      set: function(val) {
+        this.attrs.set('type', val)
+      }
+    },
+  }
+})
+
 var HTMLImageElement  = invent({
   name: 'HTMLImageElement',
   create: function(){
@@ -229,6 +255,8 @@ var Document = invent({
           return new HTMLImageElement({ownerDocument: this})
         case 'link':
           return new HTMLLinkElement({ownerDocument: this})
+        case 'script':
+          return new HTMLScriptElement({ownerDocument: this})
         default:
           return new SVGElement(name, {ownerDocument: this})
       }
@@ -292,6 +320,7 @@ extend(Window, {
   SVGMatrix: SVGMatrix,
   SVGPoint: SVGPoint,
   HTMLLinkElement: HTMLLinkElement,
+  HTMLScriptElement: HTMLScriptElement,
   Image: HTMLImageElement,
   HTMLImageElement: HTMLImageElement,
   setTimeout: setTimeout,
