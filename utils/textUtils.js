@@ -34,6 +34,7 @@ const bbox = function(text, x, y, details) {
   var fontHeight = font.ascent - font.descent
   var lineHeight = fontHeight > font.unitsPerEm ? fontHeight : fontHeight + font.lineGap
 
+  fontSize = parseFloat(fontSize)
   var height = lineHeight/font.unitsPerEm * fontSize
   var width = font.layout(text).glyphs.reduce((last, curr) => last + curr.advanceWidth, 0) / font.unitsPerEm * fontSize
 
