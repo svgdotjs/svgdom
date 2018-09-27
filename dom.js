@@ -312,6 +312,8 @@ var Window = invent({
 
 
 extend(Window, {
+  Window: Window,
+  DocumentFragment: DocumentFragment,
   Node: Node,
   Text: TextNode,
   Element: SVGElement,
