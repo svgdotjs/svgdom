@@ -312,8 +312,11 @@ var Window = invent({
 
 
 extend(Window, {
+  Window: Window,
+  DocumentFragment: DocumentFragment,
   Node: Node,
-  TextNode: TextNode,
+  Text: TextNode,
+  Element: SVGElement,
   SVGElement: SVGElement,
   CustomEvent: CustomEvent,
   Event: Event,

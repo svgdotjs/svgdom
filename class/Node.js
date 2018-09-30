@@ -254,11 +254,11 @@ var Node = invent({
       this.childNodes.splice(index, 1)
       return node
     },
-    replacedNode: function(newChild, oldChild) {
+    replaceChild: function(newChild, oldChild) {
       newChild.parentNode && newChild.parentNode.removeChild(newChild)
 
       var before = oldChild.nextSibling
-      this.remove(oldChild)
+      this.removeChild(oldChild)
       this.insertBefore(newChild, before)
       return oldChild
     },
