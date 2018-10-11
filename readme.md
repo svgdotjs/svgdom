@@ -28,7 +28,7 @@ draw.rect(100,100).fill('yellow').move(50,50)
 // get your svg as string
 console.log(draw.svg())
 // or
-console.log(draw.node.outerHtml)
+console.log(draw.node.outerHTML)
 ```
 
 ## Fonts
