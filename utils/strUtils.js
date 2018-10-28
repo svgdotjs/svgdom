@@ -53,6 +53,10 @@ function htmlEntities(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function unhtmlEntities(str) {
+  return String(str).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,">").replace('&quot;','"');
+}
+
 const splitNotInBrackets = (str, delimiter) => {
   var roundBrackets = 0
     , squareBrackets = 0
@@ -86,5 +90,6 @@ module.exports = {
   decamelize,
   removeQuotes,
   htmlEntities,
+  unhtmlEntities,
   splitNotInBrackets
 }
