@@ -30,6 +30,7 @@
   "devDependencies": {
     "mocha": "^4.0.1",
     "reify": "^0.12.3",
-    "xmldom": "^0.1.27"
+    "xmldom": "^0.1.27",
+    "puppeteer": "^1.9.0"
   }
 }

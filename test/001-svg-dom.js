@@ -83,7 +83,8 @@ describe ('svg document', () => {
   });
 
   after (async () => {
-    await setTimeout (10000);
+    const delay =  ms => new Promise(resolve => setTimeout(resolve,ms));
+    await delay(10000); 
     browser && browser.close ();
   })
 
