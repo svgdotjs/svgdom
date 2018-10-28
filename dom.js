@@ -6,6 +6,9 @@ const {SVGElement, DocumentFragment, Node, TextNode, Comment} = require('./class
 const sizeOf = require('image-size')
 const path = require('path')
 const fontkit = require('fontkit')
+const { htmlEntities } = require('./utils/strUtils')
+
+
 
 var HTMLLinkElement  = invent({
   name: 'HTMLLinkElement',
@@ -262,10 +265,10 @@ var Document = invent({
       }
     },
     createTextNode: function(text) {
-      return new TextNode('#text', {data:text, ownerDocument: this})
+      return new TextNode('#text', {data: htmlEntities(text), ownerDocument: this})
     },
     createComment: function(text) {
-      return new Comment('#comment', {data:text, ownerDocument: this})
+      return new Comment('#comment', {data: text, ownerDocument: this})
     },
     createAttribute: function(name) {
       return new AttributeNode(name, {ownerDocument: this})
