@@ -3,6 +3,8 @@ const Box = require('../class/Box')
 const NoBox = require('../class/Box').NoBox
 const regex = require('./regex')
 const textUtils = require('./textUtils')
+const strUtils = require('./strUtils')
+
 
 const bbox = (node, applyTransformations) => {
 
@@ -134,8 +136,8 @@ const textIterator = function(node, pos={x:0, y:0}, dx=[0], dy=[0]){
     if(node.childNodes[i].nodeType == 3) {
 
       // get text data
-      data = node.childNodes[i].data
-
+      data =  strUtils.unhtmlEntities(node.childNodes[i].data);
+ 
       j = 0
 
       // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
@@ -151,6 +153,7 @@ const textIterator = function(node, pos={x:0, y:0}, dx=[0], dy=[0]){
       }
 
       // in case it was only one dx/dy or no more dx/dy move the rest of the text
+
       boxes.push(textUtils.bbox(data.substr(j), pos.x, pos.y, node.getFontDetails()))
       pos.x += boxes[boxes.length-1].width
 
