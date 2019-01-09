@@ -7,7 +7,7 @@ It just has enough to make svg.js work on nodejs.
 
 **The first version of svg.js which works with svgdom is [svg.js v2.5.1](https://github.com/svgdotjs/svg.js/tree/2.5.1)**
 
-## Get started
+## Get started with svg.js v2.5
 
 ```
 npm install svg.js svgdom
@@ -20,15 +20,55 @@ const SVG      = require('svg.js')(window)
 const document = window.document
 
 // create svg.js instance
-const draw = SVG(document.documentElement)
+const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-draw.rect(100,100).fill('yellow').move(50,50)
+canvas.rect(100,100).fill('yellow').move(50,50)
 
 // get your svg as string
-console.log(draw.svg())
+console.log(canvas.svg())
 // or
-console.log(draw.node.outerHTML)
+console.log(canvas.node.outerHTML)
+```
+
+## Get started with svg.js v3.0
+
+```
+npm install @svgdotjs/svg.js svgdom
+```
+
+```js
+// returns a window with a document and an svg root node
+const window = require('../svgdom')
+const document = window.document
+const {SVG, registerWindow} = require('@svgdotjs/svg.js')
+
+// register window and document
+registerWindow(window , window.document)
+
+// create canvas
+const canvas = SVG(document.documentElement)
+
+// use svg.js as normal
+canvas.rect(100,100).fill('yellow').move(50,50)
+
+// get your svg as string
+console.log(canvas.svg())
+// or
+console.log(canvas.node.outerHTML)
+```
+
+The esm and node version of svg.js do not export a global SVG object anymore. Instead every property which was once available through the global SVG is now available via import/require.
+So if you need e.g. extend, you would use `const {SVG, registerWindow, extend} = require('@svgdotjs/svg.js')`.
+
+If you want the old object bag, you can simply build it yourself:
+```js
+const obj = require('@svgdotjs/svg.js')
+const SVG = (arg) => {
+  return obj.SVG(arg)
+}
+
+Object.assign(SVG, obj)
 ```
 
 ## Fonts

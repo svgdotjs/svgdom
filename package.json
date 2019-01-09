@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
   "main": "dom.js",
   "scripts": {
@@ -28,9 +28,9 @@
     "sax": "^1.2.2"
   },
   "devDependencies": {
-    "mocha": "^4.0.1",
+    "mocha": "^4.1.0",
+    "puppeteer": "^1.9.0",
     "reify": "^0.12.3",
-    "xmldom": "^0.1.27",
-    "puppeteer": "^1.9.0"
+    "xmldom": "^0.1.27"
   }
 }
