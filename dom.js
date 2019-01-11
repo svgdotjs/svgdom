@@ -108,12 +108,12 @@ var HTMLImageElement  = invent({
         this.attrs.set('height', val)
       }
     },
-    height: {
+    width: {
       get: function() {
-        return this.attrs.get('height')
+        return this.attrs.get('width')
       },
       set: function(val) {
-        this.attrs.set('height', val)
+        this.attrs.set('width', val)
       }
     },
   }
@@ -308,6 +308,14 @@ var Window = invent({
 
       return this
 
+    },
+    getComputedStyle(node) {
+      return {
+        getPropertyValue (attr) {
+          const css = node.style[attr]
+          return css || node.getAttribute(attr)
+        }
+      }
     }
   }
 })
