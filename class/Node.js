@@ -338,10 +338,28 @@ var Node = invent({
       return false
     },
     getBBox: function () {
-      return bbox(this)
+      return bbox(this).bbox()
     },
     getBoundingClientRect: function () {
-      return bbox(this).transform(this.getScreenCTM())
+      // The bounding client rect takes the screen ctm of the element
+      // and converts the bounding box with it
+
+      // however, normal bounding consists of:
+      // - all children transformed
+      // - the viewbox of the element if available
+
+      // The boundingClientRect is not affected by its own viewbox
+      // So we apply only our own transformations and parents screenCTM
+
+      let m = this.matrixify()
+
+      if (this.parentNode && this.parentNode.nodeName !== '#document') {
+        m = this.parentNode.getScreenCTM().multiply(m)
+      }
+
+      // let m = this.getScreenCTM()
+
+      return bbox(this).transform(m).bbox()
     },
     matrixify: function () {
       var matrix = (this.getAttribute('transform') || '')
@@ -394,6 +412,8 @@ var Node = invent({
       return node.generateViewBoxMatrix().multiply(m)
     },
     getScreenCTM: function () {
+      // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
+      // We follow Chromes behavior and include the viewbox in the screenCTM
       var m = this.getInnerMatrix()
 
       if (this.parentNode && this.parentNode.nodeName !== '#document') {
@@ -450,11 +470,8 @@ var Node = invent({
     getFontDetails: function () {
       var node = this
       var fontSize = null
-
       var fontFamily = null
-
       var textAnchor = null
-
       var dominantBaseline = null
 
       const textContentElements = {
@@ -462,7 +479,8 @@ var Node = invent({
         tspan: true,
         tref: true,
         textPath: true,
-        altGlyph: true
+        altGlyph: true,
+        g: true
       }
 
       do {

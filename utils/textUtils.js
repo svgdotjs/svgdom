@@ -6,10 +6,11 @@ const fontkit = require('fontkit')
 const bbox = function (text, x, y, details) {
 
   var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
-  var fontMap = details.fontFamilyMappings || defaults.fontFamilyMappings
+  var fontMap = Object.assign({}, defaults.fontFamilyMappings, details.fontFamilyMappings)
   var fontSize = details.fontSize || defaults.fontSize
   var fontDir = details.fontDir || defaults.fontDir
-  var fontFamily; var font
+  var fontFamily
+  var font
 
   for (var i = 0, il = families.length; i < il; ++i) {
     if (fontMap[families[i]]) {

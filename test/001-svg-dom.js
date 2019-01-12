@@ -1,19 +1,21 @@
+/* global describe, it, before, after, beforeEach */
+
 import puppeteer from 'puppeteer'
 import assert from 'assert'
-import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
+// import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
 import svgdom from '../dom'
-import fs from 'fs'
+// import fs from 'fs'
 
-var svgString
+// var svgString
 var svgDoc
 var svgRoot
 
-function makeEl (nodeName, attrs = {}) {
-  var svgNS = 'http://www.w3.org/2000/svg'
-  var el = this.createElementNS(svgNS, nodeName)
-  Object.keys(attrs).forEach(attrName => { el.setAttribute(attrName, attrs[attrName]) })
-  return el
-}
+// function makeEl (nodeName, attrs = {}) {
+//   var svgNS = 'http://www.w3.org/2000/svg'
+//   var el = this.createElementNS(svgNS, nodeName)
+//   Object.keys(attrs).forEach(attrName => { el.setAttribute(attrName, attrs[attrName]) })
+//   return el
+// }
 
 var browser, page
 
@@ -70,7 +72,7 @@ describe('svg document', () => {
           if (!check) throw (message || 'Assertion failed')
         }
 
-        window.assert.equal = function (value1, value2, message) {
+        window.assert.strictEqual = function (value1, value2, message) {
           if (value1 !== value2) throw (message || 'Assertion failed')
         }
       })
@@ -204,18 +206,17 @@ describe('svg document', () => {
     assert(bbox1.x - bbox2.x > 9.999)
     assert(bbox1.y - bbox2.y < 10.001)
     assert(bbox1.y - bbox2.y > 9.999)
-    assert.equal(bbox1.width.toFixed(3), bbox2.width.toFixed(3))
-    assert.equal(bbox1.height.toFixed(3), bbox2.height.toFixed(3))
+    assert.strictEqual(bbox1.width.toFixed(3), bbox2.width.toFixed(3))
+    assert.strictEqual(bbox1.height.toFixed(3), bbox2.height.toFixed(3))
 
     circle.setAttribute('transform', 'rotate (90, 5, 5)')
 
     var bbox3 = g.getBBox()
 
-    assert.equal(bbox1.x.toFixed(3), bbox3.x.toFixed(3))
-    assert.equal(bbox1.y.toFixed(3), bbox3.y.toFixed(3))
-    assert.equal(bbox1.width, bbox3.width)
-    assert.equal(bbox1.height, bbox3.height)
-
+    assert.strictEqual(bbox1.x.toFixed(3), bbox3.x.toFixed(3))
+    assert.strictEqual(bbox1.y.toFixed(3), bbox3.y.toFixed(3))
+    assert.strictEqual(bbox1.width, bbox3.width)
+    assert.strictEqual(bbox1.height, bbox3.height)
   })
 
   wrappedIt('transforms', () => {
@@ -225,19 +226,19 @@ describe('svg document', () => {
 
     var bbox = rect.getBBox()
 
-    assert.equal(bbox.x, x)
-    assert.equal(bbox.y, y)
-    assert.equal(bbox.width, width)
-    assert.equal(bbox.height, height)
+    assert.strictEqual(bbox.x, x)
+    assert.strictEqual(bbox.y, y)
+    assert.strictEqual(bbox.width, width)
+    assert.strictEqual(bbox.height, height)
 
     rect.setAttribute('transform', 'rotate(45)')
 
     bbox = rect.parentNode.getBBox()
 
     assert(bbox.width > width)
-    assert.equal(bbox.width.toFixed(3), (Math.sqrt(2 * width * width) / 2 + width).toFixed(3))
+    assert.strictEqual(bbox.width.toFixed(3), (Math.sqrt(2 * width * width) / 2 + width).toFixed(3))
     assert(bbox.height > height)
-    assert.equal(bbox.height.toFixed(3), (Math.sqrt(2 * height * height)).toFixed(3))
+    assert.strictEqual(bbox.height.toFixed(3), (Math.sqrt(2 * height * height)).toFixed(3))
 
     rect.setAttribute('transform', '')
 
@@ -249,27 +250,27 @@ describe('svg document', () => {
 
     bbox = circle.getBBox()
 
-    assert.equal(bbox.x, x)
-    assert.equal(bbox.y, y)
-    assert.equal(bbox.width, width)
-    assert.equal(bbox.height, height)
+    assert.strictEqual(bbox.x, x)
+    assert.strictEqual(bbox.y, y)
+    assert.strictEqual(bbox.width, width)
+    assert.strictEqual(bbox.height, height)
 
     circle.setAttribute('transform', 'translate(15, 0)')
 
     bbox = circle.parentNode.getBBox()
 
-    assert.equal(bbox.x, x + 15)
-    assert.equal(bbox.width, width)
+    assert.strictEqual(bbox.x, x + 15)
+    assert.strictEqual(bbox.width, width)
 
     // scales from 0, 0
     circle.setAttribute('transform', 'scale(2)')
 
     bbox = circle.parentNode.getBBox()
 
-    assert.equal(bbox.x, x)
-    assert.equal(bbox.y, y)
-    assert.equal(bbox.width, width * 2)
-    assert.equal(bbox.height, height * 2)
+    assert.strictEqual(bbox.x, x)
+    assert.strictEqual(bbox.y, y)
+    assert.strictEqual(bbox.width, width * 2)
+    assert.strictEqual(bbox.height, height * 2)
 
     var g = svgRoot.querySelector('#g-1')
 
@@ -278,10 +279,10 @@ describe('svg document', () => {
     /*
     console.log (bbox);
 
-    assert.equal (bbox.x, 0);
-    assert.equal (bbox.y, 0);
-    assert.equal (bbox.width, 25);
-    assert.equal (bbox.height, 20);
+    assert.strictEqual (bbox.x, 0);
+    assert.strictEqual (bbox.y, 0);
+    assert.strictEqual (bbox.width, 25);
+    assert.strictEqual (bbox.height, 20);
     */
   })
 
@@ -295,12 +296,12 @@ describe('svg document', () => {
 
     var bbox2 = rect.getBBox()
 
-    assert.equal(bbox1.x, bbox2.x, 'Translated element should have the same BBox')
+    assert.strictEqual(bbox1.x, bbox2.x, 'Translated element should have the same BBox')
 
     var bbox3 = rect.parentNode.getBBox()
 
-    assert.equal(bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed')
-    assert.equal(bbox1.width, bbox3.width - 15)
+    assert.strictEqual(bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed')
+    assert.strictEqual(bbox1.width, bbox3.width - 15)
 
   })
 
@@ -314,12 +315,12 @@ describe('svg document', () => {
 
     var bbox2 = rect.getBBox()
 
-    assert.equal(bbox1.width, bbox2.width)
-    assert.equal(bbox1.height, bbox2.height)
+    assert.strictEqual(bbox1.width, bbox2.width)
+    assert.strictEqual(bbox1.height, bbox2.height)
 
     var bbox3 = rect.parentNode.getBBox()
 
-    assert.equal(bbox3.width, 20)
+    assert.strictEqual(bbox3.width, 20)
 
   })
 
@@ -327,7 +328,7 @@ describe('svg document', () => {
 
     var connector = svgRoot.querySelector('#rect-1')
 
-    assert.equal(connector.getAttribute('style'), null)
+    assert.strictEqual(connector.getAttribute('style'), null)
 
     connector.style.fill = 'black'
 
@@ -346,7 +347,7 @@ describe('svg document', () => {
 
     assert(connectors)
 
-    assert.equal(connectors.length, 2)
+    assert.strictEqual(connectors.length, 2)
   })
 
   wrappedIt('text-anchor should affect bbox', () => {
@@ -363,9 +364,9 @@ describe('svg document', () => {
 
     var bbox2 = text.getBBox()
 
-    assert.equal('' + bbox1.x, (bbox2.x + bbox2.width).toFixed(0))
-    assert.equal(bbox1.y, bbox2.y)
-    assert.equal(bbox1.width, bbox2.width)
+    assert.strictEqual('' + bbox1.x, (bbox2.x + bbox2.width).toFixed(0))
+    assert.strictEqual(bbox1.y, bbox2.y)
+    assert.strictEqual(bbox1.width, bbox2.width)
 
   })
 

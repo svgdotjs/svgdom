@@ -2,47 +2,8 @@ const Box = require('../class/Box')
 const Point = require('../class/Point')
 const regex = require('./regex')
 const matrixFactory = require('../class/SVGMatrix').matrixFactory
-
-class PointCloud extends Array {
-  constructor (...args) {
-    if (args.length === 1 && typeof args[0] === 'number') {
-      super(args.shift())
-    } else {
-      super()
-    }
-
-    // except multiple point arrays as input and merge them into one
-    args.reduce((last, curr) => last.push(...curr), this)
-  }
-
-  transform (m) {
-    return new PointCloud(this.map((p) => p.transform(m)))
-  }
-
-  bbox () {
-    let xMin = Infinity
-    let xMax = -Infinity
-    let yMin = Infinity
-    let yMax = -Infinity
-
-    this.forEach(function (p) {
-      xMin = Math.min(xMin, p.x)
-      xMax = Math.max(xMax, p.x)
-      yMin = Math.min(yMin, p.y)
-      yMax = Math.max(yMax, p.y)
-    })
-
-    return new Box(
-      xMin, yMin,
-      xMax - xMin,
-      yMax - yMin
-    )
-  }
-
-  merge (cloud) {
-    return new PointCloud(this, cloud)
-  }
-}
+const PointCloud = require('./PointCloud.js')
+const { NoBox } = Box
 
 var pathHandlers = {
   M (c, p, r, p0) {
@@ -93,6 +54,7 @@ var pathHandlers = {
     return pathHandlers.C(c, p, r)
   },
   Z (c, p, r, p0) {
+    // FIXME: The behavior of Z depends on the command before
     return pathHandlers.L([p0.x, p0.y], p)
   },
   A (c, p, r) {
@@ -280,13 +242,9 @@ class Arc {
   }
 
   pointAt (t) {
-    var tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
-
-    var sinθ = Math.sin(tInAngle)
-
-    var cosθ = Math.cos(tInAngle)
-
-    // console.log('pointAt', t, tInAngle, this.delta)
+    const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
+    const sinθ = Math.sin(tInAngle)
+    const cosθ = Math.cos(tInAngle)
 
     return new Point(
       this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
@@ -366,26 +324,10 @@ class Arc {
   }
 
   toPathFragment () {
-    // var arc = Arc.fromCenterForm(
-    //   this.c,
-    //   this.ry, this.ry,
-    //   this.phi,
-    //   this.theta,
-    //   this.delta
-    // )
-
     return ['A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y]
   }
 
   toPath () {
-    // var arc = Arc.fromCenterForm(
-    //   this.c,
-    //   this.ry, this.ry,
-    //   this.phi,
-    //   this.theta,
-    //   this.delta
-    // )
-
     return ['M', this.p1.x, this.p1.y, 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y].join(' ')
   }
 
@@ -461,9 +403,7 @@ class Cubic {
     return this.findRootsX().concat(this.findRootsY())
   }
 
-  lengthAt (t) {
-    t = t == null ? 1 : t
-
+  lengthAt (t = 1) {
     var curves = this.splitAt(t)[0].makeFlat(t)
 
     var length = 0
@@ -475,7 +415,7 @@ class Cubic {
   }
 
   length () {
-    return this.lengthAt(1)
+    return this.lengthAt()
   }
 
   flatness () {
@@ -611,9 +551,8 @@ class Line {
   }
 }
 
-const bbox = function (d, transform) {
-  return pathParser(d)
-    .reduce((l, c) => l == null ? c.bbox(transform) : l.merge(c.bbox(transform)), null)
+const bbox = function (d) {
+  return pathParser(d).reduce((l, c) => l.merge(c.bbox()), new NoBox())
 }
 
 const pointAtLength = function (d, len) {
@@ -665,27 +604,43 @@ const length = function (d) {
     .reduce((l, c) => l + c.length(), 0)
 }
 
-const debug = function (d) {
-  var parse = pathParser(d)
+const debug = function (node) {
+  const parse = pathParser(node.getAttribute('d'))
 
-  return {
-    fragments: parse.map(el => el.toPath()),
-    fragments2: parse.map(el => el.toPathFragment().join(' ')),
+  const ret = {
+    paths: parse.map(el => el.toPath()),
+    fragments: parse.map(el => el.toPathFragment().join(' ')),
     bboxs: parse.map(el => {
       var box = el.bbox()
       return [box.x, box.y, box.width, box.height]
     }),
-    bbox: parse.reduce((l, c) => l == null ? c.bbox() : l.merge(c.bbox()), null)
+    bbox: parse.reduce((l, c) => l.merge(c.bbox()), new NoBox()),
+    bboxs_new: parse.map(el => {
+      return el.getCloud().transform(node.matrixify()).bbox()
+    })
   }
+
+  return Object.assign({}, ret, {
+    bbox_new: ret.bboxs_new.reduce((l, c) => l.merge(c), new NoBox())
+  })
+}
+
+const getCloud = (d) => {
+  return pathParser(d).reduce((cloud, segment) =>
+    segment.getCloud().merge(cloud), new PointCloud()
+  )
 }
 
 const pathFrom = {
+  box ({ x, y, width, height }) {
+    return `M ${x} ${y} h ${width} v ${height} H ${x} V ${y}`
+  },
   rect (node) {
     const width = parseFloat(node.getAttribute('width')) || 0
-    const height = parseFloat(node.getAttribute('width')) || 0
+    const height = parseFloat(node.getAttribute('height')) || 0
     const x = parseFloat(node.getAttribute('x')) || 0
     const y = parseFloat(node.getAttribute('y')) || 0
-    return `M ${x} ${y} H ${width} V ${height} H ${x} V ${y}`
+    return `M ${x} ${y} h ${width} v ${height} H ${x} V ${y}`
   },
   circle (node) {
     const r = parseFloat(node.getAttribute('r')) || 0
@@ -719,5 +674,6 @@ module.exports = {
   debug,
   Arc,
   pathParser,
-  pathFrom
+  pathFrom,
+  getCloud
 }

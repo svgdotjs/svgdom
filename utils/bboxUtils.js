@@ -1,113 +1,80 @@
 const pathUtils = require('./pathUtils')
-const Box = require('../class/Box')
-const NoBox = require('../class/Box').NoBox
+const { NoBox } = require('../class/Box')
 const regex = require('./regex')
 const textUtils = require('./textUtils')
 const strUtils = require('./strUtils')
+const PointCloud = require('./PointCloud.js')
 
-const bbox = (node, applyTransformations) => {
+const applyTransformation = (cloud, node, applyTransformations) => {
+  if (applyTransformations) {
+    return cloud.transform(node.matrixify())
+  }
+  return cloud
+}
 
-  if (node.nodeType !== 1) return new NoBox()
+const getPointCloud = (node, applyTransformations) => {
+  let cloud = getPathCloud(node, applyTransformations)
+  return applyTransformation(cloud, node, applyTransformations)
+}
+
+const getPathCloud = (node, applyTransformations) => {
+  if (node.nodeType !== 1) return new PointCloud()
 
   switch (node.nodeName) {
   case 'defs':
-    return new NoBox()
+    return new PointCloud()
   case 'rect':
   case 'image':
-
-    // return pathUtils.bbox(bboxUtils.pathFrom.rect(node), applyTransformations && node.matrixify())
-
-    return new Box(
-      parseFloat(node.getAttribute('x')) || 0,
-      parseFloat(node.getAttribute('y')) || 0,
-      parseFloat(node.getAttribute('width')) || 0,
-      parseFloat(node.getAttribute('height')) || 0
-    )
+    // Create Path from rect and create PointCloud from Path
+    return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
   case 'svg':
-  case 'g':
   case 'mask':
-  case 'clipPath':
-  case 'a':
-  case 'glyph':
-  case 'altGlyph,':
-  case 'missing-glyph':
-  case 'marker':
   case 'pattern':
   case 'symbol':
-    return node.childNodes.reduce((last, curr) => {
-      return last.merge(bbox(curr, true).transform(curr.getInnerMatrix()))
-    }, new NoBox())
+    return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+  case 'g':
+  case 'clipPath':
+  case 'a':
+  case 'marker':
+    // Iterate trough all childs and get the point cloud of each
+    // Then transform it with viewbox matrix if needed
+    return node.childNodes.reduce((cloud, child) => {
+      return cloud.merge(getPointCloud(child, true))
+    }, new PointCloud())
   case 'circle':
-    var r = parseFloat(node.getAttribute('r'))
-    var x = parseFloat(node.getAttribute('cx')) - r
-    var y = parseFloat(node.getAttribute('cy')) - r
-
-    return new Box(
-      x, y,
-      2 * r,
-      2 * r
-    )
+    return pathUtils.getCloud(pathUtils.pathFrom.circle(node))
   case 'ellipse':
-
-    //return pathUtils.bbox(pathUtils.pathFrom.ellipse(node), applyTransformations && node.matrixify())
-
-    var rx = parseFloat(node.getAttribute('rx'))
-    var ry = parseFloat(node.getAttribute('ry'))
-    var x = parseFloat(node.getAttribute('cx')) - rx
-    var y = parseFloat(node.getAttribute('cy')) - ry
-
-    return new Box(
-      x, y,
-      2 * rx,
-      2 * ry
-    )
+    return pathUtils.getCloud(pathUtils.pathFrom.ellipse(node))
   case 'line':
-    var x1 = parseFloat(node.getAttribute('x1'))
-    var x2 = parseFloat(node.getAttribute('x2'))
-    var y1 = parseFloat(node.getAttribute('y1'))
-    var y2 = parseFloat(node.getAttribute('y2'))
-    return new Box(
-      Math.min(x1, x2),
-      Math.min(y1, y2),
-      Math.abs(x2 - x1),
-      Math.abs(y2 - y1)
-    )
+    return pathUtils.getCloud(pathUtils.pathFrom.line(node))
   case 'polyline':
   case 'polygon':
-
-    var xMin = Infinity; var xMax = -Infinity; var yMin = Infinity; var yMax = -Infinity
-    var points = node.getAttribute('points').trim().split(regex.delimiter).map(parseFloat)
-      .reduce((l, c, i) => {
-        i % 2 ? l[l.length - 1].push(c) : l.push([c])
-        return l
-      }, [])
-
-    points.forEach(el => {
-      xMin = Math.min(xMin, el[0])
-      xMax = Math.max(xMax, el[0])
-      yMin = Math.min(yMin, el[1])
-      yMax = Math.max(yMax, el[1])
-    })
-
-    return new Box(
-      xMin, yMin,
-      xMax - xMin,
-      yMax - yMin
-    )
+    return pathUtils.getCloud(pathUtils.pathFrom.polyline(node))
   case 'path':
-    return pathUtils.bbox(node.getAttribute('d'))
+  case 'glyph':
+  case 'missing-glyph':
+    return pathUtils.getCloud(node.getAttribute('d'))
   case 'use':
-    var ref = node.getAttribute('href')
-    return node.getRootNode().getElementById(ref.slice(1)).getBBox()
+    // Get reference from element
+    let ref = node.getAttribute('href')
+    // Get the actual referenced Node
+    let refNode = node.getRootNode().getElementById(ref.slice(1))
+    // Get the BBox of the referenced element and apply the viewbox of <use>
+    return getPointCloud(refNode).transform(node.generateViewBoxMatrix())
   case 'text':
   case 'tspan':
-    // console.warn('itering')
-    var boxes = textIterator(node).filter(box => box.x !== 0 || box.y !== 0 || box.width !== 0 || box.height !== 0)
-    // var first = boxes.pop()
-    // if(!first) return new Box
-    return boxes.reduce((last, curr) => last.merge(curr), new NoBox())
+  case 'altGlyph':
+    const boxes = textIterator(node).filter(box => box.x !== 0 || box.y !== 0 || box.width !== 0 || box.height !== 0)
+    const box = boxes.reduce((last, curr) => last.merge(curr), new NoBox())
 
-  default: return new NoBox()
+    if (box instanceof NoBox) {
+      return new PointCloud()
+    }
+
+    return pathUtils.getCloud(pathUtils.pathFrom.box(box))
+
+  default:
+    return new PointCloud()
   }
 }
 
@@ -178,4 +145,4 @@ const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [0], dy = [0]) {
 
 }
 
-module.exports = bbox
+module.exports = getPointCloud

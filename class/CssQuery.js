@@ -144,6 +144,7 @@ const nth = (node, arr, nth) => {
 
   // eval nth to get the index
   for (var i, n = 0, nl = arr.length; n < nl; ++n) {
+    /* eslint no-eval: off */
     i = eval(nth)
 
     if (i > nl) break

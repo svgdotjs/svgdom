@@ -303,10 +303,22 @@ var Window = invent({
 
     },
     getComputedStyle (node) {
+
       return {
+        // FIXME: Currently this function treats every given attr
+        // as inheritable from its parents which is ofc not always true
+        // but good enough for svg.js
         getPropertyValue (attr) {
-          const css = node.style[attr]
-          return css || node.getAttribute(attr)
+          let value
+
+          do {
+            value = node.style[attr] || node.getAttribute(attr)
+          } while (
+            (node = node.parentNode)
+            && node.parentNode.nodeType === 1
+          )
+
+          return value || null
         }
       }
     }

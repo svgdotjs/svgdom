@@ -5,7 +5,6 @@
 This dom implementation was written for svg.js only. It is neither complete nor does it strictly follows the standards.
 It just has enough to make svg.js work on nodejs.
 
-**The first version of svg.js which works with svgdom is [svg.js v2.5.1](https://github.com/svgdotjs/svg.js/tree/2.5.1)**
 
 ## Get started with svg.js v2.5
 

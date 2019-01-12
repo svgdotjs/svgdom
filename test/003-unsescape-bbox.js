@@ -1,7 +1,8 @@
+/* global describe, it */
 
 import svgdom from '../dom'
 import assert from 'assert'
-const bbox = require('../utils/bboxUtils')
+const getPointCloud = require('../utils/bboxUtils')
 
 describe('unescape-bbox', () => {
   it(" bbox('<').x should be less then bbox('WW') ", () => {
@@ -13,8 +14,8 @@ describe('unescape-bbox', () => {
     textWW.textContent = 'W'
     svgRoot.appendChild(textLt)
     svgRoot.appendChild(textWW)
-    var bboxLt = bbox(textLt)
-    var bboxWW = bbox(textWW)
+    var bboxLt = getPointCloud(textLt).bbox()
+    var bboxWW = getPointCloud(textWW).bbox()
     assert(bboxLt.width < bboxWW.width)
   })
 })
