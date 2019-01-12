@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
   "main": "dom.js",
   "scripts": {
