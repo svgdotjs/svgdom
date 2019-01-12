@@ -1,49 +1,45 @@
-import puppeteer from 'puppeteer';
-
+import puppeteer from 'puppeteer'
 import assert from 'assert'
-
-import {DOMParser, XMLSerializer, DOMImplementation} from 'xmldom'
-
+import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
 import svgdom from '../dom'
-
 import fs from 'fs'
 
-var svgString;
-var svgDoc;
-var svgRoot;
+var svgString
+var svgDoc
+var svgRoot
 
 function makeEl (nodeName, attrs = {}) {
-  var svgNS = 'http://www.w3.org/2000/svg';
-  var el = this.createElementNS (svgNS, nodeName);
-  Object.keys (attrs).forEach (attrName => {el.setAttribute (attrName, attrs[attrName])});
-  return el;
+  var svgNS = 'http://www.w3.org/2000/svg'
+  var el = this.createElementNS(svgNS, nodeName)
+  Object.keys(attrs).forEach(attrName => { el.setAttribute(attrName, attrs[attrName]) })
+  return el
 }
 
-var browser, page;
+var browser, page
 
-var testEnv = process.env.TEST_BROWSER ? 'browser' : 'node';
+var testEnv = process.env.TEST_BROWSER ? 'browser' : 'node'
 
 function wrappedIt (message, testFn) {
   if (testEnv === 'browser') {
-    return it (message, () => page.evaluate (testFn)); // page.evaluate will return promise
+    return it(message, () => page.evaluate(testFn)) // page.evaluate will return promise
   }
-  return it (message, testFn);
+  return it(message, testFn)
 }
 
 wrappedIt.skip = function (message, testFn) {
-  return it.skip (message, testFn);
+  return it.skip(message, testFn)
 }
 
 wrappedIt.only = function (message, testFn) {
   if (testEnv === 'browser') {
-    return it.only (message, () => page.evaluate (testFn)); // page.evaluate will return promise
+    return it.only(message, () => page.evaluate(testFn)) // page.evaluate will return promise
   }
-  return it.only (message, testFn);
+  return it.only(message, testFn)
 }
 
-describe ('svg document', () => {
+describe('svg document', () => {
 
-  before (async () => {
+  before(async () => {
 
     if (testEnv === 'browser') {
 
@@ -51,235 +47,233 @@ describe ('svg document', () => {
         headless: false, // replace with false to check rendering
         args: [
           '--disable-infobars',
-          '--disable-gpu',
+          '--disable-gpu'
           // '--disable-web-security',
           // '--user-data-dir'
         ]
-      };
-
-      if (process.env.CHROMIUM_PATH) {
-        crConfig.executablePath = process.env.CHROMIUM_PATH + "/Contents/MacOS/Chromium";
       }
 
-      browser = await puppeteer.launch (crConfig);
-      page = await browser.newPage ();
+      if (process.env.CHROMIUM_PATH) {
+        crConfig.executablePath = process.env.CHROMIUM_PATH + '/Contents/MacOS/Chromium'
+      }
+
+      browser = await puppeteer.launch(crConfig)
+      page = await browser.newPage()
 
       await page.goto(
         'about:blank',
-        {waitUntil: 'load'}
-      );
+        { waitUntil: 'load' }
+      )
 
-      await page.evaluate (() => {
+      await page.evaluate(() => {
         window.assert = function (check, message) {
-          if (!check) throw (message || "Assertion failed");
+          if (!check) throw (message || 'Assertion failed')
         }
 
         window.assert.equal = function (value1, value2, message) {
-          if (value1 !== value2) throw (message || "Assertion failed");
+          if (value1 !== value2) throw (message || 'Assertion failed')
         }
       })
 
     }
-  });
-
-  after (async () => {
-    const delay =  ms => new Promise(resolve => setTimeout(resolve,ms));
-    await delay(10000); 
-    browser && browser.close ();
   })
 
-  beforeEach (async () => {
+  after(async () => {
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+    await delay(10000)
+    browser && browser.close()
+  })
+
+  beforeEach(async () => {
 
     function prepare () {
 
-      var svgNS = 'http://www.w3.org/2000/svg';
+      var svgNS = 'http://www.w3.org/2000/svg'
 
-      svgRoot.appendChild (svgDoc.createTextNode ('\n  '));
+      svgRoot.appendChild(svgDoc.createTextNode('\n  '))
 
-      var g = svgDoc.createElementNS (svgNS, 'g')
-      g.id = 'g-1';
-      g.setAttribute ('transform', 'translate(20, 20) scale(10)');
+      var g = svgDoc.createElementNS(svgNS, 'g')
+      g.id = 'g-1'
+      g.setAttribute('transform', 'translate(20, 20) scale(10)')
 
-      svgRoot.appendChild (g);
+      svgRoot.appendChild(g)
 
-      g.appendChild (svgDoc.createTextNode ('\n    '));
+      g.appendChild(svgDoc.createTextNode('\n    '))
 
-      var gRect = svgDoc.createElementNS (svgNS, 'g');
-      gRect.setAttribute ('transform', 'translate(15)');
-      g.appendChild (gRect);
+      var gRect = svgDoc.createElementNS(svgNS, 'g')
+      gRect.setAttribute('transform', 'translate(15)')
+      g.appendChild(gRect)
 
-      var rect = svgDoc.createElementNS (svgNS, 'rect')
-      rect.id = 'rect-1';
-      rect.setAttribute ('x', 0);
-      rect.setAttribute ('y', 0);
-      rect.setAttribute ('width', 10);
-      rect.setAttribute ('height', 10);
-      rect.setAttribute ('fill', '#c63');
+      var rect = svgDoc.createElementNS(svgNS, 'rect')
+      rect.id = 'rect-1'
+      rect.setAttribute('x', 0)
+      rect.setAttribute('y', 0)
+      rect.setAttribute('width', 10)
+      rect.setAttribute('height', 10)
+      rect.setAttribute('fill', '#c63')
 
-      gRect.appendChild (rect);
+      gRect.appendChild(rect)
 
-      gRect.appendChild (svgDoc.createTextNode ('\n    '));
+      gRect.appendChild(svgDoc.createTextNode('\n    '))
 
-      rect = svgDoc.createElementNS (svgNS, 'rect')
-      rect.id = 'rect-2';
-      rect.setAttribute ('x', 0);
-      rect.setAttribute ('y', 0);
-      rect.setAttribute ('width', 10);
-      rect.setAttribute ('height', 10);
-      rect.setAttribute ('fill', '#63c');
+      rect = svgDoc.createElementNS(svgNS, 'rect')
+      rect.id = 'rect-2'
+      rect.setAttribute('x', 0)
+      rect.setAttribute('y', 0)
+      rect.setAttribute('width', 10)
+      rect.setAttribute('height', 10)
+      rect.setAttribute('fill', '#63c')
 
-      gRect.appendChild (rect);
+      gRect.appendChild(rect)
 
-      var gCircle = svgDoc.createElementNS (svgNS, 'g')
-      g.appendChild (gCircle);
+      var gCircle = svgDoc.createElementNS(svgNS, 'g')
+      g.appendChild(gCircle)
 
-      var circle = svgDoc.createElementNS (svgNS, 'circle')
-      circle.id = 'circle-1';
-      circle.setAttribute ('cx', 5);
-      circle.setAttribute ('cy', 5);
-      circle.setAttribute ('r',  5);
-      circle.setAttribute ('fill', '#6c3');
+      var circle = svgDoc.createElementNS(svgNS, 'circle')
+      circle.id = 'circle-1'
+      circle.setAttribute('cx', 5)
+      circle.setAttribute('cy', 5)
+      circle.setAttribute('r', 5)
+      circle.setAttribute('fill', '#6c3')
 
-      gCircle.appendChild (circle);
+      gCircle.appendChild(circle)
 
-      var text = svgDoc.createElementNS (svgNS, 'text')
-      text.id = 'text-1';
-      text.setAttribute ('x', 5);
-      text.setAttribute ('y', 5);
+      var text = svgDoc.createElementNS(svgNS, 'text')
+      text.id = 'text-1'
+      text.setAttribute('x', 5)
+      text.setAttribute('y', 5)
 
-      text.appendChild (svgDoc.createTextNode ('TEXT'));
+      text.appendChild(svgDoc.createTextNode('TEXT'))
 
-      g.appendChild (text);
+      g.appendChild(text)
 
     }
 
     if (testEnv === 'browser') {
-      await page.evaluate (() => {
-        var svgNS = 'http://www.w3.org/2000/svg';
-        var svg = window.svgRoot = document.createElementNS (svgNS,'svg');
-        svg.setAttribute ('xmlns:xlink','http://www.w3.org/1999/xlink');
-        svg.setAttribute ('height','200');
-        svg.setAttribute ('width','400');
-        svg.setAttribute ('viewPort','0 0 200 400');
-        svg.setAttribute ('style', 'background-color: #eee');
+      await page.evaluate(() => {
+        var svgNS = 'http://www.w3.org/2000/svg'
+        var svg = window.svgRoot = document.createElementNS(svgNS, 'svg')
+        svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+        svg.setAttribute('height', '200')
+        svg.setAttribute('width', '400')
+        svg.setAttribute('viewPort', '0 0 200 400')
+        svg.setAttribute('style', 'background-color: #eee')
 
-        document.body.appendChild (svg);
-        window.svgDoc = document;
+        document.body.appendChild(svg)
+        window.svgDoc = document
       })
 
-      await page.evaluate (prepare);
+      await page.evaluate(prepare)
     } else {
-      svgDoc = new svgdom.constructor ().document;
-      svgRoot = svgDoc.documentElement;
+      svgDoc = new svgdom.constructor().document
+      svgRoot = svgDoc.documentElement
 
-      prepare ();
+      prepare()
     }
 
   })
 
-  wrappedIt ('should have children method for nodes', () => {
-    assert(svgRoot.children);
+  wrappedIt('should have children method for nodes', () => {
+    assert(svgRoot.children)
   })
 
-  wrappedIt ('should have createComment method', () => {
-    assert(svgDoc.createComment ('xxx'));
+  wrappedIt('should have createComment method', () => {
+    assert(svgDoc.createComment('xxx'))
   })
 
-  wrappedIt ('should have ownerSVGElement property for nodes', () => {
+  wrappedIt('should have ownerSVGElement property for nodes', () => {
     // this will not work with documents, embedded into html
     // but should work with svg docs as media <object>
-    if (svgDoc.documentElement.nodeName === 'svg')
-      assert(svgRoot.ownerSVGElement);
+    if (svgDoc.documentElement.nodeName === 'svg') { assert(svgRoot.ownerSVGElement) }
     // assert(svgRoot.ownerSVGElement === svgRoot);
   })
 
-  wrappedIt ('transform: rotate', () => {
+  wrappedIt('transform: rotate', () => {
 
-    var circle = svgRoot.querySelector('#circle-1');
-    var g = circle.parentNode;
+    var circle = svgRoot.querySelector('#circle-1')
+    var g = circle.parentNode
 
-    var bbox1 = g.getBBox();
+    var bbox1 = g.getBBox()
 
-    circle.setAttribute ('transform', 'rotate (180)');
+    circle.setAttribute('transform', 'rotate (180)')
 
-    var bbox2 = g.getBBox();
+    var bbox2 = g.getBBox()
 
     // floats!
-    assert (bbox1.x - bbox2.x < 10.001);
-    assert (bbox1.x - bbox2.x >  9.999);
-    assert (bbox1.y - bbox2.y < 10.001);
-    assert (bbox1.y - bbox2.y >  9.999);
-    assert.equal (bbox1.width.toFixed(3), bbox2.width.toFixed(3));
-    assert.equal (bbox1.height.toFixed(3), bbox2.height.toFixed(3));
+    assert(bbox1.x - bbox2.x < 10.001)
+    assert(bbox1.x - bbox2.x > 9.999)
+    assert(bbox1.y - bbox2.y < 10.001)
+    assert(bbox1.y - bbox2.y > 9.999)
+    assert.equal(bbox1.width.toFixed(3), bbox2.width.toFixed(3))
+    assert.equal(bbox1.height.toFixed(3), bbox2.height.toFixed(3))
 
-    circle.setAttribute ('transform', 'rotate (90, 5, 5)');
+    circle.setAttribute('transform', 'rotate (90, 5, 5)')
 
-    var bbox3 = g.getBBox();
+    var bbox3 = g.getBBox()
 
-    assert.equal (bbox1.x.toFixed(3), bbox3.x.toFixed(3));
-    assert.equal (bbox1.y.toFixed(3), bbox3.y.toFixed(3));
-    assert.equal (bbox1.width, bbox3.width);
-    assert.equal (bbox1.height, bbox3.height);
+    assert.equal(bbox1.x.toFixed(3), bbox3.x.toFixed(3))
+    assert.equal(bbox1.y.toFixed(3), bbox3.y.toFixed(3))
+    assert.equal(bbox1.width, bbox3.width)
+    assert.equal(bbox1.height, bbox3.height)
 
   })
 
+  wrappedIt('transforms', () => {
+    var rect = svgRoot.querySelector('#rect-1')
 
-  wrappedIt ('transforms', () => {
-    var rect = svgRoot.querySelector('#rect-1');
+    var x = 0; var y = 0; var width = 10; var height = 10
 
-    var x = 0, y = 0, width = 10, height = 10;
+    var bbox = rect.getBBox()
 
-    var bbox = rect.getBBox();
+    assert.equal(bbox.x, x)
+    assert.equal(bbox.y, y)
+    assert.equal(bbox.width, width)
+    assert.equal(bbox.height, height)
 
-    assert.equal (bbox.x, x);
-    assert.equal (bbox.y, y);
-    assert.equal (bbox.width, width);
-    assert.equal (bbox.height, height);
+    rect.setAttribute('transform', 'rotate(45)')
 
-    rect.setAttribute ('transform', 'rotate(45)');
+    bbox = rect.parentNode.getBBox()
 
-    bbox = rect.parentNode.getBBox();
+    assert(bbox.width > width)
+    assert.equal(bbox.width.toFixed(3), (Math.sqrt(2 * width * width) / 2 + width).toFixed(3))
+    assert(bbox.height > height)
+    assert.equal(bbox.height.toFixed(3), (Math.sqrt(2 * height * height)).toFixed(3))
 
-    assert (bbox.width > width);
-    assert.equal (bbox.width.toFixed(3), (Math.sqrt (2*width*width)/2 + width).toFixed(3));
-    assert (bbox.height > height);
-    assert.equal (bbox.height.toFixed(3), (Math.sqrt (2*height*height)).toFixed(3));
+    rect.setAttribute('transform', '')
 
-    rect.setAttribute ('transform', '');
+    var rect2 = svgRoot.querySelector('#rect-2')
 
-    var rect2 = svgRoot.querySelector('#rect-2');
+    rect2.setAttribute('transform', 'translate(15, 0)')
 
-    rect2.setAttribute ('transform', 'translate(15, 0)');
+    var circle = svgRoot.querySelector('#circle-1')
 
-    var circle = svgRoot.querySelector('#circle-1');
+    bbox = circle.getBBox()
 
-    bbox = circle.getBBox();
+    assert.equal(bbox.x, x)
+    assert.equal(bbox.y, y)
+    assert.equal(bbox.width, width)
+    assert.equal(bbox.height, height)
 
-    assert.equal (bbox.x, x);
-    assert.equal (bbox.y, y);
-    assert.equal (bbox.width, width);
-    assert.equal (bbox.height, height);
+    circle.setAttribute('transform', 'translate(15, 0)')
 
-    circle.setAttribute ('transform', 'translate(15, 0)');
+    bbox = circle.parentNode.getBBox()
 
-    bbox = circle.parentNode.getBBox();
-
-    assert.equal (bbox.x, x + 15);
-    assert.equal (bbox.width, width);
+    assert.equal(bbox.x, x + 15)
+    assert.equal(bbox.width, width)
 
     // scales from 0, 0
-    circle.setAttribute ('transform', 'scale(2)');
+    circle.setAttribute('transform', 'scale(2)')
 
-    bbox = circle.parentNode.getBBox();
+    bbox = circle.parentNode.getBBox()
 
-    assert.equal (bbox.x, x);
-    assert.equal (bbox.y, y);
-    assert.equal (bbox.width, width*2);
-    assert.equal (bbox.height, height*2);
+    assert.equal(bbox.x, x)
+    assert.equal(bbox.y, y)
+    assert.equal(bbox.width, width * 2)
+    assert.equal(bbox.height, height * 2)
 
-    var g = svgRoot.querySelector('#g-1');
+    var g = svgRoot.querySelector('#g-1')
 
-    bbox = g.getBBox();
+    bbox = g.getBBox()
 
     /*
     console.log (bbox);
@@ -291,87 +285,87 @@ describe ('svg document', () => {
     */
   })
 
-  wrappedIt ('transform: translateX', () => {
+  wrappedIt('transform: translateX', () => {
 
-    var rect = svgRoot.querySelector('#rect-1');
+    var rect = svgRoot.querySelector('#rect-1')
 
-    var bbox1 = rect.getBBox();
+    var bbox1 = rect.getBBox()
 
-    rect.setAttribute ('transform', 'translate(15)');
+    rect.setAttribute('transform', 'translate(15)')
 
-    var bbox2 = rect.getBBox();
+    var bbox2 = rect.getBBox()
 
-    assert.equal (bbox1.x, bbox2.x, "Translated element should have the same BBox");
+    assert.equal(bbox1.x, bbox2.x, 'Translated element should have the same BBox')
 
-    var bbox3 = rect.parentNode.getBBox();
+    var bbox3 = rect.parentNode.getBBox()
 
-    assert.equal (bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed');
-    assert.equal (bbox1.width, bbox3.width - 15);
-
-  })
-
-  wrappedIt ('transform: scaleXY', () => {
-
-    var rect = svgRoot.querySelector('#rect-1');
-
-    var bbox1 = rect.getBBox();
-
-    rect.setAttribute ('transform', 'scale(2, 0.5)');
-
-    var bbox2 = rect.getBBox();
-
-    assert.equal (bbox1.width, bbox2.width);
-    assert.equal (bbox1.height, bbox2.height);
-
-    var bbox3 = rect.parentNode.getBBox();
-
-    assert.equal (bbox3.width, 20);
+    assert.equal(bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed')
+    assert.equal(bbox1.width, bbox3.width - 15)
 
   })
 
-  wrappedIt ('exposed style attribute on attributes enumeration', () => {
+  wrappedIt('transform: scaleXY', () => {
 
-    var connector = svgRoot.querySelector('#rect-1');
+    var rect = svgRoot.querySelector('#rect-1')
 
-    assert.equal (connector.getAttribute ('style'), null);
+    var bbox1 = rect.getBBox()
 
-    connector.style.fill = "black";
+    rect.setAttribute('transform', 'scale(2, 0.5)')
 
-    assert (connector.getAttribute ('style').match(/^fill:\s*black\b/));
+    var bbox2 = rect.getBBox()
 
-    assert ([].some.call (connector.attributes, attr => attr.nodeName === 'style'));
+    assert.equal(bbox1.width, bbox2.width)
+    assert.equal(bbox1.height, bbox2.height)
+
+    var bbox3 = rect.parentNode.getBBox()
+
+    assert.equal(bbox3.width, 20)
+
   })
 
-  wrappedIt ('should match [attr^=startsWith] css selector', () => {
+  wrappedIt('exposed style attribute on attributes enumeration', () => {
 
-    var connector = svgRoot.querySelector('[id^=rect-1]');
+    var connector = svgRoot.querySelector('#rect-1')
 
-    assert (connector);
+    assert.equal(connector.getAttribute('style'), null)
 
-    var connectors = svgRoot.querySelectorAll ('[id^=rect]');
+    connector.style.fill = 'black'
 
-    assert (connectors);
+    assert(connector.getAttribute('style').match(/^fill:\s*black\b/))
 
-    assert.equal (connectors.length, 2);
+    assert([].some.call(connector.attributes, attr => attr.nodeName === 'style'))
   })
 
-  wrappedIt ('text-anchor should affect bbox', () => {
+  wrappedIt('should match [attr^=startsWith] css selector', () => {
 
-    var text = svgRoot.querySelector('#text-1');
+    var connector = svgRoot.querySelector('[id^=rect-1]')
 
-    assert (text);
+    assert(connector)
 
-    text.setAttribute ('text-anchor', 'start');
+    var connectors = svgRoot.querySelectorAll('[id^=rect]')
 
-    var bbox1 = text.getBBox ();
+    assert(connectors)
 
-    text.setAttribute ('text-anchor', 'end');
+    assert.equal(connectors.length, 2)
+  })
 
-    var bbox2 = text.getBBox ();
+  wrappedIt('text-anchor should affect bbox', () => {
 
-    assert.equal ("" + bbox1.x, (bbox2.x + bbox2.width).toFixed (0));
-    assert.equal (bbox1.y, bbox2.y);
-    assert.equal (bbox1.width, bbox2.width);
+    var text = svgRoot.querySelector('#text-1')
+
+    assert(text)
+
+    text.setAttribute('text-anchor', 'start')
+
+    var bbox1 = text.getBBox()
+
+    text.setAttribute('text-anchor', 'end')
+
+    var bbox2 = text.getBBox()
+
+    assert.equal('' + bbox1.x, (bbox2.x + bbox2.width).toFixed(0))
+    assert.equal(bbox1.y, bbox2.y)
+    assert.equal(bbox1.width, bbox2.width)
 
   })
 
