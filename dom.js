@@ -1,4 +1,4 @@
-const { invent, extend } = require('./utils/objectCreationUtils')
+const { extend } = require('./utils/objectCreationUtils')
 const EventTarget = require('./class/EventTarget')
 const SVGPoint = require('./class/SVGPoint')
 const SVGMatrix = require('./class/SVGMatrix')
@@ -8,139 +8,132 @@ const path = require('path')
 const fontkit = require('fontkit')
 const { htmlEntities } = require('./utils/strUtils')
 
-var HTMLLinkElement = invent({
-  name: 'HTMLLinkElement',
-  create: function () {
-    Node.call(this, 'link')
+class HTMLLinkElement extends Node {
+  constructor () {
+    super('a')
+  }
+}
+
+Object.defineProperties(HTMLLinkElement.prototype, {
+  href: {
+    get () {
+      return this.attrs.get('href')
+    },
+    set (val) {
+      this.attrs.set('href', val)
+    }
   },
-  inherit: Node,
-  props: {
-    href: {
-      get: function () {
-        return this.attrs.get('href')
-      },
-      set: function (val) {
-        this.attrs.set('href', val)
-      }
+  rel: {
+    get () {
+      return this.attrs.get('rel')
     },
-    rel: {
-      get: function () {
-        return this.attrs.get('rel')
-      },
-      set: function (val) {
-        this.attrs.set('rel', val)
-      }
+    set (val) {
+      this.attrs.set('rel', val)
+    }
+  },
+  type: {
+    get () {
+      return this.attrs.get('type')
     },
-    type: {
-      get: function () {
-        return this.attrs.get('type')
-      },
-      set: function (val) {
-        this.attrs.set('type', val)
-      }
+    set (val) {
+      this.attrs.set('type', val)
     }
   }
 })
 
-var HTMLScriptElement = invent({
-  name: 'HTMLScriptElement',
-  create: function () {
-    Node.call(this, 'script')
-  },
-  inherit: Node,
-  props: {
-    src: {
-      get: function () {
-        return this.attrs.get('src')
-      },
-      set: function (val) {
-        this.attrs.set('src', val)
-      }
+class HTMLScriptElement extends Node {
+  constructor () {
+    super('script')
+  }
+}
+
+Object.defineProperties(HTMLScriptElement.prototype, {
+  src: {
+    get () {
+      return this.attrs.get('src')
     },
-    type: {
-      get: function () {
-        return this.attrs.get('type')
-      },
-      set: function (val) {
-        this.attrs.set('type', val)
-      }
+    set (val) {
+      this.attrs.set('src', val)
+    }
+  },
+  type: {
+    get () {
+      return this.attrs.get('type')
+    },
+    set (val) {
+      this.attrs.set('type', val)
     }
   }
 })
 
-var HTMLImageElement = invent({
-  name: 'HTMLImageElement',
-  create: function () {
-    Node.call(this, 'img')
+class HTMLImageElement extends Node {
+  constructor () {
+    super('img')
     this.width = 0
     this.height = 0
     this.naturalWidth = 0
     this.naturalHeight = 0
+  }
+}
+
+Object.defineProperties(HTMLImageElement.prototype, {
+  src: {
+    get () {
+      return this.attrs.get('src')
+    },
+    set (val) {
+      this.attrs.set('src', val)
+      sizeOf(val, (err, size) => {
+        if (err) {
+          this.dispatchEvent(new Event('error', this))
+          return
+        }
+
+        this.width = this.naturalWidth = size.width
+        this.height = this.naturalHeight = size.height
+
+        this.dispatchEvent(new Event('load', this))
+      })
+    }
   },
-  inherit: Node,
-  props: {
-    src: {
-      get: function () {
-        return this.attrs.get('src')
-      },
-      set: function (val) {
-        this.attrs.set('src', val)
-        sizeOf(val, function (err, size) {
-          if (err) {
-            this.dispatchEvent(new Event('error', this))
-            return
-          }
-
-          this.width = this.naturalWidth = size.width
-          this.height = this.naturalHeight = size.height
-
-          this.dispatchEvent(new Event('load', this))
-        }.bind(this))
-      }
+  height: {
+    get () {
+      return this.attrs.get('height')
     },
-    height: {
-      get: function () {
-        return this.attrs.get('height')
-      },
-      set: function (val) {
-        this.attrs.set('height', val)
-      }
+    set (val) {
+      this.attrs.set('height', val)
+    }
+  },
+  width: {
+    get () {
+      return this.attrs.get('width')
     },
-    width: {
-      get: function () {
-        return this.attrs.get('width')
-      },
-      set: function (val) {
-        this.attrs.set('width', val)
-      }
+    set (val) {
+      this.attrs.set('width', val)
     }
   }
 })
 
-var Event = invent({
-  name: 'Event',
-  create: function (type) {
+class Event {
+  constructor (type) {
     this.type = type
     this.cancelable = false
     this.defaultPrevented = false
-  },
-  extend: {
-    preventDefault: function () {
-      this.defaultPrevented = true
-    }
   }
-})
 
-var CustomEvent = invent({
-  name: 'CustomEvent',
-  create: function (name, props = {}) {
-    Event.call(this, name)
+  preventDefault () {
+    this.defaultPrevented = true
+  }
+}
+
+class CustomEvent extends Event {
+  constructor (name, props = {}) {
+    super(name)
 
     this.detail = props.detail || null
     this.cancelable = props.cancelable || false
-  },
-  inherit: Event
-})
+  }
+}
 
 // Feature/version pairs that DOMImplementation.hasFeature() returns true for.  It returns false for anything else.
 var supportedFeatures = {
@@ -150,44 +143,41 @@ var supportedFeatures = {
   'xhtml': { '': true, '1.0': true, '2.0': true } // HTML
 }
 
-var DOMImplementation = invent({
-  name: 'DOMImplementation',
-  extend: {
-    hasFeature: function hasFeature (feature, version) {
-      var f = supportedFeatures[(feature || '').toLowerCase()]
-      return (f && f[version || '']) || false
-    },
-
-    createDocumentType: function createDocumentType (qualifiedName, publicId, systemId) {
-      throw new Error('createDocumentType not implemented yet')
-    },
-
-    createDocument: function createDocument (namespace, qualifiedName, doctype) {
-      var doc = new Document()
-
-      if (doctype) {
-        if (doctype.ownerDocument) { throw new Error('the object is in the wrong Document, a call to importNode is required') }
-        doc.appendChild(doctype)
-      }
-
-      if (qualifiedName) { doc.appendChild(doc.createElementNS(namespace, qualifiedName)) }
-
-      return doc
-    },
-
-    createHTMLDocument: function createHTMLDocument (titleText) {
-      var d = new Document('html')
-      var root = d.documentElement
-      var head = d.createElement('head')
-      root.appendChild(head)
-      var title = d.createElement('title')
-      head.appendChild(title)
-      title.appendChild(d.createTextNode(titleText))
-      root.appendChild(d.createElement('body'))
-      return d
-    }
+class DOMImplementation {
+  hasFeature (feature, version) {
+    var f = supportedFeatures[(feature || '').toLowerCase()]
+    return (f && f[version || '']) || false
   }
-})
+
+  createDocumentType (qualifiedName, publicId, systemId) {
+    throw new Error('createDocumentType not implemented yet')
+  }
+
+  createDocument (namespace, qualifiedName, doctype) {
+    var doc = new Document()
+
+    if (doctype) {
+      if (doctype.ownerDocument) { throw new Error('the object is in the wrong Document, a call to importNode is required') }
+      doc.appendChild(doctype)
+    }
+
+    if (qualifiedName) { doc.appendChild(doc.createElementNS(namespace, qualifiedName)) }
+
+    return doc
+  }
+
+  createHTMLDocument (titleText) {
+    var d = new Document('html')
+    var root = d.documentElement
+    var head = d.createElement('head')
+    root.appendChild(head)
+    var title = d.createElement('title')
+    head.appendChild(title)
+    title.appendChild(d.createTextNode(titleText))
+    root.appendChild(d.createElement('body'))
+    return d
+  }
+}
 
 function getChildByTagName (parent, name) {
   for (var child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -198,132 +188,128 @@ function getChildByTagName (parent, name) {
   return null
 }
 
-var Document = invent({
-  name: 'Document',
-  create: function (root) {
-    Node.call(this, '#document')
-    this.nodeType = 9
+class Document extends Node {
+  constructor (root) {
+    super('#document')
+    this.nodeType = Node.DOCUMENT_NODE
     root = this.createElement(root)
     this.appendChild(root)
     root.ownerDocument = this
     this.documentElement = root
     this._preloaded = {}
     this._implementation = new DOMImplementation()
-  },
-  inherit: Node,
-  props: {
-    implementation: {
-      get: function () {
-        return this._implementation
-      }
-    },
-    compatMode: {
-      get: function () {
-        return 'CSS1Compat' // always be in standards-mode
-      }
-    },
-    body: {
-      get: function () {
-        return getChildByTagName(this.documentElement, 'body')
-      },
-      set: function () {
-        throw new Error('setting body not implemented yet')
-      }
-    },
-    head: {
-      get: function () {
-        return getChildByTagName(this.documentElement, 'head')
-      }
+  }
+
+  createElementNS (ns, name) {
+    return new SVGElement(name, {
+      attrs: { xmlns: ns },
+      ownerDocument: this
+    })
+  }
+  createDocumentFragment (name) {
+    return new DocumentFragment()
+  }
+  createElement (name) {
+    switch (name) {
+    case 'img':
+      return new HTMLImageElement({ ownerDocument: this })
+    case 'link':
+      return new HTMLLinkElement({ ownerDocument: this })
+    case 'script':
+      return new HTMLScriptElement({ ownerDocument: this })
+    default:
+      return new SVGElement(name, { ownerDocument: this })
+    }
+  }
+  createTextNode (text) {
+    return new TextNode('#text', { data: htmlEntities(text), ownerDocument: this })
+  }
+  createComment (text) {
+    return new Comment('#comment', { data: text, ownerDocument: this })
+  }
+  createAttribute (name) {
+    return new AttributeNode(name, { ownerDocument: this })
+  }
+}
+
+Object.defineProperties(Document.prototype, {
+  implementation: {
+    get () {
+      return this._implementation
     }
   },
-  extend: {
-    createElementNS: function (ns, name) {
-      return new SVGElement(name, {
-        attrs: { xmlns: ns },
-        ownerDocument: this
-      })
+  compatMode: {
+    get () {
+      return 'CSS1Compat' // always be in standards-mode
+    }
+  },
+  body: {
+    get () {
+      return getChildByTagName(this.documentElement, 'body')
     },
-    createDocumentFragment: function (name) {
-      return new DocumentFragment()
-    },
-    createElement: function (name) {
-      switch (name) {
-      case 'img':
-        return new HTMLImageElement({ ownerDocument: this })
-      case 'link':
-        return new HTMLLinkElement({ ownerDocument: this })
-      case 'script':
-        return new HTMLScriptElement({ ownerDocument: this })
-      default:
-        return new SVGElement(name, { ownerDocument: this })
-      }
-    },
-    createTextNode: function (text) {
-      return new TextNode('#text', { data: htmlEntities(text), ownerDocument: this })
-    },
-    createComment: function (text) {
-      return new Comment('#comment', { data: text, ownerDocument: this })
-    },
-    createAttribute: function (name) {
-      return new AttributeNode(name, { ownerDocument: this })
+    set () {
+      throw new Error('setting body not implemented yet')
+    }
+  },
+  head: {
+    get () {
+      return getChildByTagName(this.documentElement, 'head')
     }
   }
 })
 
-var Window = invent({
-  create: function () {
-    EventTarget.call(this)
+class Window extends EventTarget {
+  constructor () {
+    super()
     this.document = new Document('svg')
-  },
-  inherit: EventTarget,
-  extend: {
-    setFontDir: function (dir) {
-      this.document.fontDir = dir
-      return this
-    },
-    setFontFamilyMappings: function (map) {
-      this.document.fontFamilyMappings = map
-      return this
-    },
-    preloadFonts: function () {
-      var map = this.document.fontFamilyMappings
-      var filename
+  }
+  setFontDir (dir) {
+    this.document.fontDir = dir
+    return this
+  }
+  setFontFamilyMappings (map) {
+    this.document.fontFamilyMappings = map
+    return this
+  }
+  preloadFonts () {
+    var map = this.document.fontFamilyMappings
+    var filename
 
-      for (var i in map) {
-        filename = path.join(this.document.fontDir, map[i])
+    for (var i in map) {
+      filename = path.join(this.document.fontDir, map[i])
 
-        try {
-          this.document._preloaded[i] = fontkit.openSync(filename)
-        } catch (e) {
-          console.warn('Could not load font file for ' + i + '.' + e)
-        }
+      try {
+        this.document._preloaded[i] = fontkit.openSync(filename)
+      } catch (e) {
+        console.warn('Could not load font file for ' + i + '.' + e)
       }
+    }
 
-      return this
+    return this
 
-    },
-    getComputedStyle (node) {
+  }
+  getComputedStyle (node) {
 
-      return {
-        // FIXME: Currently this function treats every given attr
-        // as inheritable from its parents which is ofc not always true
-        // but good enough for svg.js
-        getPropertyValue (attr) {
-          let value
+    return {
+      // FIXME: Currently this function treats every given attr
+      // as inheritable from its parents which is ofc not always true
+      // but good enough for svg.js
+      getPropertyValue (attr) {
+        let value
 
-          do {
-            value = node.style[attr] || node.getAttribute(attr)
-          } while (
-            (node = node.parentNode)
-            && node.parentNode.nodeType === 1
-          )
+        do {
+          value = node.style[attr] || node.getAttribute(attr)
+        } while (
+          value == null
+          && (node = node.parentNode)
+          && node.parentNode.nodeType === 1
+        )
 
-          return value || null
-        }
+        return value || null
       }
     }
   }
-})
+}
 
 extend(Window, {
   Window: Window,

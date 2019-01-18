@@ -1,11 +1,8 @@
-const { invent } = require('../utils/objectCreationUtils')
 const { removeQuotes, splitNotInBrackets } = require('../utils/strUtils')
 const regex = require('../utils/regex')
 
-const CssQuery = invent({
-  name: 'CssQuery',
-  create: function (query) {
-
+class CssQuery {
+  constructor (query) {
     if (CssQuery.cache.has(query)) {
       this.queries = CssQuery.cache.get(query)
       return
@@ -15,25 +12,8 @@ const CssQuery = invent({
 
     queries = queries.map(query => {
 
-      var roundBrackets = 0; var squareBrackets = 0
-
-      // make sure there is a space before and after every relation sign (>~+)
-      // for(var i = 0, il = query.length; i < il; ++i) {
-      //  var ch = query.charAt(i)
-      //
-      //  if(ch == '(') ++roundBrackets
-      //  else if(ch == ')') --roundBrackets
-      //  else if(ch == '[') ++squareBrackets
-      //  else if(ch == ']') --squareBrackets
-      //
-      //  if(squareBrackets || roundBrackets) continue
-      //
-      //  if('>~+'.indexOf(ch) > -1) {
-      //    query = query.substr(0, i) + ' ' + ch + ' ' + query.substr(i+1)
-      //    i+=2
-      //    il+=2
-      //  }
-      // }
+      var roundBrackets = 0
+      var squareBrackets = 0
 
       // this is the same as above but easier
       query.replace(/[()[]>~+]/g, function (ch) {
@@ -69,11 +49,6 @@ const CssQuery = invent({
 
       return pairs
 
-      // return ['%'].concat(query).reduce((l, c, i) => {
-      //   i % 2 ? l[l.length - 1].push(c) : l.push([c])
-      //   return l
-      // }, [])
-
     })
 
     this.queries = queries
@@ -86,47 +61,51 @@ const CssQuery = invent({
     CssQuery.cache.set(query, queries)
     CssQuery.cacheKeys.push(query)
 
-  },
-  extend: {
-    matches: function (node) {
-      for (var i = this.queries.length; i--;) {
-        if (this.matchHelper(this.queries[i], node)) return true
-      }
-    },
-    matchHelper: function (query, node) {
-      query = query.slice()
-      var last = query.pop()
+  }
 
-      if (!new CssQueryNode(last[1]).matches(node)) { return false }
-
-      if (!query.length) return true
-
-      if (last[0] === ',') return true
-
-      if (last[0] === '+') {
-        return !!node.previousSibling && this.matchHelper(query, node.previousSibling)
-      }
-
-      if (last[0] === '>') {
-        return !!node.parentNode && this.matchHelper(query, node.parentNode)
-      }
-
-      if (last[0] === '~') {
-        while ((node = node.previousSibling)) {
-          if (this.matchHelper(query, node)) { return true }
-        }
-        return false
-      }
-
-      if (last[0] === '%') {
-        while ((node = node.parentNode)) {
-          if (this.matchHelper(query, node)) { return true }
-        }
-        return false
+  matches (node) {
+    for (var i = this.queries.length; i--;) {
+      if (this.matchHelper(this.queries[i], node)) {
+        return true
       }
     }
+    return false
   }
-})
+
+  matchHelper (query, node) {
+    query = query.slice()
+    var last = query.pop()
+
+    if (!new CssQueryNode(last[1]).matches(node)) { return false }
+
+    if (!query.length) return true
+
+    if (last[0] === ',') return true
+
+    if (last[0] === '+') {
+      return !!node.previousSibling && this.matchHelper(query, node.previousSibling)
+    }
+
+    if (last[0] === '>') {
+      return !!node.parentNode && this.matchHelper(query, node.parentNode)
+    }
+
+    if (last[0] === '~') {
+      while ((node = node.previousSibling)) {
+        if (this.matchHelper(query, node)) { return true }
+      }
+      return false
+    }
+
+    if (last[0] === '%') {
+      while ((node = node.parentNode)) {
+        if (this.matchHelper(query, node)) { return true }
+      }
+      return false
+    }
+  }
+
+}
 
 CssQuery.cache = new Map()
 CssQuery.cacheKeys = []
@@ -190,9 +169,8 @@ const pseudoMatcher = {
   'matches': (a, n) => (new CssQuery(a)).matches(n)
 }
 
-const CssQueryNode = invent({
-  name: 'CssQueryNode',
-  create: function (node) {
+class CssQueryNode {
+  constructor (node) {
     this.tag = ''
     this.id = ''
     this.classList = []
@@ -238,40 +216,40 @@ const CssQueryNode = invent({
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
 
-  },
-  extend: {
-    matches: function (node) {
-      var i
-
-      if (node.nodeType !== 1) return false
-
-      if (this.tag && this.tag !== node.nodeName && this.tag !== '*') { return false }
-
-      if (this.id && this.id !== node.id) {
-        return false
-      }
-
-      var classList = (node.getAttribute('class') || '').split(regex.delimiter).filter(el => !!el.length)
-      if (this.classList.filter(className => classList.indexOf(className) < 0).length) {
-        return false
-      }
-
-      for (i = this.attrs.length; i--;) {
-        var attrValue = node.getAttribute(this.attrs[i].name)
-        if (attrValue === null || !this.attrs[i].matcher(attrValue)) {
-          return false
-        }
-      }
-
-      for (i = this.pseudo.length; i--;) {
-        if (!this.pseudo[i](node)) {
-          return false
-        }
-      }
-
-      return true
-    }
   }
-})
+
+  matches (node) {
+    var i
+
+    if (node.nodeType !== 1) return false
+
+    if (this.tag && this.tag !== node.nodeName && this.tag !== '*') { return false }
+
+    if (this.id && this.id !== node.id) {
+      return false
+    }
+
+    var classList = (node.getAttribute('class') || '').split(regex.delimiter).filter(el => !!el.length)
+    if (this.classList.filter(className => classList.indexOf(className) < 0).length) {
+      return false
+    }
+
+    for (i = this.attrs.length; i--;) {
+      var attrValue = node.getAttribute(this.attrs[i].name)
+      if (attrValue === null || !this.attrs[i].matcher(attrValue)) {
+        return false
+      }
+    }
+
+    for (i = this.pseudo.length; i--;) {
+      if (!this.pseudo[i](node)) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+}
 
 module.exports = CssQuery

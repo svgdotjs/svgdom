@@ -6,3 +6,4 @@ fonts/
 !fonts/Apache License.txt
 spec/
 index.js
+.reify-cache

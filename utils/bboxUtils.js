@@ -21,8 +21,6 @@ const getPathCloud = (node, applyTransformations) => {
   if (node.nodeType !== 1) return new PointCloud()
 
   switch (node.nodeName) {
-  case 'defs':
-    return new PointCloud()
   case 'rect':
   case 'image':
     // Create Path from rect and create PointCloud from Path
