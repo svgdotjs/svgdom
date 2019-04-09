@@ -10,7 +10,7 @@ const { htmlEntities } = require('./utils/strUtils')
 
 class HTMLLinkElement extends Node {
   constructor () {
-    super('a')
+    super('link')
   }
 }
 
