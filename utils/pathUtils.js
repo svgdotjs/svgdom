@@ -659,6 +659,14 @@ const pathFrom = {
 
     return `M ${x - rx} ${y} A ${rx} ${ry} 0 0 0 ${x + rx} ${y} A ${rx} ${ry} 0 0 0 ${x - rx} ${y}`
   },
+  line (node) {
+    const x1 = parseFloat(node.getAttribute('x1')) || 0
+    const x2 = parseFloat(node.getAttribute('x2')) || 0
+    const y1 = parseFloat(node.getAttribute('y1')) || 0
+    const y2 = parseFloat(node.getAttribute('y2')) || 0
+
+    return `M ${x1} ${y1} L ${x2} ${y2}`
+  },
   polygon (node) {
     return `M ${node.getAttribute('points')} z`
   },
