@@ -302,7 +302,7 @@ class Window extends EventTarget {
         } while (
           value == null
           && (node = node.parentNode)
-          && node.parentNode.nodeType === 1
+          && node.nodeType === 1
         )
 
         return value || null
