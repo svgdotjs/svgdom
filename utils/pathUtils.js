@@ -203,7 +203,7 @@ class Arc {
              / (divisor1 + divisor2)
     ))
 
-    if (arc === sweep) c_ = c_.mul(-1)
+    if (this.arc === this.sweep) c_ = c_.mul(-1)
 
     var c = c_.transform(matrixFactory(
       cosφ, sinφ, -sinφ, cosφ, 0, 0
