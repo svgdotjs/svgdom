@@ -43,7 +43,7 @@ const document = window.document
 const {SVG, registerWindow} = require('@svgdotjs/svg.js')
 
 // register window and document
-registerWindow(window , window.document)
+registerWindow(window , document)
 
 // create canvas
 const canvas = SVG(document.documentElement)
