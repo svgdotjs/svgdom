@@ -453,6 +453,16 @@ Object.defineProperties(Node.prototype, {
       return this.childNodes[0] || null
     }
   },
+  firstElementChild: {
+    get () {
+      for (var c in this.childNodes) {
+        if (this.childNodes[c] && this.childNodes[c].nodeType === Node.ELEMENT_NODE) {
+          return this.childNodes[c];
+        }
+      }
+      return null
+    }
+  },
   lastChild: {
     get () {
       return this.childNodes[this.childNodes.length - 1] || null
