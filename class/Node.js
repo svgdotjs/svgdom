@@ -457,7 +457,7 @@ Object.defineProperties(Node.prototype, {
     get () {
       for (var c in this.childNodes) {
         if (this.childNodes[c] && this.childNodes[c].nodeType === Node.ELEMENT_NODE) {
-          return this.childNodes[c];
+          return this.childNodes[c]
         }
       }
       return null

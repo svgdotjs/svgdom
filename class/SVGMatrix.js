@@ -21,7 +21,7 @@ class SVGMatrix {
     r.f = this.b * m.e + this.d * m.f + this.f * 1
     return r
   }
-  translate (x=0, y=0) {
+  translate (x = 0, y = 0) {
     return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
   }
   inverse () {
@@ -33,7 +33,7 @@ class SVGMatrix {
   toString () {
     return 'SVGMatrix'
   }
-  scale (scaleX, scaleY=scaleX) {
+  scale (scaleX, scaleY = scaleX) {
     return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
   }
   rotate (r, x, y) {
