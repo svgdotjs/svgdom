@@ -54,6 +54,8 @@ class Node extends EventTarget {
   }
 
   getStyleProxy () {
+    const node = this
+
     return new Proxy(this._style, {
       get (target, key) {
         if (typeof key !== 'string') return Reflect.get(target, key)
@@ -70,9 +72,14 @@ class Node extends EventTarget {
         return Reflect.get(target, key)
       },
       set (target, key, value) {
-        value = hexToRGB(value.toString())
-        key = camelCase(key)
-        return Reflect.set(target, key, value)
+        if (key === 'cssText') {
+          node.setNewStyle(mapToObject(cssToMap(value)))
+          return true
+        } else {
+          value = hexToRGB(value.toString())
+          key = camelCase(key)
+          return Reflect.set(target, key, value)
+        }
       }
     })
   }
