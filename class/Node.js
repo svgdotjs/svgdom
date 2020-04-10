@@ -349,23 +349,29 @@ class Node extends EventTarget {
     return new SVGPoint()
   }
   matches (query) {
-    return new CssQuery(query).matches(this)
+    return this.matchWithScope(query, this)
+    //return new CssQuery(query).matches(this)
+  }
+  matchWithScope (query, scope) {
+    return new CssQuery(query).matches(this, scope)
+  }
+  query (query, scope, single = false) {
+    var ret = []
+    for (var i = 0, il = this.childNodes.length; i < il; ++i) {
+      var child = this.childNodes[i]
+      if (child.matchWithScope(query, scope)) {
+        ret.push(child)
+        if (single) return ret
+      }
+      ret = ret.concat(child.query(query, scope))
+    }
+    return ret    
   }
   querySelectorAll (query) {
-    var ret = []
-    for (var i = 0, il = this.childNodes.length; i < il; ++i) {
-      if (this.childNodes[i].matches(query)) ret.push(this.childNodes[i])
-      ret = ret.concat(this.childNodes[i].querySelectorAll(query))
-    }
-    return ret
+    return this.query(query, this)
   }
   querySelector (query) {
-    var ret = []
-    for (var i = 0, il = this.childNodes.length; i < il; ++i) {
-      if (this.childNodes[i].matches(query)) ret.push(this.childNodes[i])
-      ret = ret.concat(this.childNodes[i].querySelectorAll(query))
-    }
-    return ret[0] || null
+    return this.query(query, this, true)[0] || null
   }
   getComputedTextLength () {
     return this.getBBox().width

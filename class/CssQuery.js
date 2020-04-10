@@ -16,7 +16,7 @@ class CssQuery {
       var squareBrackets = 0
 
       // this is the same as above but easier
-      query.replace(/[()[]>~+]/g, function (ch) {
+      query = query.replace(/[()\[\]>~+]/g, function (ch) {
         if (ch === '(') ++roundBrackets
         else if (ch === ')') --roundBrackets
         else if (ch === '[') ++squareBrackets
@@ -63,48 +63,49 @@ class CssQuery {
 
   }
 
-  matches (node) {
+  matches (node, scope) {
     for (var i = this.queries.length; i--;) {
-      if (this.matchHelper(this.queries[i], node)) {
+      if (this.matchHelper(this.queries[i], node, scope)) {
         return true
       }
     }
     return false
   }
 
-  matchHelper (query, node) {
+  matchHelper (query, node, scope) {
     query = query.slice()
     var last = query.pop()
 
-    if (!new CssQueryNode(last[1]).matches(node)) { return false }
+    if (!new CssQueryNode(last[1]).matches(node, scope)) { return false }
 
     if (!query.length) return true
 
     if (last[0] === ',') return true
 
     if (last[0] === '+') {
-      return !!node.previousSibling && this.matchHelper(query, node.previousSibling)
+      return !!node.previousSibling && this.matchHelper(query, node.previousSibling, scope)
     }
 
     if (last[0] === '>') {
-      return !!node.parentNode && this.matchHelper(query, node.parentNode)
+      return !!node.parentNode && this.matchHelper(query, node.parentNode, scope)
     }
 
     if (last[0] === '~') {
       while ((node = node.previousSibling)) {
-        if (this.matchHelper(query, node)) { return true }
+        if (this.matchHelper(query, node, scope)) { return true }
       }
       return false
     }
 
     if (last[0] === '%') {
       while ((node = node.parentNode)) {
-        if (this.matchHelper(query, node)) { return true }
+        if (this.matchHelper(query, node, scope)) { return true }
       }
       return false
     }
-  }
+    
 
+  }
 }
 
 CssQuery.cache = new Map()
@@ -153,6 +154,7 @@ const attributeMatcher = {
 
 // [a] (prebound) [a]rgument of the pseudo selector
 // [n] (passed)   [n]ode
+// [s] (passed)   [s]cope - the element this query is scoped to
 const pseudoMatcher = {
   'first-child': (a, n) => n.parentNode && n.parentNode.firstChild === n,
   'last-child': (a, n) => n.parentNode && n.parentNode.lastChild === n,
@@ -165,8 +167,9 @@ const pseudoMatcher = {
   'only-child': (a, n) => n.parentNode && n.parentNode.childNodes.length === 1,
   'only-of-type': (a, n) => n.parentNode && n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).length === 1,
   'root': (a, n) => n.ownerDocument.documentElement === n,
-  'not': (a, n) => !(new CssQuery(a)).matches(n),
-  'matches': (a, n) => (new CssQuery(a)).matches(n)
+  'not': (a, n, s) => !(new CssQuery(a)).matches(n, s),
+  'matches': (a, n, s) => (new CssQuery(a)).matches(n, s),
+  'scope': (a, n, s) => n === s
 }
 
 class CssQueryNode {
@@ -215,10 +218,9 @@ class CssQueryNode {
       })
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
-
   }
 
-  matches (node) {
+  matches (node, scope) {
     var i
 
     if (node.nodeType !== 1) return false
@@ -242,7 +244,7 @@ class CssQueryNode {
     }
 
     for (i = this.pseudo.length; i--;) {
-      if (!this.pseudo[i](node)) {
+      if (!this.pseudo[i](node, scope)) {
         return false
       }
     }

@@ -34,7 +34,7 @@ const getPathCloud = (node, applyTransformations) => {
   case 'clipPath':
   case 'a':
   case 'marker':
-    // Iterate trough all childs and get the point cloud of each
+    // Iterate trough all children and get the point cloud of each
     // Then transform it with viewbox matrix if needed
     return node.childNodes.reduce((cloud, child) => {
       return cloud.merge(getPointCloud(child, true))
@@ -54,7 +54,7 @@ const getPathCloud = (node, applyTransformations) => {
     return pathUtils.getCloud(node.getAttribute('d'))
   case 'use':
     // Get reference from element
-    let ref = node.getAttribute('href')
+    let ref = node.getAttribute('href') || node.getAttribute('xlink:href')
     // Get the actual referenced Node
     let refNode = node.getRootNode().getElementById(ref.slice(1))
     // Get the BBox of the referenced element and apply the viewbox of <use>

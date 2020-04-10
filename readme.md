@@ -107,6 +107,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
     - `root`
     - `not`
     - `matches`
+    - `scope`
 
 ## Using svgdom in your own projects
 
