@@ -1,28 +1,28 @@
-const { extendClass } = require('../utils/objectCreationUtils')
+import { extendStatic } from '../utils/objectCreationUtils.js'
 
-const EventTarget = require('./EventTarget')
+import EventTarget from './EventTarget.js'
 
-const { objectToMap, mapToObject, mapMap, mapToCss, cssToMap } = require('../utils/mapUtils')
-const { hexToRGB, camelCase, htmlEntities } = require('../utils/strUtils')
-const pathUtils = require('../utils/pathUtils')
-const { tag, cloneNode } = require('../utils/tagUtils')
-const bbox = require('../utils/bboxUtils')
-const regex = require('../utils/regex')
+import { objectToMap, mapToObject, mapMap, mapToCss, cssToMap } from '../utils/mapUtils.js'
+import { hexToRGB, camelCase, htmlEntities } from '../utils/strUtils.js'
+import * as pathUtils from '../utils/pathUtils.js'
+import { tag, cloneNode } from '../utils/tagUtils.js'
+import { getPointCloud } from '../utils/bboxUtils.js'
+import * as regex from '../utils/regex.js'
 
-const CssQuery = require('./CssQuery')
-const SVGPoint = require('./SVGPoint')
-const SVGMatrix = require('./SVGMatrix')
-const Box = require('./Box')
+import CssQuery from './CssQuery.js'
+import SVGPoint from './SVGPoint.js'
+import SVGMatrix from './SVGMatrix.js'
+import { Box } from './Box.js'
 
 // XMLParser
-const sax = require('sax')
+import sax from 'sax'
 
 // Map matrix array to object
 function arrayToMatrix (a) {
   return { a: a[0], b: a[1], c: a[2], d: a[3], e: a[4], f: a[5] }
 }
 
-class Node extends EventTarget {
+export class Node extends EventTarget {
   constructor (name = '', props = {}) {
     super()
 
@@ -83,39 +83,49 @@ class Node extends EventTarget {
       }
     })
   }
+
   setNewStyle (obj) {
     this._style = hexToRGB(obj)
     this.style = this.getStyleProxy()
   }
+
   setAttribute (name, value) {
     if (name === 'style') {
       return this.setNewStyle(mapToObject(cssToMap(value)))
     }
     this.attrs.set(name, value)
   }
+
   setAttributeNS (ns, name, value) {
     this.setAttribute(name, value)
   }
+
   removeAttribute (name) {
     this.attrs.delete(name)
   }
+
   removeAttributeNS (ns, name) {
     this.removeAttribute(name)
   }
+
   hasAttribute (name) {
     if (name === 'style') return !!this.style.cssText // TODO check
     return this.attrs.get(name) != null
   }
+
   getAttribute (name) {
     if (name === 'style') return this.style.cssText
     return this.attrs.get(name) == null ? null : this.attrs.get(name)
   }
+
   getAttributeNS (ns, name) {
     return this.getAttribute(name)
   }
+
   hasChildNodes () {
     return !!this.childNodes.length
   }
+
   appendChild (node) {
     if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
       for (var i = 0, il = node.childNodes.length; i < il; ++i) {
@@ -133,9 +143,10 @@ class Node extends EventTarget {
     this.childNodes.push(node)
     return node
   }
+
   insertBefore (node, before) {
     if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      let index = this.childNodes.indexOf(before)
+      const index = this.childNodes.indexOf(before)
       if (index === -1) return this.appendChild(node)
 
       this.childNodes = this.childNodes.slice(0, index).concat(node.childNodes, this.childNodes.slice(index))
@@ -148,12 +159,13 @@ class Node extends EventTarget {
 
     node.parentNode = this
 
-    let index = this.childNodes.indexOf(before)
+    const index = this.childNodes.indexOf(before)
     if (index === -1) return this.appendChild(node)
 
     this.childNodes = this.childNodes.slice(0, index).concat(node, this.childNodes.slice(index))
     return node
   }
+
   removeChild (node) {
 
     node.parentNode = null
@@ -162,6 +174,7 @@ class Node extends EventTarget {
     this.childNodes.splice(index, 1)
     return node
   }
+
   replaceChild (newChild, oldChild) {
     newChild.parentNode && newChild.parentNode.removeChild(newChild)
 
@@ -170,12 +183,14 @@ class Node extends EventTarget {
     this.insertBefore(newChild, before)
     return oldChild
   }
+
   getElementsByTagName (name) {
     return this.childNodes.reduce(function (last, current) {
       if (current.nodeName === name) last.push(current)
       return last.concat(current.getElementsByTagName(name))
     }, [])
   }
+
   getElementById (id) {
     for (var i = this.childNodes.length; i--;) {
       if (this.childNodes[i].id === id) return this.childNodes[i]
@@ -184,6 +199,7 @@ class Node extends EventTarget {
     }
     return null
   }
+
   cloneNode (deep) {
     var clone = cloneNode(this)
 
@@ -196,19 +212,24 @@ class Node extends EventTarget {
 
     return clone
   }
+
   getRootNode () {
     if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
     return this.parentNode.getRootNode()
   }
+
   isDefaultNamespace (ns) {
     return ns === this.attrs.get('xmlns')
   }
+
   isEqualNode (node) {
     return node.nodeName === this.nodeName && node.constructor === this.constructor && node.nodeType === this.nodeType
   }
+
   isSameNode (node) {
     return this === node
   }
+
   contains (node) {
     if (node === this) return false
 
@@ -218,10 +239,11 @@ class Node extends EventTarget {
     }
     return false
   }
+
   normalize () {
     this.childNodes = this.childNodes.reduce((textNodes, node) => {
       // FIXME: If first node is an empty textnode, what do we do? -> spec
-      if (!textNodes) return [node]
+      if (!textNodes) return [ node ]
       var last = textNodes.pop()
 
       if (node.nodeType === Node.TEXT_NODE) {
@@ -239,6 +261,7 @@ class Node extends EventTarget {
       return textNodes
     }, null)
   }
+
   dropNameSpace (ns) {
     if (this.parentNode) {
       if (this.parentNode.attrs.get('xmlns') === ns) return true
@@ -246,9 +269,11 @@ class Node extends EventTarget {
     }
     return false
   }
+
   getBBox () {
-    return bbox(this).bbox()
+    return getPointCloud(this).bbox()
   }
+
   getBoundingClientRect () {
     // The bounding client rect takes the screen ctm of the element
     // and converts the bounding box with it
@@ -268,15 +293,16 @@ class Node extends EventTarget {
 
     // let m = this.getScreenCTM()
 
-    return bbox(this).transform(m).bbox()
+    return getPointCloud(this).transform(m).bbox()
   }
+
   matrixify () {
     var matrix = (this.getAttribute('transform') || '')
       // split transformations
       .split(regex.transforms).slice(0, -1).map(function (str) {
         // generate key => value pairs
         var kv = str.trim().split('(')
-        return [kv[0].trim(), kv[1].split(regex.delimiter).map(function (str) { return parseFloat(str.trim()) })]
+        return [ kv[0].trim(), kv[1].split(regex.delimiter).map(function (str) { return parseFloat(str.trim()) }) ]
       })
       // merge every transformation into one matrix
       .reduce(function (matrix, transform) {
@@ -288,6 +314,7 @@ class Node extends EventTarget {
 
     return matrix
   }
+
   // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
   generateViewBoxMatrix () {
     var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
@@ -302,24 +329,26 @@ class Node extends EventTarget {
     }
 
     if (view.length !== 4) {
-      view = [0, 0, width, height]
+      view = [ 0, 0, width, height ]
     }
 
     // first apply x and y if nested, then viewbox scale, then viewBox move
     return new SVGMatrix().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
   }
+
   getCTM () {
     var m = this.matrixify()
 
     var node = this
     while ((node = node.parentNode)) {
-      if (['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(node.nodeName) > -1) break
+      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
       m = m.multiply(node.matrixify())
       if (node.nodeName === '#document') return this.getScreenCTM()
     }
 
     return node.generateViewBoxMatrix().multiply(m)
   }
+
   getScreenCTM () {
     // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
     // We follow Chromes behavior and include the viewbox in the screenCTM
@@ -331,30 +360,37 @@ class Node extends EventTarget {
 
     return m
   }
+
   getInnerMatrix () {
     var m = this.matrixify()
 
-    if (['svg', 'symbol', 'image', 'pattern', 'marker'].indexOf(this.nodeName) > -1) {
+    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
       m = this.generateViewBoxMatrix().multiply(m)
     }
     return m
   }
+
   createSVGRect () {
     return new Box()
   }
+
   createSVGMatrix () {
     return new SVGMatrix()
   }
+
   createSVGPoint () {
     return new SVGPoint()
   }
+
   matches (query) {
     return this.matchWithScope(query, this)
-    //return new CssQuery(query).matches(this)
+    // return new CssQuery(query).matches(this)
   }
+
   matchWithScope (query, scope) {
     return new CssQuery(query).matches(this, scope)
   }
+
   query (query, scope, single = false) {
     var ret = []
     for (var i = 0, il = this.childNodes.length; i < il; ++i) {
@@ -365,23 +401,29 @@ class Node extends EventTarget {
       }
       ret = ret.concat(child.query(query, scope))
     }
-    return ret    
+    return ret
   }
+
   querySelectorAll (query) {
     return this.query(query, this)
   }
+
   querySelector (query) {
     return this.query(query, this, true)[0] || null
   }
+
   getComputedTextLength () {
     return this.getBBox().width
   }
+
   getPointAtLength (len) {
     return pathUtils.pointAtLength(this.getAttribute('d'), len)
   }
+
   getTotalLength () {
     return pathUtils.length(this.getAttribute('d'))
   }
+
   getFontDetails () {
     var node = this
     var fontSize = null
@@ -458,7 +500,7 @@ Object.defineProperties(Node.prototype, {
       }, '')
     },
     set (text) {
-      this.childNodes = [new TextNode('#text', { data: htmlEntities(text) })]
+      this.childNodes = [ new TextNode('#text', { data: htmlEntities(text) }) ]
     }
   },
   firstChild: {
@@ -543,7 +585,7 @@ Object.defineProperties(Node.prototype, {
   }
 })
 
-extendClass(Node, {
+extendStatic(Node, {
   ELEMENT_NODE: 1,
   ATTRIBUTE_NODE: 2,
   TEXT_NODE: 3,
@@ -558,7 +600,7 @@ extendClass(Node, {
   NOTATION_NODE: 12
 })
 
-class SVGElement extends Node { }
+export class SVGElement extends Node { }
 
 const mapToAttributeArray = function (themap) {
   return mapMap(themap, function (value, key) {
@@ -566,14 +608,14 @@ const mapToAttributeArray = function (themap) {
   })
 }
 
-class DocumentFragment extends Node {
+export class DocumentFragment extends Node {
   constructor () {
     super('#document-fragment')
     this.nodeType = Node.DOCUMENT_FRAGMENT_NODE
   }
 }
 
-class AttributeNode extends Node {
+export class AttributeNode extends Node {
   constructor (name = '', value = null) {
     super(name)
     this.nodeValue = value
@@ -581,7 +623,7 @@ class AttributeNode extends Node {
   }
 }
 
-class CharacterData extends Node {
+export class CharacterData extends Node {
   constructor (name, props) {
     super(name, props)
     if (Object.getPrototypeOf(this) === CharacterData.prototype) {
@@ -590,14 +632,14 @@ class CharacterData extends Node {
   }
 }
 
-class TextNode extends CharacterData {
+export class TextNode extends CharacterData {
   constructor (name, props) {
     super(name, props)
     this.nodeType = Node.TEXT_NODE
   }
 }
 
-class Comment extends CharacterData {
+export class Comment extends CharacterData {
   constructor (name, props) {
     super(name, props)
     this.nodeType = Node.COMMENT_NODE
@@ -626,13 +668,4 @@ const HTMLParser = function (str, el) {
   }
 
   parser.write(str)
-}
-
-module.exports = {
-  Node,
-  SVGElement,
-  DocumentFragment,
-  AttributeNode,
-  TextNode,
-  Comment
 }

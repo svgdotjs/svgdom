@@ -1,9 +1,9 @@
-const pathUtils = require('./pathUtils')
-const { NoBox } = require('../class/Box')
-const regex = require('./regex')
-const textUtils = require('./textUtils')
-const strUtils = require('./strUtils')
-const PointCloud = require('./PointCloud.js')
+import * as pathUtils from './pathUtils.js'
+import * as regex from './regex.js'
+import * as textUtils from './textUtils.js'
+import * as strUtils from './strUtils.js'
+import { NoBox } from '../class/Box.js'
+import PointCloud from './PointCloud.js'
 
 const applyTransformation = (cloud, node, applyTransformations) => {
   if (applyTransformations) {
@@ -12,8 +12,8 @@ const applyTransformation = (cloud, node, applyTransformations) => {
   return cloud
 }
 
-const getPointCloud = (node, applyTransformations) => {
-  let cloud = getPathCloud(node, applyTransformations)
+export const getPointCloud = (node, applyTransformations) => {
+  const cloud = getPathCloud(node, applyTransformations)
   return applyTransformation(cloud, node, applyTransformations)
 }
 
@@ -52,16 +52,17 @@ const getPathCloud = (node, applyTransformations) => {
   case 'glyph':
   case 'missing-glyph':
     return pathUtils.getCloud(node.getAttribute('d'))
-  case 'use':
+  case 'use': {
     // Get reference from element
-    let ref = node.getAttribute('href') || node.getAttribute('xlink:href')
+    const ref = node.getAttribute('href') || node.getAttribute('xlink:href')
     // Get the actual referenced Node
-    let refNode = node.getRootNode().getElementById(ref.slice(1))
+    const refNode = node.getRootNode().getElementById(ref.slice(1))
     // Get the BBox of the referenced element and apply the viewbox of <use>
     return getPointCloud(refNode).transform(node.generateViewBoxMatrix())
+  }
   case 'text':
   case 'tspan':
-  case 'altGlyph':
+  case 'altGlyph': {
     const boxes = textIterator(node).filter(box => box.x !== 0 || box.y !== 0 || box.width !== 0 || box.height !== 0)
     const box = boxes.reduce((last, curr) => last.merge(curr), new NoBox())
 
@@ -70,7 +71,7 @@ const getPathCloud = (node, applyTransformations) => {
     }
 
     return pathUtils.getCloud(pathUtils.pathFrom.box(box))
-
+  }
   default:
     return new PointCloud()
   }
@@ -78,7 +79,7 @@ const getPathCloud = (node, applyTransformations) => {
 
 // this function is passing dx and dy values by references. Dont assign new values to it!
 // const textIterator = function(node, x0=0, y0=0, dx=[0], dy=[0]){
-const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [0], dy = [0]) {
+const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [ 0 ], dy = [ 0 ]) {
 
   var x = parseFloat(node.getAttribute('x'))
   var y = parseFloat(node.getAttribute('y'))
@@ -113,7 +114,7 @@ const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [0], dy = [0]) {
       data = strUtils.unhtmlEntities(node.childNodes[i].data)
 
       let j = 0
-      let jl = data.length
+      const jl = data.length
 
       // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
       if (dy.length || dx.length) {
@@ -142,5 +143,3 @@ const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [0], dy = [0]) {
   return boxes
 
 }
-
-module.exports = getPointCloud

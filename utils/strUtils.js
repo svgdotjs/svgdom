@@ -1,5 +1,5 @@
 // Ensure to six-based hex
-const fullHex = function (hex) {
+export const fullHex = function (hex) {
   return hex.length === 4
     ? [ '#',
       hex.substring(1, 2), hex.substring(1, 2),
@@ -8,7 +8,7 @@ const fullHex = function (hex) {
     ].join('') : hex
 }
 
-const hexToRGB = function (a) {
+export const hexToRGB = function (a) {
   if (typeof a === 'object') {
     for (var i in a) {
       a[i] = hexToRGB(a[i])
@@ -27,34 +27,34 @@ const hexToRGB = function (a) {
   ].join(',') + ')'
 }
 
-function decamelize (s) {
+export function decamelize (s) {
   return String(s).replace(/([a-z])([A-Z])/g, function (m, g1, g2) {
     return g1 + '-' + g2.toLowerCase()
   })
 }
 
-function camelCase (s) {
+export function camelCase (s) {
   return String(s).replace(/([a-z])-([a-z])/g, function (m, g1, g2) {
     return g1 + g2.toUpperCase()
   })
 }
 
-function removeQuotes (str) {
+export function removeQuotes (str) {
   if (str.startsWith('"') || str.startsWith("'")) {
     return str.slice(1, -1)
   }
   return str
 }
 
-function htmlEntities (str) {
+export function htmlEntities (str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function unhtmlEntities (str) {
+export function unhtmlEntities (str) {
   return String(str).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace('&quot;', '"')
 }
 
-const splitNotInBrackets = (str, delimiter) => {
+export const splitNotInBrackets = (str, delimiter) => {
   var roundBrackets = 0
 
   var squareBrackets = 0
@@ -82,15 +82,4 @@ const splitNotInBrackets = (str, delimiter) => {
 
   split.push(str.slice(lastIndex).trim())
   return split
-}
-
-module.exports = {
-  fullHex,
-  hexToRGB,
-  camelCase,
-  decamelize,
-  removeQuotes,
-  htmlEntities,
-  unhtmlEntities,
-  splitNotInBrackets
 }

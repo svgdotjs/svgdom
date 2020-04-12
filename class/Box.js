@@ -1,24 +1,19 @@
-const regex = require('../utils/regex')
+import * as regex from '../utils/regex.js'
+import Point from './Point.js'
 
-const Point = require('./Point')
-
-class Box {
+export class Box {
   constructor (source) {
-    var base = [0, 0, 0, 0]
-    source = typeof source === 'string'
-      ? source.split(regex.delimiter).map(parseFloat)
-      : Array.isArray(source)
-        ? source
-        : typeof source === 'object'
-          ? [
-            source.left != null ? source.left : source.x,
-            source.top != null ? source.top : source.y,
-            source.width,
-            source.height
-          ]
-          : arguments.length === 4
-            ? [].slice.call(arguments)
-            : base
+    var base = [ 0, 0, 0, 0 ]
+    source = typeof source === 'string' ? source.split(regex.delimiter).map(parseFloat)
+      : Array.isArray(source) ? source
+      : typeof source === 'object' ? [
+        source.left != null ? source.left : source.x,
+        source.top != null ? source.top : source.y,
+        source.width,
+        source.height
+      ]
+      : arguments.length === 4 ? [].slice.call(arguments)
+      : base
 
     this.x = this.left = source[0]
     this.y = this.top = source[1]
@@ -69,15 +64,7 @@ class Box {
   }
 }
 
-class NoBox extends Box {
-  constructor () {
-    super()
-    this.x = 0
-    this.y = 0
-    this.width = 0
-    this.height = 0
-  }
-
+export class NoBox extends Box {
   // NoBox has no valid values so it cant be merged
   merge (box) {
     return box instanceof NoBox ? new NoBox() : new Box(box)
@@ -87,7 +74,3 @@ class NoBox extends Box {
     return new NoBox()
   }
 }
-
-Box.NoBox = NoBox
-
-module.exports = Box

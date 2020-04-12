@@ -1,9 +1,8 @@
-const Box = require('../class/Box')
-const Point = require('../class/Point')
-const regex = require('./regex')
-const matrixFactory = require('../class/SVGMatrix').matrixFactory
-const PointCloud = require('./PointCloud.js')
-const { NoBox } = Box
+import { Box, NoBox } from '../class/Box.js'
+import Point from '../class/Point.js'
+import * as regex from './regex.js'
+import { matrixFactory } from '../utils/matrixUtils.js'
+import PointCloud from './PointCloud.js'
 
 var pathHandlers = {
   M (c, p, r, p0) {
@@ -19,10 +18,10 @@ var pathHandlers = {
     return ret
   },
   H (c, p) {
-    return pathHandlers.L([c[0], p.y], p)
+    return pathHandlers.L([ c[0], p.y ], p)
   },
   V (c, p) {
-    return pathHandlers.L([p.x, c[0]], p)
+    return pathHandlers.L([ p.x, c[0] ], p)
   },
   Q (c, p, r) {
     var ret = Cubic.fromQuad(p, new Point(c[0], c[1]), new Point(c[2], c[3]))// .offset(o)
@@ -36,7 +35,7 @@ var pathHandlers = {
     return ret
   },
   T (c, p, r, p0, reflectionIsPossible) {
-    if (reflectionIsPossible) { c = [r.x, r.y].concat(c) } else { c = [p.x, p.y].concat(c) }
+    if (reflectionIsPossible) { c = [ r.x, r.y ].concat(c) } else { c = [ p.x, p.y ].concat(c) }
     return pathHandlers.Q(c, p, r)
   },
   C (c, p, r) {
@@ -50,12 +49,12 @@ var pathHandlers = {
   },
   S (c, p, r, p0, reflectionIsPossible) {
     // reflection makes only sense if this command was preceeded by another beziere command (QTSC)
-    if (reflectionIsPossible) { c = [r.x, r.y].concat(c) } else { c = [p.x, p.y].concat(c) }
+    if (reflectionIsPossible) { c = [ r.x, r.y ].concat(c) } else { c = [ p.x, p.y ].concat(c) }
     return pathHandlers.C(c, p, r)
   },
   Z (c, p, r, p0) {
     // FIXME: The behavior of Z depends on the command before
-    return pathHandlers.L([p0.x, p0.y], p)
+    return pathHandlers.L([ p0.x, p0.y ], p)
   },
   A (c, p, r) {
     var ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
@@ -94,10 +93,10 @@ function isBeziere (obj) {
   return obj instanceof Cubic
 }
 
-const pathParser = (array) => {
+export const pathParser = (array) => {
 
   // prepare for parsing
-  var paramCnt = { 'M': 2, 'L': 2, 'H': 1, 'V': 1, 'C': 6, 'S': 4, 'Q': 4, 'T': 2, 'A': 7, 'Z': 0 }
+  var paramCnt = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
 
   array = array
     .replace(regex.numbersWithDots, pathRegReplace) // convert 45.123.123 to 45.123 .123
@@ -146,27 +145,27 @@ class Move {
   }
 
   getCloud () {
-    return new PointCloud([this.p1])
+    return new PointCloud([ this.p1 ])
   }
 
   // FIXME: Use pointcloud
   bbox () {
-    let p = this.p1
+    const p = this.p1
     return new Box(p.x, p.y, 0, 0)
   }
 
   length () { return 0 }
 
   toPath () {
-    return ['M', this.p1.x, this.p1.y].join(' ')
+    return [ 'M', this.p1.x, this.p1.y ].join(' ')
   }
 
   toPathFragment () {
-    return ['M', this.p1.x, this.p1.y]
+    return [ 'M', this.p1.x, this.p1.y ]
   }
 }
 
-class Arc {
+export class Arc {
   constructor (p1, p2, rx, ry, φ, arc, sweep) {
     this.p1 = p1.clone()
     this.p2 = p2.clone()
@@ -295,7 +294,7 @@ class Arc {
     }
 
     if (θ2 < θ1) {
-      let temp = θ1
+      const temp = θ1
       θ1 = θ2
       θ2 = temp
 
@@ -306,9 +305,9 @@ class Arc {
     while (θ02 - 90 > θ02) θ02 -= 90
     while (θ02 < θ1) θ02 += 90
 
-    const angleToTest = [θ01, θ02, (θ01 + 90), (θ02 + 90), (θ01 + 180), (θ02 + 180), (θ01 + 270), (θ02 + 270)]
+    const angleToTest = [ θ01, θ02, (θ01 + 90), (θ02 + 90), (θ01 + 180), (θ02 + 180), (θ01 + 270), (θ02 + 270) ]
 
-    let points = angleToTest.filter(function (angle) {
+    const points = angleToTest.filter(function (angle) {
       return (angle > θ1 && angle < θ2)
     }).map(function (angle) {
       while (this.theta < angle) angle -= 360
@@ -324,11 +323,11 @@ class Arc {
   }
 
   toPathFragment () {
-    return ['A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y]
+    return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
   }
 
   toPath () {
-    return ['M', this.p1.x, this.p1.y, 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y].join(' ')
+    return [ 'M', this.p1.x, this.p1.y, 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ].join(' ')
   }
 
   static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
@@ -388,10 +387,10 @@ class Cubic {
     var b = 6 * (p1 - 2 * p2 + p3)
     var c = 3 * (p2 - p1)
 
-    if (a === 0) return [-c / b].filter(function (el) { return el > 0 && el < 1 })
+    if (a === 0) return [ -c / b ].filter(function (el) { return el > 0 && el < 1 })
 
     if (b * b - 4 * a * c < 0) return []
-    if (b * b - 4 * a * c === 0) return [Math.round((-b / (2 * a)) * 100000) / 100000].filter(function (el) { return el > 0 && el < 1 })
+    if (b * b - 4 * a * c === 0) return [ Math.round((-b / (2 * a)) * 100000) / 100000 ].filter(function (el) { return el > 0 && el < 1 })
 
     return [
       Math.round((-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a) * 100000) / 100000,
@@ -437,7 +436,7 @@ class Cubic {
         .reduce(function (last, current) { return last.concat(current) }, [])
     } else {
       this.t_value = t
-      return [this]
+      return [ this ]
     }
   }
 
@@ -483,7 +482,7 @@ class Cubic {
       new Point(x[1][3], y[1][3])
     )
 
-    return [a, b]
+    return [ a, b ]
   }
 
   getCloud () {
@@ -500,11 +499,11 @@ class Cubic {
   }
 
   toPathFragment () {
-    return ['C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y]
+    return [ 'C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y ]
   }
 
   toPath () {
-    return ['M', this.p1.x, this.p1.y].concat(this.toPathFragment()).join(' ')
+    return [ 'M', this.p1.x, this.p1.y ].concat(this.toPathFragment()).join(' ')
   }
 
   static fromQuad (p1, c, p2) {
@@ -526,7 +525,7 @@ class Line {
   }
 
   getCloud () {
-    return new PointCloud([this.p1, this.p2])
+    return new PointCloud([ this.p1, this.p2 ])
   }
 
   bbox () {
@@ -543,19 +542,19 @@ class Line {
   }
 
   toPath () {
-    return ['M', this.p1.x, this.p1.y, this.p2.x, this.p2.y].join(' ')
+    return [ 'M', this.p1.x, this.p1.y, this.p2.x, this.p2.y ].join(' ')
   }
 
   toPathFragment () {
-    return ['L', this.p2.x, this.p2.y]
+    return [ 'L', this.p2.x, this.p2.y ]
   }
 }
 
-const bbox = function (d) {
+export const bbox = function (d) {
   return pathParser(d).reduce((l, c) => l.merge(c.bbox()), new NoBox())
 }
 
-const pointAtLength = function (d, len) {
+export const pointAtLength = function (d, len) {
   var segs = pathParser(d)
 
   var segLengths = segs.map(el => el.length())
@@ -599,12 +598,12 @@ const pointAtLength = function (d, len) {
   return segs[i].pointAt(t).native()
 }
 
-const length = function (d) {
+export const length = function (d) {
   return pathParser(d)
     .reduce((l, c) => l + c.length(), 0)
 }
 
-const debug = function (node) {
+export const debug = function (node) {
   const parse = pathParser(node.getAttribute('d'))
 
   const ret = {
@@ -612,7 +611,7 @@ const debug = function (node) {
     fragments: parse.map(el => el.toPathFragment().join(' ')),
     bboxs: parse.map(el => {
       var box = el.bbox()
-      return [box.x, box.y, box.width, box.height]
+      return [ box.x, box.y, box.width, box.height ]
     }),
     bbox: parse.reduce((l, c) => l.merge(c.bbox()), new NoBox()),
     bboxs_new: parse.map(el => {
@@ -625,13 +624,13 @@ const debug = function (node) {
   })
 }
 
-const getCloud = (d) => {
+export const getCloud = (d) => {
   return pathParser(d).reduce((cloud, segment) =>
     segment.getCloud().merge(cloud), new PointCloud()
   )
 }
 
-const pathFrom = {
+export const pathFrom = {
   box ({ x, y, width, height }) {
     return `M ${x} ${y} h ${width} v ${height} H ${x} V ${y}`
   },
@@ -673,15 +672,4 @@ const pathFrom = {
   polyline (node) {
     return `M ${node.getAttribute('points')}`
   }
-}
-
-module.exports = {
-  bbox,
-  pointAtLength,
-  length,
-  debug,
-  Arc,
-  pathParser,
-  pathFrom,
-  getCloud
 }

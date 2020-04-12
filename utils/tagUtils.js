@@ -1,4 +1,4 @@
-const { mapMap } = require('./mapUtils')
+import { mapMap } from './mapUtils.js'
 
 const htmlEntities = function (str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -11,7 +11,7 @@ var emptyElements = {
   link: true
 }
 
-const tag = function (node) {
+export const tag = function (node) {
 
   var attrs = new Map(node.attrs)
 
@@ -35,7 +35,7 @@ const tag = function (node) {
   return '<' + [].concat(name, attrs).join(' ') + '>' + (emptyElements[name] ? '' : node.innerHTML + '</' + name + '>')
 }
 
-const cloneNode = function (node) {
+export const cloneNode = function (node) {
 
   var clone = new node.constructor(node.nodeName, {
     attrs: node.attrs,
@@ -48,9 +48,4 @@ const cloneNode = function (node) {
   clone.nodeType = node.nodeType
 
   return clone
-}
-
-module.exports = {
-  tag,
-  cloneNode
 }

@@ -1,23 +1,22 @@
-module.exports = {
-  // splits a transformation chain
-  transforms: /\)\s*,?\s*/,
-  // split at whitespace and comma
-  delimiter: /[\s,]+/,
+// splits a transformation chain
+export const transforms = /\)\s*,?\s*/
 
-  // The following regex are used to parse the d attribute of a path
+// split at whitespace and comma
+export const delimiter = /[\s,]+/
 
-  // Matches all hyphens which are not after an exponent
-  hyphen: /([^e])-/gi,
+// The following regex are used to parse the d attribute of a path
 
-  // Replaces and tests for all path letters
-  pathLetters: /[MLHVCSQTAZ]/gi,
+// Matches all hyphens which are not after an exponent
+export const hyphen = /([^e])-/gi
 
-  // yes we need this one, too
-  isPathLetter: /[MLHVCSQTAZ]/i,
+// Replaces and tests for all path letters
+export const pathLetters = /[MLHVCSQTAZ]/gi
 
-  // matches 0.154.23.45
-  numbersWithDots: /((\d?\.\d+(?:e[+-]?\d+)?)((?:\.\d+(?:e[+-]?\d+)?)+))+/gi,
+// yes we need this one, too
+export const isPathLetter = /[MLHVCSQTAZ]/i
 
-  // matches .
-  dots: /\./g
-}
+// matches 0.154.23.45
+export const numbersWithDots = /((\d?\.\d+(?:e[+-]?\d+)?)((?:\.\d+(?:e[+-]?\d+)?)+))+/gi
+
+// matches .
+export const dots = /\./g

@@ -1,9 +1,9 @@
-const defaults = require('./defaults')
-const Box = require('../class/Box')
-const path = require('path')
-const fontkit = require('fontkit')
+import defaults from './defaults.js'
+import { Box } from '../class/Box.js'
+import path from 'path'
+import fontkit from 'fontkit'
 
-const bbox = function (text, x, y, details) {
+export const bbox = function (text, x, y, details) {
 
   var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
   var fontMap = Object.assign({}, defaults.fontFamilyMappings, details.fontFamilyMappings)
@@ -26,7 +26,7 @@ const bbox = function (text, x, y, details) {
   if (details.preloaded[fontFamily]) {
     font = details.preloaded[fontFamily]
   } else {
-    let filename = path.join(fontDir, fontMap[fontFamily])
+    const filename = path.join(fontDir, fontMap[fontFamily])
 
     try {
       font = fontkit.openSync(filename)
@@ -71,5 +71,3 @@ const bbox = function (text, x, y, details) {
 
   return new Box(x + xAdjust, y - yAdjust / font.unitsPerEm * fontSize, width, height)
 }
-
-module.exports = { bbox }

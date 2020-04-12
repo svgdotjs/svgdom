@@ -1,7 +1,6 @@
-const Box = require('../class/Box.js')
-const { NoBox } = Box
+import { Box, NoBox } from '../class/Box.js'
 
-class PointCloud extends Array {
+export default class PointCloud extends Array {
   constructor (...args) {
     if (args.length === 1 && typeof args[0] === 'number') {
       super(args.shift())
@@ -48,5 +47,3 @@ class PointCloud extends Array {
     return new PointCloud(this, cloud)
   }
 }
-
-module.exports = PointCloud

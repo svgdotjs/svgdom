@@ -1,7 +1,7 @@
-const { removeQuotes, splitNotInBrackets } = require('../utils/strUtils')
-const regex = require('../utils/regex')
+import { removeQuotes, splitNotInBrackets } from '../utils/strUtils.js'
+import * as regex from '../utils/regex.js'
 
-class CssQuery {
+export default class CssQuery {
   constructor (query) {
     if (CssQuery.cache.has(query)) {
       this.queries = CssQuery.cache.get(query)
@@ -16,7 +16,7 @@ class CssQuery {
       var squareBrackets = 0
 
       // this is the same as above but easier
-      query = query.replace(/[()\[\]>~+]/g, function (ch) {
+      query = query.replace(/[()[\]>~+]/g, function (ch) {
         if (ch === '(') ++roundBrackets
         else if (ch === ')') --roundBrackets
         else if (ch === '[') ++squareBrackets
@@ -42,7 +42,7 @@ class CssQuery {
           continue
         }
 
-        pairs.push([relation, query[i]])
+        pairs.push([ relation, query[i] ])
         relation = '%'
 
       }
@@ -103,7 +103,6 @@ class CssQuery {
       }
       return false
     }
-    
 
   }
 }
@@ -166,10 +165,10 @@ const pseudoMatcher = {
   'nth-last-of-type': (a, n) => n.parentNode && nth(n, n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).reverse(), a),
   'only-child': (a, n) => n.parentNode && n.parentNode.childNodes.length === 1,
   'only-of-type': (a, n) => n.parentNode && n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).length === 1,
-  'root': (a, n) => n.ownerDocument.documentElement === n,
-  'not': (a, n, s) => !(new CssQuery(a)).matches(n, s),
-  'matches': (a, n, s) => (new CssQuery(a)).matches(n, s),
-  'scope': (a, n, s) => n === s
+  root: (a, n) => n.ownerDocument.documentElement === n,
+  not: (a, n, s) => !(new CssQuery(a)).matches(n, s),
+  matches: (a, n, s) => (new CssQuery(a)).matches(n, s),
+  scope: (a, n, s) => n === s
 }
 
 class CssQueryNode {
@@ -253,5 +252,3 @@ class CssQueryNode {
   }
 
 }
-
-module.exports = CssQuery

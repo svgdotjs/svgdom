@@ -1,12 +1,12 @@
-const { extend } = require('./utils/objectCreationUtils')
-const EventTarget = require('./class/EventTarget')
-const SVGPoint = require('./class/SVGPoint')
-const SVGMatrix = require('./class/SVGMatrix')
-const { SVGElement, DocumentFragment, Node, TextNode, Comment, AttributeNode } = require('./class/Node')
-const sizeOf = require('image-size')
-const path = require('path')
-const fontkit = require('fontkit')
-const { htmlEntities } = require('./utils/strUtils')
+import { extend } from './utils/objectCreationUtils.js'
+import EventTarget from './class/EventTarget.js'
+import SVGPoint from './class/SVGPoint.js'
+import SVGMatrix from './class/SVGMatrix.js'
+import { SVGElement, DocumentFragment, Node, TextNode, Comment, AttributeNode } from './class/Node.js'
+import sizeOf from 'image-size'
+import path from 'path'
+import fontkit from 'fontkit'
+import { htmlEntities } from './utils/strUtils.js'
 
 class HTMLLinkElement extends Node {
   constructor () {
@@ -137,10 +137,10 @@ class CustomEvent extends Event {
 
 // Feature/version pairs that DOMImplementation.hasFeature() returns true for.  It returns false for anything else.
 var supportedFeatures = {
-  'xml': { '': true, '1.0': true, '2.0': true }, // DOM Core
-  'core': { '': true, '2.0': true }, // DOM Core
-  'html': { '': true, '1.0': true, '2.0': true }, // HTML
-  'xhtml': { '': true, '1.0': true, '2.0': true } // HTML
+  xml: { '': true, '1.0': true, '2.0': true }, // DOM Core
+  core: { '': true, '2.0': true }, // DOM Core
+  html: { '': true, '1.0': true, '2.0': true }, // HTML
+  xhtml: { '': true, '1.0': true, '2.0': true } // HTML
 }
 
 class DOMImplementation {
@@ -206,9 +206,11 @@ class Document extends Node {
       ownerDocument: this
     })
   }
+
   createDocumentFragment (name) {
     return new DocumentFragment()
   }
+
   createElement (name) {
     switch (name) {
     case 'img':
@@ -221,12 +223,15 @@ class Document extends Node {
       return new SVGElement(name, { ownerDocument: this })
     }
   }
+
   createTextNode (text) {
     return new TextNode('#text', { data: htmlEntities(text), ownerDocument: this })
   }
+
   createComment (text) {
     return new Comment('#comment', { data: text, ownerDocument: this })
   }
+
   createAttribute (name) {
     return new AttributeNode(name, { ownerDocument: this })
   }
@@ -263,14 +268,17 @@ class Window extends EventTarget {
     super()
     this.document = new Document('svg')
   }
+
   setFontDir (dir) {
     this.document.fontDir = dir
     return this
   }
+
   setFontFamilyMappings (map) {
     this.document.fontFamilyMappings = map
     return this
   }
+
   preloadFonts () {
     var map = this.document.fontFamilyMappings
     var filename
@@ -288,6 +296,7 @@ class Window extends EventTarget {
     return this
 
   }
+
   getComputedStyle (node) {
 
     return {
@@ -311,25 +320,50 @@ class Window extends EventTarget {
   }
 }
 
-extend(Window, {
-  Window: Window,
-  DocumentFragment: DocumentFragment,
-  Node: Node,
-  Text: TextNode,
+const winProps = {
+  Window,
+  Document,
+  DocumentFragment,
+  Node,
+  TextNode,
+  SVGElement,
   Element: SVGElement,
-  SVGElement: SVGElement,
-  CustomEvent: CustomEvent,
-  Event: Event,
-  SVGMatrix: SVGMatrix,
-  SVGPoint: SVGPoint,
-  HTMLLinkElement: HTMLLinkElement,
-  HTMLScriptElement: HTMLScriptElement,
+  CustomEvent,
+  Event,
+  SVGMatrix,
+  SVGPoint,
+  HTMLLinkElement,
+  HTMLScriptElement,
+  HTMLImageElement,
   Image: HTMLImageElement,
-  HTMLImageElement: HTMLImageElement,
-  setTimeout: setTimeout,
-  clearTimeout: clearTimeout,
+  setTimeout: global.setTimeout,
+  clearTimeout: global.clearTimeout,
   pageXOffset: 0,
   pageYOffset: 0
-})
+}
 
-module.exports = new Window()
+extend(Window, winProps)
+
+export default Window
+export {
+  Window,
+  Document,
+  DocumentFragment,
+  Node,
+  TextNode,
+  SVGElement,
+  CustomEvent,
+  Event,
+  SVGMatrix,
+  SVGPoint,
+  HTMLLinkElement,
+  HTMLScriptElement,
+  HTMLImageElement
+}
+
+export const Element = SVGElement
+export const Image = HTMLImageElement
+export const setTimeout = global.setTimeout
+export const clearTimeout = global.clearTimeout
+export const pageXOffset = 0
+export const pageYOffset = 0

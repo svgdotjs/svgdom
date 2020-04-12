@@ -1,8 +1,11 @@
-const path = require('path')
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
-module.exports = {
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export default {
   fontSize: 16,
   fontFamily: 'sans-serif',
-  fontDir: path.join(__dirname, '..', 'fonts/'),
+  fontDir: join(__dirname, '..', 'fonts/'),
   fontFamilyMappings: { 'sans-serif': 'OpenSans-Regular.ttf' }
 }
