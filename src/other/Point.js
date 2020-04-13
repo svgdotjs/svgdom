@@ -1,4 +1,4 @@
-import { SVGPoint } from '../dom/SVGPoint.js'
+import { SVGPoint } from '../dom/svg/SVGPoint.js'
 
 export class Point {
   // Initialize

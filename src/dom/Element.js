@@ -1,10 +1,10 @@
 import { Node } from './Node.js'
 
-import { ParentNode } from './interfaces/ParentNode.js'
-import { elementAccess } from './interfaces/elementAccess.js'
-import { HTMLParser } from './HTMLParser.js'
+import { ParentNode } from './mixins/ParentNode.js'
+import { elementAccess } from './mixins/elementAccess.js'
+import { HTMLParser } from './html/HTMLParser.js'
 import { DocumentFragment } from './DocumentFragment.js'
-import { mixInterface } from '../utils/objectCreationUtils.js'
+import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
 import { cssToMap, mapToCss, mapMap } from '../utils/mapUtils.js'
 import { hexToRGB, decamelize, htmlEntities } from '../utils/strUtils.js'
@@ -15,7 +15,7 @@ const getStyleProxy = (node) => {
 
   return new Proxy(node, {
     get (target, key) {
-      const styles = target.getAttribute('style')
+      const styles = target.getAttribute('style') || ''
       const styleMap = cssToMap(styles)
 
       if (key === 'cssText') {
@@ -41,7 +41,7 @@ const getStyleProxy = (node) => {
         return true
       } else {
         value = hexToRGB(value.toString())
-        const styles = target.getAttribute('style')
+        const styles = target.getAttribute('style') || ''
         const styleMap = cssToMap(styles)
         styleMap.set(key, value)
 
@@ -60,8 +60,8 @@ export const mapToAttributeArray = function (themap) {
 }
 
 export class Element extends Node {
-  constructor (name, props) {
-    super(name, props)
+  constructor (name, props, ns) {
+    super(name, props, ns)
 
     this.style = getStyleProxy(this)
     this.tagName = this.nodeName
@@ -86,7 +86,7 @@ export class Element extends Node {
   }
 
   hasAttribute (name) {
-    return this.attrs.has(name) != null
+    return this.attrs.has(name)
   }
 
   hasAttributeNS (ns = '', name) {
@@ -105,10 +105,14 @@ export class Element extends Node {
     return this.matchWithScope(query, this)
   }
 
+  getBoundingClientRect () {
+    throw new Error('Only implemented for SVG Elements')
+  }
+
 }
 /* mix methods of the ParentNode interface into Element */
-mixInterface(ParentNode, Element)
-mixInterface(elementAccess, Element)
+mixin(ParentNode, Element)
+mixin(elementAccess, Element)
 
 Object.defineProperties(Node.prototype, {
   attributes: {

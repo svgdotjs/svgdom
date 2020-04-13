@@ -20,16 +20,17 @@ export const extendStatic = (...modules) => {
   }
 }
 
-export const mixInterface = (mixin, _class) => {
+// TODO: refactor so that it takes a class
+export const mixin = (mixin, _class) => {
   const descriptors = Object.getOwnPropertyDescriptors(mixin)
-  const all = Object.getOwnPropertyNames(mixin)
+  // const all = Object.getOwnPropertyNames(mixin)
 
-  const propNames = Object.keys(descriptors)
-  const methodNames = all.filter(p => !propNames.includes(p))
+  // const propNames = Object.keys(descriptors)
+  // const methodNames = all.filter(p => !propNames.includes(p))
 
-  for (const method of methodNames) {
-    _class.prototype[method] = mixin[method]
-  }
+  // for (const method of methodNames) {
+  //   _class.prototype[method] = mixin[method]
+  // }
 
-  Object.defineProperties(_class, descriptors)
+  Object.defineProperties(_class.prototype, descriptors)
 }

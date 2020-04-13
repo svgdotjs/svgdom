@@ -1,5 +1,5 @@
 import sizeOf from 'image-size'
-import { Event } from './Event.js'
+import { Event } from '../Event.js'
 import { HTMLElement } from './HTMLElement.js'
 
 export class HTMLImageElement extends HTMLElement {

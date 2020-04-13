@@ -1,16 +1,67 @@
-import * as defaults from './defaults.js'
-import { Box, NoBox } from '../other/Box.js'
 import path from 'path'
 import fontkit from 'fontkit'
+import * as defaults from './defaults.js'
+import { Box, NoBox } from '../other/Box.js'
+import { getConfig, getFonts } from '../config.js'
 
-export const textBBox = function (text, x, y, details) {
+const getFontDetails = (node) => {
+  let fontSize = null
+  let fontFamily = null
+  let textAnchor = null
+  let dominantBaseline = null
+
+  const textContentElements = [
+    'text',
+    'tspan',
+    'tref',
+    'textPath',
+    'altGlyph',
+    'g'
+  ]
+
+  do {
+    // TODO: stop on
+    if (!fontSize) { fontSize = node.style.fontSize || node.getAttribute('font-size') }
+    if (!fontFamily) { fontFamily = node.style.fontFamily || node.getAttribute('font-family') }
+    if (!textAnchor) { textAnchor = node.style.textAnchor || node.getAttribute('text-anchor') }
+    if (!dominantBaseline) { dominantBaseline = node.style.dominantBaseline || node.getAttribute('dominant-baseline') }
+    // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
+    // TODO: alignment-adjust, baseline-shift
+    /*
+    if(!alignmentBaseline)
+    alignmentBaseline = this.style.alignmentBaseline || this.getAttribute('alignment-baseline')
+    */
+
+  } while (
+    (node = node.parentNode)
+    && node.nodeType === node.ELEMENT_NODE
+    && (textContentElements.includes(node.nodeName))
+  )
+
+  return {
+    fontFamily,
+    fontSize,
+    textAnchor: textAnchor || 'start',
+    // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
+    dominantBaseline: dominantBaseline || 'alphabetical'
+    // fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
+    // fontDir: this.ownerDocument.fontDir,
+    // preloaded: this.ownerDocument._preloaded
+  }
+}
+
+export const textBBox = function (text, x, y, node) {
 
   if (!text) return new NoBox()
 
+  const details = getFontDetails(node)
+  const config = getConfig()
+  const preloaded = getFonts()
+
   var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
-  var fontMap = Object.assign({}, defaults.fontFamilyMappings, details.fontFamilyMappings)
+  var fontMap = Object.assign({}, defaults.fontFamilyMappings, config.fontFamilyMappings)
   var fontSize = details.fontSize || defaults.fontSize
-  var fontDir = details.fontDir || defaults.fontDir
+  var fontDir = config.fontDir || defaults.fontDir
   var fontFamily
   var font
 
@@ -25,11 +76,10 @@ export const textBBox = function (text, x, y, details) {
     fontFamily = defaults.fontFamily
   }
 
-  if (details.preloaded[fontFamily]) {
-    font = details.preloaded[fontFamily]
+  if (preloaded[fontFamily]) {
+    font = preloaded[fontFamily]
   } else {
     const filename = path.join(fontDir, fontMap[fontFamily])
-
     try {
       font = fontkit.openSync(filename)
     } catch (e) {
@@ -37,7 +87,7 @@ export const textBBox = function (text, x, y, details) {
       return new NoBox()
     }
 
-    details.preloaded[fontFamily] = font
+    preloaded[fontFamily] = font
   }
 
   var fontHeight = font.ascent - font.descent

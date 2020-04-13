@@ -31,13 +31,13 @@ const ParentNode = {
 Object.defineProperties(ParentNode, {
   children: {
     get () {
-      return this.childNodes.filter(function (node) { return node.nodeType === this.ELEMENT_NODE })
+      return this.childNodes.filter(function (node) { return node.nodeType === node.ELEMENT_NODE })
     }
   },
   firstElementChild: {
     get () {
       for (const node of this.childNodes) {
-        if (node && node.nodeType === this.ELEMENT_NODE) {
+        if (node && node.nodeType === node.ELEMENT_NODE) {
           return node
         }
       }
@@ -47,7 +47,7 @@ Object.defineProperties(ParentNode, {
   lastElementChild: {
     get () {
       for (const node of this.childNodes.slice().reverse()) {
-        if (node && node.nodeType === this.ELEMENT_NODE) {
+        if (node && node.nodeType === node.ELEMENT_NODE) {
           return node
         }
       }

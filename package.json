@@ -3,7 +3,7 @@
   "version": "0.0.21",
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
   "type": "module",
-  "main": "dom.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha",
     "fix": "npx eslint ./ --fix",

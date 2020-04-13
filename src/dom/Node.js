@@ -1,36 +1,22 @@
 import { extend, extendStatic } from '../utils/objectCreationUtils.js'
 
 import { EventTarget } from './EventTarget.js'
-
 import { objectToMap } from '../utils/mapUtils.js'
-import * as pathUtils from '../utils/pathUtils.js'
 import { cloneNode } from '../utils/tagUtils.js'
-import { getPointCloud } from '../utils/bboxUtils.js'
-import * as regex from '../utils/regex.js'
 
-import { SVGPoint } from './SVGPoint.js'
-import { SVGMatrix } from './SVGMatrix.js'
-import { Box } from '../other/Box.js'
-import { nodeTypes } from './nodeTypes.js'
-// import {
-//   extend,
-//   extendStatic,
-//   nodeTypes,
-//   EventTarget,
-//   objectToMap,
-//   htmlEntities,
-//   pathUtils,
-//   cloneNode,
-//   getPointCloud,
-//   SVGPoint,
-//   SVGMatrix,
-//   Box,
-//   TextNode
-// } from '../intern.js'
-
-// Map matrix array to object
-function arrayToMatrix (a) {
-  return { a: a[0], b: a[1], c: a[2], d: a[3], e: a[4], f: a[5] }
+const nodeTypes = {
+  ELEMENT_NODE: 1,
+  ATTRIBUTE_NODE: 2,
+  TEXT_NODE: 3,
+  CDATA_SECTION_NODE: 4,
+  ENTITY_REFERENCE_NODE: 5,
+  ENTITY_NODE: 6,
+  PROCESSING_INSTRUCTION_NODE: 7,
+  COMMENT_NODE: 8,
+  DOCUMENT_NODE: 9,
+  DOCUMENT_TYPE_NODE: 10,
+  DOCUMENT_FRAGMENT_NODE: 11,
+  NOTATION_NODE: 12
 }
 
 export class Node extends EventTarget {
@@ -240,8 +226,8 @@ export class Node extends EventTarget {
       return null
     default:
       // EntityReferences may have to be skipped to get to it
-      if (this.parentElement) {
-        return this.parentElement.lookupNamespacePrefix(namespaceURI)
+      if (this.parentNode) {
+        return this.parentNode.lookupNamespacePrefix(namespaceURI)
       }
       return null
     }
@@ -263,8 +249,8 @@ export class Node extends EventTarget {
     }
 
     // EntityReferences may have to be skipped to get to it
-    if (this.parentElement) {
-      return this.parentElement.lookupNamespacePrefix(namespaceURI, originalElement)
+    if (this.parentNode) {
+      return this.parentNode.lookupNamespacePrefix(namespaceURI, originalElement)
     }
     return null
   }
@@ -281,8 +267,8 @@ export class Node extends EventTarget {
       }
 
       // EntityReferences may have to be skipped to get to it
-      if (this.parentElement) {
-        return this.parentElement.isDefaultNamespace(namespaceURI)
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
       }
 
       return false
@@ -300,8 +286,8 @@ export class Node extends EventTarget {
       return false
     default:
       // EntityReferences may have to be skipped to get to it
-      if (this.parentElement) {
-        return this.parentElement.isDefaultNamespace(namespaceURI)
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
       }
       return false
     }
@@ -333,8 +319,8 @@ export class Node extends EventTarget {
       }
 
       // EntityReferences may have to be skipped to get to it
-      if (this.parentElement) {
-        return this.parentElement.lookupNamespaceURI(prefix)
+      if (this.parentNode) {
+        return this.parentNode.lookupNamespaceURI(prefix)
       }
       return null
     case Node.DOCUMENT_NODE:
@@ -351,183 +337,13 @@ export class Node extends EventTarget {
       return null
     default:
       // EntityReferences may have to be skipped to get to it
-      if (this.parentElement) {
-        return this.parentElement.lookupNamespaceURI(prefix)
+      if (this.parentNode) {
+        return this.parentNode.lookupNamespaceURI(prefix)
       }
       return null
     }
   }
 
-  getBBox () {
-    return getPointCloud(this).bbox()
-  }
-
-  getBoundingClientRect () {
-    // The bounding client rect takes the screen ctm of the element
-    // and converts the bounding box with it
-
-    // however, normal bounding consists of:
-    // - all children transformed
-    // - the viewbox of the element if available
-
-    // The boundingClientRect is not affected by its own viewbox
-    // So we apply only our own transformations and parents screenCTM
-
-    let m = this.matrixify()
-
-    if (this.parentNode && this.parentNode.nodeName !== '#document') {
-      m = this.parentNode.getScreenCTM().multiply(m)
-    }
-
-    // let m = this.getScreenCTM()
-
-    return getPointCloud(this).transform(m).bbox()
-  }
-
-  matrixify () {
-    var matrix = (this.getAttribute('transform') || '')
-      // split transformations
-      .split(regex.transforms).slice(0, -1).map(function (str) {
-        // generate key => value pairs
-        var kv = str.trim().split('(')
-        return [ kv[0].trim(), kv[1].split(regex.delimiter).map(function (str) { return parseFloat(str.trim()) }) ]
-      })
-      // merge every transformation into one matrix
-      .reduce(function (matrix, transform) {
-
-        if (transform[0] === 'matrix') return matrix.multiply(arrayToMatrix(transform[1]))
-        return matrix[transform[0]].apply(matrix, transform[1])
-
-      }, new SVGMatrix())
-
-    return matrix
-  }
-
-  // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
-  generateViewBoxMatrix () {
-    var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
-    var width = parseFloat(this.getAttribute('width')) || 0
-    var height = parseFloat(this.getAttribute('height')) || 0
-    var x = parseFloat(this.getAttribute('x')) || 0
-    var y = parseFloat(this.getAttribute('y')) || 0
-
-    // TODO: If no width and height is given, width and height of the outer svg element is used
-    if (!width || !height) {
-      return new SVGMatrix().translate(x, y)
-    }
-
-    if (view.length !== 4) {
-      view = [ 0, 0, width, height ]
-    }
-
-    // first apply x and y if nested, then viewbox scale, then viewBox move
-    return new SVGMatrix().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
-  }
-
-  getCTM () {
-    var m = this.matrixify()
-
-    var node = this
-    while ((node = node.parentNode)) {
-      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
-      m = m.multiply(node.matrixify())
-      if (node.nodeName === '#document') return this.getScreenCTM()
-    }
-
-    return node.generateViewBoxMatrix().multiply(m)
-  }
-
-  getScreenCTM () {
-    // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
-    // We follow Chromes behavior and include the viewbox in the screenCTM
-    var m = this.getInnerMatrix()
-
-    if (this.parentNode && this.parentNode.nodeName !== '#document') {
-      return this.parentNode.getScreenCTM().multiply(m)
-    }
-
-    return m
-  }
-
-  getInnerMatrix () {
-    var m = this.matrixify()
-
-    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
-      m = this.generateViewBoxMatrix().multiply(m)
-    }
-    return m
-  }
-
-  createSVGRect () {
-    return new Box()
-  }
-
-  createSVGMatrix () {
-    return new SVGMatrix()
-  }
-
-  createSVGPoint () {
-    return new SVGPoint()
-  }
-
-  getComputedTextLength () {
-    return this.getBBox().width
-  }
-
-  getPointAtLength (len) {
-    return pathUtils.pointAtLength(this.getAttribute('d'), len)
-  }
-
-  getTotalLength () {
-    return pathUtils.length(this.getAttribute('d'))
-  }
-
-  getFontDetails () {
-    var node = this
-    var fontSize = null
-    var fontFamily = null
-    var textAnchor = null
-    var dominantBaseline = null
-
-    const textContentElements = {
-      text: true,
-      tspan: true,
-      tref: true,
-      textPath: true,
-      altGlyph: true,
-      g: true
-    }
-
-    do {
-      // TODO: stop on
-      if (!fontSize) { fontSize = node.style.fontSize || node.getAttribute('font-size') }
-      if (!fontFamily) { fontFamily = node.style.fontFamily || node.getAttribute('font-family') }
-      if (!textAnchor) { textAnchor = node.style.textAnchor || node.getAttribute('text-anchor') }
-      if (!dominantBaseline) { dominantBaseline = node.style.dominantBaseline || node.getAttribute('dominant-baseline') }
-      // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
-      // TODO: alignment-adjust, baseline-shift
-      /*
-      if(!alignmentBaseline)
-      alignmentBaseline = this.style.alignmentBaseline || this.getAttribute('alignment-baseline')
-      */
-
-    } while (
-      node.parentNode.nodeType === Node.ELEMENT_NODE
-      && (node.parentNode.nodeName in textContentElements)
-      && (node = node.parentNode)
-    )
-
-    return {
-      fontFamily,
-      fontSize,
-      textAnchor: textAnchor || 'start',
-      // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
-      dominantBaseline: dominantBaseline || 'alphabetical',
-      fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
-      fontDir: this.ownerDocument.fontDir,
-      preloaded: this.ownerDocument._preloaded
-    }
-  }
 }
 
 // Define dynamic properties

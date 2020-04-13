@@ -17,17 +17,6 @@ export const tag = function (node) {
 
   var name = node.nodeName
 
-  var style = node.getAttribute('style')
-
-  attrs.delete('style')
-  if (style) {
-    attrs.set('style', style)
-  }
-
-  if (attrs.has('xmlns') && node.dropNameSpace(attrs.get('xmlns'))) {
-    attrs.delete('xmlns')
-  }
-
   attrs = mapMap(attrs, function (value, key) {
     return key + '="' + htmlEntities(value) + '"'
   })
@@ -42,10 +31,6 @@ export const cloneNode = function (node) {
     data: node.data,
     ownerDocument: node.ownerDocument
   })
-
-  // clone styles
-  Object.keys(node._style).forEach(function (el) { clone._style[el] = node._style[el] })
-  clone.nodeType = node.nodeType
 
   return clone
 }

@@ -1,6 +1,6 @@
 const hasClass = (node, name) => {
   const classList = node.className.split(/\s+/)
-  return classList.contains(name)
+  return classList.includes(name)
 }
 
 const elementAccess = {

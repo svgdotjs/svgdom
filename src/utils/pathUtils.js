@@ -2,7 +2,7 @@ import { Box, NoBox } from '../other/Box.js'
 import { Point } from '../other/Point.js'
 import * as regex from './regex.js'
 // TODO: use own matrix implementation
-import { matrixFactory } from './../dom/SVGMatrix.js'
+import { matrixFactory } from './../dom/svg/SVGMatrix.js'
 import { PointCloud } from './PointCloud.js'
 
 var pathHandlers = {
