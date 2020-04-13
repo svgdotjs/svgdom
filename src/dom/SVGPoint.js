@@ -1,4 +1,4 @@
-export default class SVGPoint {
+export class SVGPoint {
   constructor () {
     this.x = 0
     this.y = 0

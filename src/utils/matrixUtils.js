@@ -1,4 +1,4 @@
-import SVGMatrix from '../class/SVGMatrix.js'
+import { SVGMatrix } from '../dom/SVGMatrix.js'
 
 export function matrixFactory (a, b, c, d, e, f) {
   var r = new SVGMatrix()

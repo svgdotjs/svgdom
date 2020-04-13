@@ -32,15 +32,19 @@
   },
   "devDependencies": {
     "@svgdotjs/svg.js": "^3.0.6",
-    "mocha": "^4.1.0",
-    "puppeteer": "^1.9.0",
-    "reify": "^0.12.3",
-    "xmldom": "^0.1.27",
+    "acorn": "^7.1.1",
+    "circular-dependency-plugin": "^5.2.0",
     "eslint": "^6.6.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
+    "eslint-plugin-standard": "^4.0.1",
+    "mocha": "^4.1.0",
+    "puppeteer": "^1.9.0",
+    "reify": "^0.12.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "xmldom": "^0.1.27"
   }
 }

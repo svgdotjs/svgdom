@@ -1,21 +1,31 @@
 import { extendStatic } from '../utils/objectCreationUtils.js'
 
-import EventTarget from './EventTarget.js'
+import { EventTarget } from './EventTarget.js'
 
-import { objectToMap, mapToObject, mapMap, mapToCss, cssToMap } from '../utils/mapUtils.js'
-import { hexToRGB, camelCase, htmlEntities } from '../utils/strUtils.js'
+import { objectToMap } from '../utils/mapUtils.js'
+import { htmlEntities } from '../utils/strUtils.js'
 import * as pathUtils from '../utils/pathUtils.js'
-import { tag, cloneNode } from '../utils/tagUtils.js'
+import { cloneNode } from '../utils/tagUtils.js'
 import { getPointCloud } from '../utils/bboxUtils.js'
 import * as regex from '../utils/regex.js'
 
-import CssQuery from './CssQuery.js'
-import SVGPoint from './SVGPoint.js'
-import SVGMatrix from './SVGMatrix.js'
-import { Box } from './Box.js'
-
-// XMLParser
-import sax from 'sax'
+import { SVGPoint } from './SVGPoint.js'
+import { SVGMatrix } from './SVGMatrix.js'
+import { Box } from '../other/Box.js'
+import { TextNode } from './TextNode.js'
+// import {
+//   extendStatic,
+//   EventTarget,
+//   objectToMap,
+//   htmlEntities,
+//   pathUtils,
+//   cloneNode,
+//   getPointCloud,
+//   SVGPoint,
+//   SVGMatrix,
+//   Box,
+//   TextNode
+// } from '../intern.js'
 
 // Map matrix array to object
 function arrayToMatrix (a) {
@@ -23,107 +33,33 @@ function arrayToMatrix (a) {
 }
 
 export class Node extends EventTarget {
-  constructor (name = '', props = {}) {
+  constructor (name = '', props = {}, ns = null) {
     super()
 
-    this.nodeName = name
+    this.prefix = null
+    this.nodeName = this.localName = name
+
+    if (name.includes(':')) {
+      ;[ this.prefix, this.localName ] = name.split(':')
+      this.nodeName = this.localName
+    }
+
+    this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
     this.nodeValue = 0
     this.childNodes = []
-
-    this._style = {}
-
-    if (props.attrs && props.attrs.style) {
-      this._style = mapToObject(cssToMap(props.attrs.style))
-    }
 
     this.attrs = objectToMap(props.attrs || {})
     this.data = props.data || ''
 
     this.ownerDocument = props.ownerDocument || null
     this.parentNode = null
-    this.cnt = 0
-
-    this.style = this.getStyleProxy()
 
     if (props.childNodes) {
       for (var i = 0, il = props.childNodes.length; i < il; ++i) {
         this.appendChild(props.childNodes[i])
       }
     }
-  }
-
-  getStyleProxy () {
-    const node = this
-
-    return new Proxy(this._style, {
-      get (target, key) {
-        if (typeof key !== 'string') return Reflect.get(target, key)
-        if (key === 'cssText') {
-          return mapToCss(objectToMap(target))
-        }
-        if (key === 'setProperty') {
-          return function (propertyName, value, priority) {
-            Reflect.set(target, propertyName, value)
-          }
-        }
-        key = camelCase(key)
-        if (!target[key]) return ''
-        return Reflect.get(target, key)
-      },
-      set (target, key, value) {
-        if (key === 'cssText') {
-          node.setNewStyle(mapToObject(cssToMap(value)))
-          return true
-        } else {
-          value = hexToRGB(value.toString())
-          key = camelCase(key)
-          return Reflect.set(target, key, value)
-        }
-      }
-    })
-  }
-
-  setNewStyle (obj) {
-    this._style = hexToRGB(obj)
-    this.style = this.getStyleProxy()
-  }
-
-  setAttribute (name, value) {
-    if (name === 'style') {
-      return this.setNewStyle(mapToObject(cssToMap(value)))
-    }
-    this.attrs.set(name, value)
-  }
-
-  setAttributeNS (ns, name, value) {
-    this.setAttribute(name, value)
-  }
-
-  removeAttribute (name) {
-    this.attrs.delete(name)
-  }
-
-  removeAttributeNS (ns, name) {
-    this.removeAttribute(name)
-  }
-
-  hasAttribute (name) {
-    if (name === 'style') return !!this.style.cssText // TODO check
-    return this.attrs.get(name) != null
-  }
-
-  getAttribute (name) {
-    if (name === 'style') return this.style.cssText
-    return this.attrs.get(name) == null ? null : this.attrs.get(name)
-  }
-
-  getAttributeNS (ns, name) {
-    return this.getAttribute(name)
-  }
-
-  hasChildNodes () {
-    return !!this.childNodes.length
   }
 
   appendChild (node) {
@@ -184,23 +120,11 @@ export class Node extends EventTarget {
     return oldChild
   }
 
-  getElementsByTagName (name) {
-    return this.childNodes.reduce(function (last, current) {
-      if (current.nodeName === name) last.push(current)
-      return last.concat(current.getElementsByTagName(name))
-    }, [])
+  hasChildNodes () {
+    return !!this.childNodes.length
   }
 
-  getElementById (id) {
-    for (var i = this.childNodes.length; i--;) {
-      if (this.childNodes[i].id === id) return this.childNodes[i]
-      var el = this.childNodes[i].getElementById(id)
-      if (el) return el
-    }
-    return null
-  }
-
-  cloneNode (deep) {
+  cloneNode (deep = false) {
     var clone = cloneNode(this)
 
     if (deep) {
@@ -218,12 +142,41 @@ export class Node extends EventTarget {
     return this.parentNode.getRootNode()
   }
 
-  isDefaultNamespace (ns) {
-    return ns === this.attrs.get('xmlns')
-  }
-
   isEqualNode (node) {
-    return node.nodeName === this.nodeName && node.constructor === this.constructor && node.nodeType === this.nodeType
+    this.normalize()
+    node.normalize()
+
+    let bool = this.nodeName === node.nodeName
+    bool = bool && this.localName === node.localName
+    bool = bool && this.namespaceURI === node.namespaceURI
+    bool = bool && this.prefix === node.prefix
+    bool = bool && this.nodeValue === node.nodeValue
+
+    bool = bool && !this.childNodes.reduce((last, curr, index) => {
+      return last && curr.isEqualNode(node.childNodes[index])
+    }, true)
+
+    bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
+      const [ key, val ] = node.attrs.entries()
+      return last && curr[0] === key && curr[1] === val
+    }, true)
+
+    /*
+    TODO:
+    For two DocumentType nodes to be equal, the following conditions must also be satisfied:
+
+    The following string attributes are equal: publicId, systemId, internalSubset.
+    The entities NamedNodeMaps are equal.
+    The notations NamedNodeMaps are equal.
+    */
+
+    if (this.nodeType === Node.DOCUMENT_TYPE_NODE && node.nodeType === Node.DOCUMENT_TYPE_NODE) {
+      bool = bool && this.publicId === node.publicId
+      bool = bool && this.systemId === node.systemId
+      bool = bool && this.internalSubset === node.internalSubset
+    }
+
+    return bool
   }
 
   isSameNode (node) {
@@ -262,12 +215,146 @@ export class Node extends EventTarget {
     }, null)
   }
 
-  dropNameSpace (ns) {
-    if (this.parentNode) {
-      if (this.parentNode.attrs.get('xmlns') === ns) return true
-      return this.parentNode.dropNameSpace(ns)
+  lookupPrefix (namespaceURI) {
+    if (!namespaceURI) {
+      return null
     }
-    return false
+
+    const type = this.nodeType
+
+    switch (type) {
+    case Node.ELEMENT_NODE:
+      return this.lookupNamespacePrefix(namespaceURI, this)
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.lookupNamespacePrefix(namespaceURI)
+    case Node.ENTITY_NODE :
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+      return null // type is unknown
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentElement) {
+        return this.parentElement.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
+    }
+  }
+
+  lookupNamespacePrefix (namespaceURI, originalElement) {
+    if (this.ns && this.ns === namespaceURI && this.prefix
+         && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
+      return this.prefix
+    }
+
+    for (const [ key, val ] of this.attrs.entries()) {
+      if (!key.includes(':')) continue
+
+      const [ prefix, name ] = key.split(':')
+      if (prefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
+        return name
+      }
+    }
+
+    // EntityReferences may have to be skipped to get to it
+    if (this.parentElement) {
+      return this.parentElement.lookupNamespacePrefix(namespaceURI, originalElement)
+    }
+    return null
+  }
+
+  isDefaultNamespace (namespaceURI) {
+    switch (this.nodeType) {
+    case Node.ELEMENT_NODE:
+      if (!this.prefix) {
+        return this.ns === namespaceURI
+      }
+
+      if (this.hasAttribute('xmlns')) {
+        return this.getAttribute('xmlns')
+      }
+
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentElement) {
+        return this.parentElement.isDefaultNamespace(namespaceURI)
+      }
+
+      return false
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.isDefaultNamespace(namespaceURI)
+    case Node.ENTITY_NODE:
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+      return false
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.isDefaultNamespace(namespaceURI)
+      }
+      return false
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentElement) {
+        return this.parentElement.isDefaultNamespace(namespaceURI)
+      }
+      return false
+    }
+  }
+
+  lookupNamespaceURI (prefix) {
+    switch (this.nodeType) {
+    case Node.ELEMENT_NODE:
+      if (this.ns != null && this.prefix === prefix) {
+        // Note: prefix could be "null" in this case Node.we are looking for default namespace
+        return this.ns
+      }
+
+      for (const [ key, val ] of this.attrs.entries()) {
+        if (!key.includes(':')) continue
+
+        const [ prefix, name ] = key.split(':')
+        if (prefix === 'xmlns' && name === prefix) {
+          if (val != null) {
+            return val
+          }
+          return null
+        } else if (name === 'xmlns' && prefix == null) {
+          if (val != null) {
+            return val
+          }
+          return null
+        }
+      }
+
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentElement) {
+        return this.parentElement.lookupNamespaceURI(prefix)
+      }
+      return null
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.lookupNamespaceURI(prefix)
+    case Node.ENTITY_NODE:
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+      return null
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.lookupNamespaceURI(prefix)
+      }
+      return null
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentElement) {
+        return this.parentElement.lookupNamespaceURI(prefix)
+      }
+      return null
+    }
   }
 
   getBBox () {
@@ -382,36 +469,6 @@ export class Node extends EventTarget {
     return new SVGPoint()
   }
 
-  matches (query) {
-    return this.matchWithScope(query, this)
-    // return new CssQuery(query).matches(this)
-  }
-
-  matchWithScope (query, scope) {
-    return new CssQuery(query).matches(this, scope)
-  }
-
-  query (query, scope, single = false) {
-    var ret = []
-    for (var i = 0, il = this.childNodes.length; i < il; ++i) {
-      var child = this.childNodes[i]
-      if (child.matchWithScope(query, scope)) {
-        ret.push(child)
-        if (single) return ret
-      }
-      ret = ret.concat(child.query(query, scope))
-    }
-    return ret
-  }
-
-  querySelectorAll (query) {
-    return this.query(query, this)
-  }
-
-  querySelector (query) {
-    return this.query(query, this, true)[0] || null
-  }
-
   getComputedTextLength () {
     return this.getBBox().width
   }
@@ -474,23 +531,6 @@ export class Node extends EventTarget {
 
 // Define dynamic properties
 Object.defineProperties(Node.prototype, {
-  attributes: {
-    get () {
-      var attributes = mapToAttributeArray(this.attrs)
-      if (Object.keys(this._style).length) {
-        attributes.push(new AttributeNode('style', this.getAttribute('style')))
-      }
-      return attributes
-    }
-  },
-  className: {
-    get () {
-      return this.getAttribute('class')
-    },
-    set (c) {
-      this.setAttribute('class', c)
-    }
-  },
   textContent: {
     get () {
       if (this.nodeType === Node.TEXT_NODE) return this.data
@@ -508,24 +548,9 @@ Object.defineProperties(Node.prototype, {
       return this.childNodes[0] || null
     }
   },
-  firstElementChild: {
-    get () {
-      for (var c in this.childNodes) {
-        if (this.childNodes[c] && this.childNodes[c].nodeType === Node.ELEMENT_NODE) {
-          return this.childNodes[c]
-        }
-      }
-      return null
-    }
-  },
   lastChild: {
     get () {
       return this.childNodes[this.childNodes.length - 1] || null
-    }
-  },
-  children: {
-    get () {
-      return this.childNodes.filter(function (node) { return node.nodeType === Node.ELEMENT_NODE })
     }
   },
   nextSibling: {
@@ -538,49 +563,6 @@ Object.defineProperties(Node.prototype, {
     get () {
       const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
       return child || null
-    }
-  },
-  innerHTML: {
-    get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
-      return this.childNodes.reduce(function (last, current) {
-        return last + current.outerHTML
-      }, '')
-    },
-    set (str) {
-      while (this.firstChild) {
-        this.removeChild(this.firstChild)
-      }
-      // The parser adds the html to this
-      HTMLParser(str, this)
-    }
-  },
-  outerHTML: {
-    get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
-      if (this.nodeType === Node.DOCUMENT_NODE || this.nodeType === Node.DOCUMENT_FRAGMENT_NODE) return this.innerHTML
-      return tag(this)
-    },
-    set (str) {
-      var well = new SVGElement('well')
-      HTMLParser(str, well)
-      for (var i = 0, il = well.childNodes.length; i < il; ++i) {
-        this.parentNode.insertBefore(well.childNodes[i], this)
-      }
-      this.parentNode.removeChild(this)
-    }
-  },
-  id: {
-    get () {
-      return this.attrs.get('id')
-    },
-    set (id) {
-      this.attrs.set('id', id)
-    }
-  },
-  ownerSVGElement: {
-    get () {
-      return this.ownerDocument ? this.ownerDocument.documentElement : null
     }
   }
 })
@@ -599,73 +581,3 @@ extendStatic(Node, {
   DOCUMENT_FRAGMENT_NODE: 11,
   NOTATION_NODE: 12
 })
-
-export class SVGElement extends Node { }
-
-const mapToAttributeArray = function (themap) {
-  return mapMap(themap, function (value, key) {
-    return new AttributeNode(key, value)
-  })
-}
-
-export class DocumentFragment extends Node {
-  constructor () {
-    super('#document-fragment')
-    this.nodeType = Node.DOCUMENT_FRAGMENT_NODE
-  }
-}
-
-export class AttributeNode extends Node {
-  constructor (name = '', value = null) {
-    super(name)
-    this.nodeValue = value
-    this.nodeType = Node.ATTRIBUTE_NODE
-  }
-}
-
-export class CharacterData extends Node {
-  constructor (name, props) {
-    super(name, props)
-    if (Object.getPrototypeOf(this) === CharacterData.prototype) {
-      throw new Error('CharacterData cannot be created directly')
-    }
-  }
-}
-
-export class TextNode extends CharacterData {
-  constructor (name, props) {
-    super(name, props)
-    this.nodeType = Node.TEXT_NODE
-  }
-}
-
-export class Comment extends CharacterData {
-  constructor (name, props) {
-    super(name, props)
-    this.nodeType = Node.COMMENT_NODE
-  }
-}
-
-const HTMLParser = function (str, el) {
-  let currentTag = el
-  var ownerDocument = el.ownerDocument
-
-  var parser = sax.parser(true)
-  parser.ontext = t => currentTag.appendChild(new TextNode('#text', {
-    data: t,
-    ownerDocument: ownerDocument
-  }))
-  parser.onopentag = node => {
-    var newSvgElement = new SVGElement(node.name, {
-      attrs: node.attributes,
-      ownerDocument: ownerDocument
-    })
-    currentTag.appendChild(newSvgElement)
-    currentTag = newSvgElement
-  }
-  parser.onclosetag = node => {
-    currentTag = currentTag.parentNode
-  }
-
-  parser.write(str)
-}

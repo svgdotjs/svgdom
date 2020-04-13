@@ -1,6 +1,6 @@
-import { Box, NoBox } from '../class/Box.js'
+import { Box, NoBox } from '../other/Box.js'
 
-export default class PointCloud extends Array {
+export class PointCloud extends Array {
   constructor (...args) {
     if (args.length === 1 && typeof args[0] === 'number') {
       super(args.shift())

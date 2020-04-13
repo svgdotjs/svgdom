@@ -6,7 +6,7 @@ const radians = function (d) {
   return d % 360 * Math.PI / 180
 }
 
-export default class SVGMatrix {
+export class SVGMatrix {
   constructor () {
     this.a = this.d = 1
     this.b = this.c = this.e = this.f = 0

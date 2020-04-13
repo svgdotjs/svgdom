@@ -1,4 +1,5 @@
 import { decamelize } from '../utils/strUtils.js'
+import { getAttributeNode } from '../dom/AttributeNode.js'
 
 export const objectToMap = function (obj) {
   if (obj instanceof Map) return new Map(obj)
@@ -32,4 +33,10 @@ export const cssToMap = function (css) {
   return new Map(css.split(/\s*;\s*/).filter(function (el) { return !!el }).map(function (el) {
     return el.split(/\s*:\s*/)
   }))
+}
+
+export const mapToAttributeArray = function (themap) {
+  return mapMap(themap, function (value, key) {
+    return getAttributeNode(key, value)
+  })
 }

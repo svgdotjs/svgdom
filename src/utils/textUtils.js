@@ -1,9 +1,9 @@
-import defaults from './defaults.js'
-import { Box } from '../class/Box.js'
+import * as defaults from './defaults.js'
+import { Box } from '../other/Box.js'
 import path from 'path'
 import fontkit from 'fontkit'
 
-export const bbox = function (text, x, y, details) {
+export const textBBox = function (text, x, y, details) {
 
   var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
   var fontMap = Object.assign({}, defaults.fontFamilyMappings, details.fontFamilyMappings)

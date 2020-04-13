@@ -1,7 +1,7 @@
 import { removeQuotes, splitNotInBrackets } from '../utils/strUtils.js'
 import * as regex from '../utils/regex.js'
 
-export default class CssQuery {
+export class CssQuery {
   constructor (query) {
     if (CssQuery.cache.has(query)) {
       this.queries = CssQuery.cache.get(query)

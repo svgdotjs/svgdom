@@ -1,5 +1,6 @@
 
 extends: standard
+#plugins: [ dependencies ]
 rules:
   operator-linebreak: [ error, before ]
   object-curly-spacing: [ error, always ]
@@ -8,6 +9,7 @@ rules:
     flatTernaryExpressions: true
   }]
   padded-blocks: off
-globals:
-  SVG: true
-  performance: true
+#  dependencies/case-sensitive: 1
+#  dependencies/no-cycles: 1
+#  dependencies/no-unresolved: 1
+#  dependencies/require-json-ext: 1

@@ -1,5 +1,5 @@
 import * as regex from '../utils/regex.js'
-import Point from './Point.js'
+import { Point } from './Point.js'
 
 export class Box {
   constructor (source) {

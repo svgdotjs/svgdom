@@ -1,8 +1,8 @@
-import { Box, NoBox } from '../class/Box.js'
-import Point from '../class/Point.js'
+import { Box, NoBox } from '../other/Box.js'
+import { Point } from '../other/Point.js'
 import * as regex from './regex.js'
-import { matrixFactory } from '../utils/matrixUtils.js'
-import PointCloud from './PointCloud.js'
+import { matrixFactory } from './matrixUtils.js'
+import { PointCloud } from './PointCloud.js'
 
 var pathHandlers = {
   M (c, p, r, p0) {
@@ -550,7 +550,7 @@ class Line {
   }
 }
 
-export const bbox = function (d) {
+export const pathBBox = function (d) {
   return pathParser(d).reduce((l, c) => l.merge(c.bbox()), new NoBox())
 }
 

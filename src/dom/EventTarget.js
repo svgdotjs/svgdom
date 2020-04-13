@@ -1,6 +1,6 @@
 const $ = Symbol('private properties')
 
-export default class EventTarget {
+export class EventTarget {
   constructor () {
     this[$] = {}
     this[$].listeners = {}

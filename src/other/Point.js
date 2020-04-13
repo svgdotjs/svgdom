@@ -1,6 +1,6 @@
-import SVGPoint from './SVGPoint.js'
+import { SVGPoint } from '../dom/SVGPoint.js'
 
-export default class Point {
+export class Point {
   // Initialize
   constructor (x, y) {
     var source
