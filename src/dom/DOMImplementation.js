@@ -8,15 +8,15 @@ var supportedFeatures = {
   xhtml: { '': true, '1.0': true, '2.0': true } // HTML
 }
 
-export class DOMImplementation {
+export const DOMImplementation = {
   hasFeature (feature, version) {
     var f = supportedFeatures[(feature || '').toLowerCase()]
     return (f && f[version || '']) || false
-  }
+  },
 
   createDocumentType (qualifiedName, publicId, systemId) {
     throw new Error('createDocumentType not implemented yet')
-  }
+  },
 
   createDocument (namespace, qualifiedName, doctype) {
     var doc = new Document()
@@ -30,7 +30,7 @@ export class DOMImplementation {
       doc.appendChild(doc.createElementNS(namespace, qualifiedName))
     }
     return doc
-  }
+  },
 
   createHTMLDocument (titleText) {
     var d = new Document('html')

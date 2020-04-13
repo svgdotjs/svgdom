@@ -1,9 +1,19 @@
 import mat2d from 'gl-matrix'
-import { matrixFactory } from '../utils/matrixUtils.js'
 const matrix = mat2d.mat2d
 
 const radians = function (d) {
   return d % 360 * Math.PI / 180
+}
+
+export function matrixFactory (a, b, c, d, e, f) {
+  var r = new SVGMatrix()
+  r.a = a
+  r.b = b
+  r.c = c
+  r.d = d
+  r.e = e
+  r.f = f
+  return r
 }
 
 export class SVGMatrix {

@@ -1,5 +1,6 @@
 // webpack.config.js
 const CircularDependencyPlugin = require('circular-dependency-plugin')
+const path = require('path')
 
 module.exports = {
   entry: './src/dom/Window.js',

@@ -1,4 +1,3 @@
-import { Node } from '../Node.js'
 import { CssQuery } from '../../other/CssQuery.js'
 
 // https://developer.mozilla.org/en-US/docs/Web/API/ParentNode
@@ -29,16 +28,16 @@ const ParentNode = {
   }
 }
 
-Object.defineProperties({
+Object.defineProperties(ParentNode, {
   children: {
     get () {
-      return this.childNodes.filter(function (node) { return node.nodeType === Node.ELEMENT_NODE })
+      return this.childNodes.filter(function (node) { return node.nodeType === this.ELEMENT_NODE })
     }
   },
   firstElementChild: {
     get () {
       for (const node of this.childNodes) {
-        if (node && node.nodeType === Node.ELEMENT_NODE) {
+        if (node && node.nodeType === this.ELEMENT_NODE) {
           return node
         }
       }
@@ -48,7 +47,7 @@ Object.defineProperties({
   lastElementChild: {
     get () {
       for (const node of this.childNodes.slice().reverse()) {
-        if (node && node.nodeType === Node.ELEMENT_NODE) {
+        if (node && node.nodeType === this.ELEMENT_NODE) {
           return node
         }
       }

@@ -1,9 +1,11 @@
 import * as defaults from './defaults.js'
-import { Box } from '../other/Box.js'
+import { Box, NoBox } from '../other/Box.js'
 import path from 'path'
 import fontkit from 'fontkit'
 
 export const textBBox = function (text, x, y, details) {
+
+  if (!text) return new NoBox()
 
   var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
   var fontMap = Object.assign({}, defaults.fontFamilyMappings, details.fontFamilyMappings)
@@ -32,7 +34,7 @@ export const textBBox = function (text, x, y, details) {
       font = fontkit.openSync(filename)
     } catch (e) {
       console.warn(`Could not open font "${fontFamily}" in file "${filename}". ${e.toString()}`)
-      return new Box()
+      return new NoBox()
     }
 
     details.preloaded[fontFamily] = font

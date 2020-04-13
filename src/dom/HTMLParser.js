@@ -1,27 +1,43 @@
-import { TextNode } from './TextNode.js'
-import { Element } from './Element.js'
 import sax from 'sax'
 
 // TODO: Make it recognize the correct namespace
 export const HTMLParser = function (str, el) {
   let currentTag = el
-  var ownerDocument = el.ownerDocument
-  var parser = sax.parser(true)
+  // const namespaces = { xmlns: el.getAttribute('xmlns') }
+  const document = el.ownerDocument
 
-  parser.ontext = t => currentTag.appendChild(new TextNode('#text', {
-    data: t,
-    ownerDocument: ownerDocument
-  }))
+  const parser = sax.parser(false, {
+    lowercase: true,
+    xmlns: true,
+    strictEntities: true
+  })
+
+  parser.ontext = t => currentTag.appendChild(document.createTextNode(t))
+  // parser.onnamopennamespace = ns => {
+  //   namespaces[ns.prefix] = ns.uri
+  // }
+  // parser.onclosenamespace = ns => {
+  //   delete namespaces[ns.prefix]
+  // }
+
   parser.onopentag = node => {
-    var newElement = new Element(node.name, {
-      attrs: node.attributes,
-      ownerDocument: ownerDocument
-    })
+
+    const attrs = node.attributes
+    const ns = attrs.ns
+
+    var newElement = document.createElementNS(ns.uri, node.name)
+
+    for (const [ name, node ] of attrs) {
+      newElement.setAttributeNS(node.uri, name, node.value)
+    }
+
     currentTag.appendChild(newElement)
     currentTag = newElement
   }
+
   parser.onclosetag = node => {
     currentTag = currentTag.parentNode
   }
+
   parser.write(str)
 }

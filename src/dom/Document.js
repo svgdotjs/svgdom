@@ -28,7 +28,7 @@ export class Document extends Node {
     root.ownerDocument = this
     this.documentElement = root
     this._preloaded = {}
-    this._implementation = new DOMImplementation()
+    this.implementation = DOMImplementation
   }
 
   createElementNS (ns, name) {
@@ -56,6 +56,7 @@ export class Document extends Node {
   }
 
   createTextNode (text) {
+    // TODO: No entities here. Do it in innerHTML only
     return new TextNode('#text', { data: htmlEntities(text), ownerDocument: this })
   }
 
@@ -78,11 +79,6 @@ export class Document extends Node {
 }
 
 Object.defineProperties(Document.prototype, {
-  implementation: {
-    get () {
-      return this._implementation
-    }
-  },
   compatMode: {
     get () {
       return 'CSS1Compat' // always be in standards-mode

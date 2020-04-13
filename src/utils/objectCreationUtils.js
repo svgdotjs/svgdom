@@ -20,16 +20,16 @@ export const extendStatic = (...modules) => {
   }
 }
 
-export const mixInterface = (_interface, _class) => {
-  const descriptors = Object.getOwnPropertyDescriptors(_interface)
-  const all = Object.getOwnPropertyNames(_interface)
+export const mixInterface = (mixin, _class) => {
+  const descriptors = Object.getOwnPropertyDescriptors(mixin)
+  const all = Object.getOwnPropertyNames(mixin)
 
-  const propNames = descriptors.map((d) => d.value)
+  const propNames = Object.keys(descriptors)
   const methodNames = all.filter(p => !propNames.includes(p))
 
   for (const method of methodNames) {
-    _class.prototype[method] = _interface[method]
+    _class.prototype[method] = mixin[method]
   }
 
-  Object.defineProperties(descriptors)
+  Object.defineProperties(_class, descriptors)
 }

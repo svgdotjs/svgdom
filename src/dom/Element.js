@@ -6,8 +6,9 @@ import { HTMLParser } from './HTMLParser.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { mixInterface } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
-import { cssToMap, mapToAttributeArray, mapToCss } from '../utils/mapUtils.js'
-import { hexToRGB, decamelize } from '../utils/strUtils.js'
+import { cssToMap, mapToCss, mapMap } from '../utils/mapUtils.js'
+import { hexToRGB, decamelize, htmlEntities } from '../utils/strUtils.js'
+import { AttributeNode } from './AttributeNode.js'
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
 const getStyleProxy = (node) => {
@@ -49,6 +50,12 @@ const getStyleProxy = (node) => {
         return true
       }
     }
+  })
+}
+
+export const mapToAttributeArray = function (themap) {
+  return mapMap(themap, function (value, key) {
+    return new AttributeNode(key, value)
   })
 }
 
@@ -119,7 +126,7 @@ Object.defineProperties(Node.prototype, {
   },
   innerHTML: {
     get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
+      if (this.nodeType === Node.TEXT_NODE) return htmlEntities(this.data)
       return this.childNodes.reduce(function (last, current) {
         return last + current.outerHTML
       }, '')

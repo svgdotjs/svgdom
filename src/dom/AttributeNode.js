@@ -7,5 +7,3 @@ export class AttributeNode extends Node {
     this.nodeType = Node.ATTRIBUTE_NODE
   }
 }
-
-export const getAttributeNode = (...args) => new AttributeNode(...args)

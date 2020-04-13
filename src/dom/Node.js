@@ -1,9 +1,8 @@
-import { extendStatic } from '../utils/objectCreationUtils.js'
+import { extend, extendStatic } from '../utils/objectCreationUtils.js'
 
 import { EventTarget } from './EventTarget.js'
 
 import { objectToMap } from '../utils/mapUtils.js'
-import { htmlEntities } from '../utils/strUtils.js'
 import * as pathUtils from '../utils/pathUtils.js'
 import { cloneNode } from '../utils/tagUtils.js'
 import { getPointCloud } from '../utils/bboxUtils.js'
@@ -12,9 +11,11 @@ import * as regex from '../utils/regex.js'
 import { SVGPoint } from './SVGPoint.js'
 import { SVGMatrix } from './SVGMatrix.js'
 import { Box } from '../other/Box.js'
-import { TextNode } from './TextNode.js'
+import { nodeTypes } from './nodeTypes.js'
 // import {
+//   extend,
 //   extendStatic,
+//   nodeTypes,
 //   EventTarget,
 //   objectToMap,
 //   htmlEntities,
@@ -203,7 +204,7 @@ export class Node extends EventTarget {
         if (!node.data) return textNodes
 
         if (last.nodeType === Node.TEXT_NODE) {
-          const merged = new TextNode(last.data + ' ' + node.data)
+          const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
           textNodes.push(merged)
           return textNodes.concat(merged)
         }
@@ -540,7 +541,7 @@ Object.defineProperties(Node.prototype, {
       }, '')
     },
     set (text) {
-      this.childNodes = [ new TextNode('#text', { data: htmlEntities(text) }) ]
+      this.childNodes = [ this.ownerDocument.createTextNode(text) ]
     }
   },
   firstChild: {
@@ -567,17 +568,5 @@ Object.defineProperties(Node.prototype, {
   }
 })
 
-extendStatic(Node, {
-  ELEMENT_NODE: 1,
-  ATTRIBUTE_NODE: 2,
-  TEXT_NODE: 3,
-  CDATA_SECTION_NODE: 4,
-  ENTITY_REFERENCE_NODE: 5,
-  ENTITY_NODE: 6,
-  PROCESSING_INSTRUCTION_NODE: 7,
-  COMMENT_NODE: 8,
-  DOCUMENT_NODE: 9,
-  DOCUMENT_TYPE_NODE: 10,
-  DOCUMENT_FRAGMENT_NODE: 11,
-  NOTATION_NODE: 12
-})
+extendStatic(Node, nodeTypes)
+extend(Node, nodeTypes)
