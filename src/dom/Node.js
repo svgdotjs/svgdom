@@ -234,7 +234,7 @@ export class Node extends EventTarget {
   }
 
   lookupNamespacePrefix (namespaceURI, originalElement) {
-    if (this.ns && this.ns === namespaceURI && this.prefix
+    if (this.namespaceURI && this.namespaceURI === namespaceURI && this.prefix
          && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
       return this.prefix
     }
@@ -259,7 +259,7 @@ export class Node extends EventTarget {
     switch (this.nodeType) {
     case Node.ELEMENT_NODE:
       if (!this.prefix) {
-        return this.ns === namespaceURI
+        return this.namespaceURI === namespaceURI
       }
 
       if (this.hasAttribute('xmlns')) {
@@ -296,9 +296,9 @@ export class Node extends EventTarget {
   lookupNamespaceURI (prefix) {
     switch (this.nodeType) {
     case Node.ELEMENT_NODE:
-      if (this.ns != null && this.prefix === prefix) {
-        // Note: prefix could be "null" in this case Node.we are looking for default namespace
-        return this.ns
+      if (this.namespaceURI != null && this.prefix === prefix) {
+        // Note: prefix could be "null" in this case we are looking for default namespace
+        return this.namespaceURI
       }
 
       for (const [ key, val ] of this.attrs.entries()) {

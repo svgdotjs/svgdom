@@ -6,7 +6,7 @@ export class NodeFilter {
   }
 }
 
-extendStatic({
+extendStatic(NodeFilter, {
   FILTER_ACCEPT: 1,
   FILTER_REJECT: 2,
   FILTER_IGNORE: 4,

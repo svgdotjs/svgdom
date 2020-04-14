@@ -14,6 +14,8 @@ import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
+import { NodeIterator } from './NodeIterator.js'
+import { NodeFilter } from './NodeFilter.js'
 
 export function getChildByTagName (parent, name) {
   for (var child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -163,10 +165,9 @@ export class Document extends Node {
   }
 
   getElementById (id) {
-    for (var i = this.childNodes.length; i--;) {
-      if (this.childNodes[i].id === id) { return this.childNodes[i] }
-      var el = this.childNodes[i].getElementById(id)
-      if (el) { return el }
+    const iter = new NodeIterator(this, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => id === node.id ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE })
+    for (const node of iter) {
+      return node
     }
     return null
   }

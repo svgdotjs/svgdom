@@ -21,6 +21,10 @@ module.exports = {
     path: __dirname
   },
   externals: nodeModules,
+  node: {
+    __dirname: true,
+    __filename: true
+  },
   devtool: 'inline-source-map',
   plugins: [
     new CircularDependencyPlugin({

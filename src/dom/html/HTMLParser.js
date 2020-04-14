@@ -13,7 +13,7 @@ export const HTMLParser = function (str, el) {
   })
 
   parser.ontext = t => currentTag.appendChild(document.createTextNode(t))
-  // parser.onnamopennamespace = ns => {
+  // parser.onopennamespace = ns => {
   //   namespaces[ns.prefix] = ns.uri
   // }
   // parser.onclosenamespace = ns => {
@@ -23,11 +23,12 @@ export const HTMLParser = function (str, el) {
   parser.onopentag = node => {
 
     const attrs = node.attributes
-    const ns = attrs.ns
 
-    var newElement = document.createElementNS(ns.uri, node.name)
+    const uri = node.uri || currentTag.lookupNamespaceURI(node.prefix || null)
 
-    for (const [ name, node ] of attrs) {
+    var newElement = document.createElementNS(uri, node.name)
+
+    for (const [ name, node ] of Object.entries(attrs)) {
       newElement.setAttributeNS(node.uri, name, node.value)
     }
 
