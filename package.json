@@ -2,8 +2,12 @@
   "name": "svgdom",
   "version": "0.0.21",
   "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
+  "main": "./main-require.cjs",
+  "exports": {
+    "import": "./main-module.js",
+    "require": "./main-require.cjs"
+  },
   "type": "module",
-  "main": "index.js",
   "scripts": {
     "test": "mocha",
     "fix": "npx eslint ./ --fix",
@@ -16,6 +20,9 @@
   "keywords": [
     "svgjs",
     "dom",
+    "xml",
+    "xmldom",
+    "svgdom",
     "nodejs"
   ],
   "author": "Ulrich-Matthias Schäfer",
@@ -31,7 +38,7 @@
     "sax": "^1.2.2"
   },
   "devDependencies": {
-    "@svgdotjs/svg.js": "^3.0.6",
+    "@svgdotjs/svg.js": "^3.0.16",
     "acorn": "^7.1.1",
     "circular-dependency-plugin": "^5.2.0",
     "eslint": "^6.6.0",
@@ -44,7 +51,6 @@
     "puppeteer": "^1.9.0",
     "reify": "^0.12.3",
     "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11",
-    "xmldom": "^0.1.27"
+    "webpack-cli": "^3.3.11"
   }
 }

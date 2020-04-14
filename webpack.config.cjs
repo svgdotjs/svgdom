@@ -1,9 +1,27 @@
 // webpack.config.js
 const CircularDependencyPlugin = require('circular-dependency-plugin')
-const path = require('path')
+const fs = require('fs')
+
+const nodeModules = {}
+fs.readdirSync('node_modules')
+  .filter(function (x) {
+    return [ '.bin' ].indexOf(x) === -1
+  })
+  .forEach(function (mod) {
+    nodeModules[mod] = 'commonjs ' + mod
+  })
 
 module.exports = {
-  entry: './src/dom/Window.js',
+  mode: 'development',
+  entry: './main-module.js',
+  output: {
+    // library: 'svgdom',
+    libraryTarget: 'commonjs',
+    filename: './main-require.cjs',
+    path: __dirname
+  },
+  externals: nodeModules,
+  devtool: 'inline-source-map',
   plugins: [
     new CircularDependencyPlugin({
       // exclude detection of files based on a RegExp
@@ -18,5 +36,6 @@ module.exports = {
       // set the current working directory for displaying module paths
       cwd: process.cwd()
     })
-  ]
+  ],
+  target: 'node'
 }
