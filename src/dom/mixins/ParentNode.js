@@ -1,4 +1,6 @@
 import { CssQuery } from '../../other/CssQuery.js'
+import { NodeIterator } from '../NodeIterator.js'
+import { NodeFilter } from '../NodeFilter.js'
 
 // https://developer.mozilla.org/en-US/docs/Web/API/ParentNode
 const ParentNode = {
@@ -7,9 +9,21 @@ const ParentNode = {
   },
 
   query (query, scope, single = false) {
+
+    const iter = new NodeIterator(scope, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => node.matchWithScope(query, scope) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE })
+
+    const nodes = []
+    for (const node of iter) {
+      nodes.push(node)
+      if (single) return nodes
+    }
+
+    return nodes
+    /*
     var ret = []
     for (var i = 0, il = this.childNodes.length; i < il; ++i) {
       var child = this.childNodes[i]
+      console.log(child)
       if (child.matchWithScope(query, scope)) {
         ret.push(child)
         if (single) return ret
@@ -17,6 +31,7 @@ const ParentNode = {
       ret = ret.concat(child.query(query, scope))
     }
     return ret
+    */
   },
 
   querySelectorAll (query) {
@@ -56,7 +71,7 @@ Object.defineProperties(ParentNode, {
   },
   childElementCount: {
     get () {
-      return this.children().length
+      return this.children.length
     }
   }
 })

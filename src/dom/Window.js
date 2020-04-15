@@ -19,6 +19,8 @@ import { SVGSVGElement } from './svg/SVGSVGElement.js'
 import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
+import { camelCase } from '../utils/strUtils.js'
+import * as defaults from '../utils/defaults.js'
 
 export class Window extends EventTarget {
   constructor () {
@@ -44,7 +46,7 @@ export class Window extends EventTarget {
           && node.nodeType === 1
         )
 
-        return value || null
+        return value || defaults[camelCase(attr)] || null
       }
     }
   }

@@ -23,6 +23,10 @@ export class Node extends EventTarget {
   constructor (name = '', props = {}, ns = null) {
     super()
 
+    if (ns === 'http://www.w3.org/1999/xhtml') {
+      name = name.toUpperCase()
+    }
+
     this.prefix = null
     this.nodeName = this.localName = name
 

@@ -11,7 +11,8 @@
   "scripts": {
     "test": "mocha",
     "fix": "npx eslint ./ --fix",
-    "lint": "npx eslint ./"
+    "lint": "npx eslint ./",
+    "build": "npx webpack --config webpack.config.cjs"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
     "fontkit": "^1.5.4",
     "gl-matrix": "^2.3.2",
     "image-size": "^0.5.1",
+    "request": "^2.88.2",
     "sax": "^1.2.2"
   },
   "devDependencies": {

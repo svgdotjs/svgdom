@@ -22,6 +22,7 @@ export class CssQuery {
         else if (ch === '[') ++squareBrackets
         else if (ch === ']') --squareBrackets
 
+        if ('()[]'.indexOf(ch) > -1) return ch
         if (squareBrackets || roundBrackets) return ch
 
         return ' ' + ch + ' '
@@ -151,6 +152,13 @@ const attributeMatcher = {
   '*': (i, a, b) => b != null
 }
 
+const getAttributeValue = (prefix, name, node) => {
+  if (!prefix || prefix === '*') {
+    return node.getAttribute(name)
+  }
+  return node.getAttribute(prefix + ':' + name)
+}
+
 // [a] (prebound) [a]rgument of the pseudo selector
 // [n] (passed)   [n]ode
 // [s] (passed)   [s]cope - the element this query is scoped to
@@ -180,7 +188,7 @@ class CssQueryNode {
     this.pseudo = []
 
     // match the tag name
-    var matches = node.match(/^[\w-]+|\*/)
+    var matches = node.match(/^[\w-]+|^\*/)
     if (matches) {
       this.tag = matches[0]
       node = node.slice(this.tag.length)
@@ -206,13 +214,15 @@ class CssQueryNode {
     }
 
     // match attributes
-    while ((matches = /\[([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(node))) {
+    while ((matches = /\[([\w-*]+\|)?([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(node))) {
+      const prefix = matches[1] ? matches[1].split('|')[0] : null
       this.attrs.push({
-        name: matches[1],
-        matcher: attributeMatcher[matches[3] || '*'].bind(
+        name: matches[2],
+        getValue: getAttributeValue.bind(this, prefix, matches[2]),
+        matcher: attributeMatcher[matches[4] || '*'].bind(
           this,
-          !!matches[5], // case insensitive yes/no
-          removeQuotes((matches[4] || '').trim()) // attribute value
+          !!matches[6], // case insensitive yes/no
+          removeQuotes((matches[5] || '').trim()) // attribute value
         )
       })
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
@@ -236,7 +246,7 @@ class CssQueryNode {
     }
 
     for (i = this.attrs.length; i--;) {
-      var attrValue = node.getAttribute(this.attrs[i].name)
+      var attrValue = this.attrs[i].getValue(node)
       if (attrValue === null || !this.attrs[i].matcher(attrValue)) {
         return false
       }

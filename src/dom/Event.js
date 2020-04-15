@@ -3,9 +3,12 @@ export class Event {
     this.type = type
     this.cancelable = false
     this.defaultPrevented = false
+    this.target = null
   }
 
   preventDefault () {
-    this.defaultPrevented = true
+    if (this.cancelable) {
+      this.defaultPrevented = true
+    }
   }
 }

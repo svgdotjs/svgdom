@@ -4,7 +4,14 @@ import sax from 'sax'
 export const HTMLParser = function (str, el) {
   let currentTag = el
   // const namespaces = { xmlns: el.getAttribute('xmlns') }
-  const document = el.ownerDocument
+  let document = el.ownerDocument
+
+  // sax expects a root element but we also missuse it to parse fragments
+  if (el.nodeType !== el.DOCUMENT_NODE) {
+    str = '<svgdom:wrapper>' + str + '</svgdom:wrapper>'
+  } else {
+    document = el
+  }
 
   const parser = sax.parser(false, {
     lowercase: true,
@@ -22,6 +29,8 @@ export const HTMLParser = function (str, el) {
 
   parser.onopentag = node => {
 
+    if (node.name === 'svgdom:wrapper') return
+
     const attrs = node.attributes
 
     const uri = node.uri || currentTag.lookupNamespaceURI(node.prefix || null)
@@ -37,6 +46,8 @@ export const HTMLParser = function (str, el) {
   }
 
   parser.onclosetag = node => {
+    if (node.name === 'svgdom:wrapper') return
+
     currentTag = currentTag.parentNode
   }
 

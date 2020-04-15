@@ -145,7 +145,7 @@ export class Document extends Node {
   }
 
   createElement (name) {
-    return this.createElementNS(null, name)
+    return this.createElementNS(namespaces.html, name)
   }
 
   createTextNode (text) {

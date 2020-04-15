@@ -94,7 +94,9 @@ export class SVGGraphicsElement extends SVGElement {
     // We follow Chromes behavior and include the viewbox in the screenCTM
     var m = this.getInnerMatrix()
 
-    if (this.parentNode && this.parentNode.nodeName !== '#document') {
+    // TODO: We have to loop until document, however html elements dont have getScreenCTM implemented
+    // they also dont have a transform attribute. Therefore we need a different way of figuring out their (css) transform
+    if (this.parentNode && this.parentNode instanceof SVGGraphicsElement) {
       return this.parentNode.getScreenCTM().multiply(m)
     }
 

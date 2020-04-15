@@ -82,6 +82,11 @@ export class Element extends Node {
 
   // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
   removeAttributeNS (ns = '', name) {
+    const prefix = this.lookupPrefix(ns)
+    if (name.includes(':') || !prefix) {
+      return this.removeAttribute(name)
+    }
+
     this.removeAttribute([ ns, name ].join(':'))
   }
 
@@ -90,6 +95,11 @@ export class Element extends Node {
   }
 
   hasAttributeNS (ns = '', name) {
+    const prefix = this.lookupPrefix(ns)
+    if (name.includes(':') || !prefix) {
+      return this.hasAttribute(name)
+    }
+
     return this.hasAttribute([ ns, name ].join(':'))
   }
 
@@ -98,7 +108,12 @@ export class Element extends Node {
   }
 
   getAttributeNS (ns = '', name) {
-    return this.getAttribute([ ns, name ].join(':'))
+    const prefix = this.lookupPrefix(ns)
+    if (name.includes(':') || !prefix) {
+      return this.getAttribute(name)
+    }
+
+    return this.getAttribute([ prefix, name ].join(':'))
   }
 
   matches (query) {
@@ -157,7 +172,7 @@ Object.defineProperties(Node.prototype, {
   },
   id: {
     get () {
-      return this.getAttribute('id')
+      return this.getAttribute('id') || ''
     },
     set (id) {
       return this.setAttribute('id', id)
