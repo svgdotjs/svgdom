@@ -1,3 +1,5 @@
+import * as defaults from './src/utils/defaults.js'
+
 export * from './src/dom/AttributeNode.js'
 export * from './src/dom/CharacterData.js'
 export * from './src/dom/Comment.js'
@@ -29,3 +31,4 @@ export * from './src/dom/svg/SVGTextContentElement.js'
 
 export * from './src/config.js'
 export * from './src/factories.js'
+export { defaults }

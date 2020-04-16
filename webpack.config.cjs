@@ -1,6 +1,7 @@
 // webpack.config.js
 const CircularDependencyPlugin = require('circular-dependency-plugin')
 const fs = require('fs')
+const path = require('path')
 
 const nodeModules = {}
 fs.readdirSync('node_modules')
@@ -20,11 +21,13 @@ module.exports = {
     filename: './main-require.cjs',
     path: __dirname
   },
-  externals: nodeModules,
-  node: {
-    __dirname: true,
-    __filename: true
-  },
+  // This function is only to make __dirname work properly!!!
+  externals: [ nodeModules, function (context, request, callback) {
+    if (/dirname.cjs/.test(request)) {
+      return callback(null, 'commonjs ./' + path.join('./', path.relative(__dirname, context), request).replace('\\', '/'))
+    }
+    callback()
+  } ],
   devtool: 'inline-source-map',
   plugins: [
     new CircularDependencyPlugin({
@@ -42,4 +45,5 @@ module.exports = {
     })
   ],
   target: 'node'
+
 }
