@@ -14,10 +14,9 @@ import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
-import { NodeIterator } from './NodeIterator.js'
-import { NodeFilter } from './NodeFilter.js'
 import * as namespaces from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
+import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 
 export function getChildByTagName (parent, name) {
   for (var child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -156,14 +155,6 @@ export class Document extends Node {
   createAttributeNS (ns, name) {
     return new Attr(name, ns)
   }
-
-  getElementById (id) {
-    const iter = new NodeIterator(this, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => id === node.id ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE })
-    for (const node of iter) {
-      return node
-    }
-    return null
-  }
 }
 
 Object.defineProperties(Document.prototype, {
@@ -194,3 +185,4 @@ Object.defineProperties(Document.prototype, {
 
 mixin(elementAccess, Document)
 mixin(ParentNode, Document)
+mixin(NonElementParentNode, Document)

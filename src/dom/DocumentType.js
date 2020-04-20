@@ -1,4 +1,6 @@
 import { Node } from './Node.js'
+import { mixin } from '../utils/objectCreationUtils.js'
+import { ChildNode } from './mixins/ChildNode.js'
 
 export class DocumentType extends Node {
   constructor (name, props) {
@@ -13,4 +15,4 @@ export class DocumentType extends Node {
   }
 }
 
-// TODO: implements ChildNode Interface
+mixin(ChildNode, DocumentType)

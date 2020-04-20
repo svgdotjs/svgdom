@@ -1,8 +1,9 @@
 import { CssQuery } from '../../other/CssQuery.js'
 import { NodeIterator } from '../NodeIterator.js'
 import { NodeFilter } from '../NodeFilter.js'
+import { nodesToNode } from '../../utils/nodesToNode.js'
 
-// https://developer.mozilla.org/en-US/docs/Web/API/ParentNode
+// https://dom.spec.whatwg.org/#parentnode
 const ParentNode = {
   matchWithScope (query, scope) {
     return new CssQuery(query).matches(this, scope)
@@ -19,19 +20,6 @@ const ParentNode = {
     }
 
     return nodes
-    /*
-    var ret = []
-    for (var i = 0, il = this.childNodes.length; i < il; ++i) {
-      var child = this.childNodes[i]
-      console.log(child)
-      if (child.matchWithScope(query, scope)) {
-        ret.push(child)
-        if (single) return ret
-      }
-      ret = ret.concat(child.query(query, scope))
-    }
-    return ret
-    */
   },
 
   querySelectorAll (query) {
@@ -40,6 +28,24 @@ const ParentNode = {
 
   querySelector (query) {
     return this.query(query, this, true)[0] || null
+  },
+
+  prepend (nodes) {
+    const node = nodesToNode(nodes, this.ownerDocument)
+
+    this.insertBefore(node, this.firstChild)
+  },
+
+  append (nodes) {
+    const node = nodesToNode(nodes, this.ownerDocument)
+    this.appendChild(node)
+  },
+
+  replaceChildren (nodes) {
+    while (this.firstChild) {
+      this.removeChild(this.firstChild)
+    }
+    this.append(nodes)
   }
 }
 

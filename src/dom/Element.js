@@ -8,6 +8,8 @@ import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
 import { cssToMap, mapToCss, mapMap } from '../utils/mapUtils.js'
 import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/strUtils.js'
+import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
+import { ChildNode } from './mixins/ChildNode.js'
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
 const getStyleProxy = (node) => {
@@ -128,9 +130,6 @@ export class Element extends Node {
   }
 
 }
-/* mix methods of the ParentNode interface into Element */
-mixin(ParentNode, Element)
-mixin(elementAccess, Element)
 
 Object.defineProperties(Element.prototype, {
   attributes: {
@@ -184,3 +183,8 @@ Object.defineProperties(Element.prototype, {
     }
   }
 })
+
+mixin(ParentNode, Element)
+mixin(elementAccess, Element)
+mixin(NonDocumentTypeChildNode, Element)
+mixin(ChildNode, Element)

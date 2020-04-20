@@ -2,6 +2,7 @@ import { Node } from './Node.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { elementAccess } from './mixins/elementAccess.js'
 import { ParentNode } from './mixins/ParentNode.js'
+import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 export class DocumentFragment extends Node {
   constructor () {
     super('#document-fragment')
@@ -11,3 +12,4 @@ export class DocumentFragment extends Node {
 
 mixin(elementAccess, DocumentFragment)
 mixin(ParentNode, DocumentFragment)
+mixin(NonElementParentNode, DocumentFragment)
