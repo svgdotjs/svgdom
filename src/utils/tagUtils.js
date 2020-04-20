@@ -1,4 +1,5 @@
 import { mapMap } from './mapUtils.js'
+import { html } from './namespaces.js'
 
 const htmlEntities = function (str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -13,24 +14,37 @@ var emptyElements = {
 
 export const tag = function (node) {
 
-  var attrs = new Map(node.attrs)
+  let { nodeName: name, prefix } = node
 
-  var name = node.nodeName
+  // Follow browser behavior and lowercase tagnames on innerHTML
+  if (node.namespaceURI === html) {
+    name = name.toLowerCase()
+  }
 
-  attrs = mapMap(attrs, function (value, key) {
+  // We need no prefix if it is the default namespace
+  if (node.isDefaultNamespace(node.lookupNamespaceURI(prefix))) {
+    prefix = null
+  }
+
+  const attrs = mapMap(node.attrs, function (value, key) {
     return key + '="' + htmlEntities(value) + '"'
   })
 
-  return '<' + [].concat(name, attrs).join(' ') + '>' + (emptyElements[name] ? '' : node.innerHTML + '</' + name + '>')
+  const tagName = prefix ? [ prefix, name ].join(':') : name
+
+  return '<' + [].concat(tagName, attrs).join(' ') + '>' + (emptyElements[name] ? '' : node.innerHTML + '</' + tagName + '>')
 }
 
 export const cloneNode = function (node) {
 
-  var clone = new node.constructor(node.nodeName, {
+  const { name, prefix } = node
+  const tagName = prefix ? [ prefix, name ].join(':') : name
+
+  var clone = new node.constructor(tagName, {
     attrs: node.attrs,
-    data: node.data,
+    nodeValue: node.nodeValue,
     ownerDocument: node.ownerDocument
-  })
+  }, node.namespaceURI)
 
   return clone
 }

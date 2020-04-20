@@ -1,10 +1,11 @@
 import sax from 'sax'
 
-// TODO: Make it recognize the correct namespace
+// TODO: Its an XMLParser not HTMLParser!!
 export const HTMLParser = function (str, el) {
   let currentTag = el
   // const namespaces = { xmlns: el.getAttribute('xmlns') }
   let document = el.ownerDocument
+  let cdata = null
 
   // sax expects a root element but we also missuse it to parse fragments
   if (el.nodeType !== el.DOCUMENT_NODE) {
@@ -19,7 +20,20 @@ export const HTMLParser = function (str, el) {
     strictEntities: true
   })
 
-  parser.ontext = t => currentTag.appendChild(document.createTextNode(t))
+  parser.onerror = (e) => {
+    throw e
+  }
+
+  parser.ondoctype = (str) => {
+    if (currentTag !== document) {
+      throw new Error('Doctype can only be appended to document')
+    }
+    currentTag.appendChild(document.implementation.createDocumentType())
+  }
+
+  parser.ontext = (str) => currentTag.appendChild(document.createTextNode(str))
+  parser.oncomment = (str) => currentTag.appendChild(document.createComment(str))
+
   // parser.onopennamespace = ns => {
   //   namespaces[ns.prefix] = ns.uri
   // }
@@ -28,7 +42,6 @@ export const HTMLParser = function (str, el) {
   // }
 
   parser.onopentag = node => {
-
     if (node.name === 'svgdom:wrapper') return
 
     const attrs = node.attributes
@@ -49,6 +62,18 @@ export const HTMLParser = function (str, el) {
     if (node.name === 'svgdom:wrapper') return
 
     currentTag = currentTag.parentNode
+  }
+
+  parser.onopencdata = () => {
+    cdata = document.createCDATASection('')
+  }
+
+  parser.oncdata = (str) => {
+    cdata.appendData(str)
+  }
+
+  parser.onclosecdata = () => {
+    currentTag.appendChild(cdata)
   }
 
   parser.write(str)

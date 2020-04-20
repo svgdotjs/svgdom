@@ -3,7 +3,7 @@ export class SVGElement extends Element {
 
 }
 
-Object.defineProperties(Element.prototype, {
+Object.defineProperties(SVGElement.prototype, {
   ownerSVGElement: {
     get () {
       let owner = null

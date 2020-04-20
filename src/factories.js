@@ -1,5 +1,6 @@
 import { Window } from './dom/Window.js'
-import { DOMImplementation, namespaces } from './dom/Document.js'
+import { DOMImplementation } from './dom/Document.js'
+import * as namespaces from './utils/namespaces.js'
 
 const { createDocument, createHTMLDocument } = DOMImplementation
 

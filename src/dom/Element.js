@@ -7,8 +7,7 @@ import { DocumentFragment } from './DocumentFragment.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
 import { cssToMap, mapToCss, mapMap } from '../utils/mapUtils.js'
-import { hexToRGB, decamelize, htmlEntities } from '../utils/strUtils.js'
-import { AttributeNode } from './AttributeNode.js'
+import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/strUtils.js'
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
 const getStyleProxy = (node) => {
@@ -53,9 +52,13 @@ const getStyleProxy = (node) => {
   })
 }
 
-export const mapToAttributeArray = function (themap) {
-  return mapMap(themap, function (value, key) {
-    return new AttributeNode(key, value)
+export const mapToAttributeArray = function (element) {
+  const { attrs, ownerDocument, namespaceURI } = element
+  return mapMap(attrs, function (value, key) {
+    const attr = ownerDocument.createAttributeNS(namespaceURI, key)
+    attr.value = value
+    attr.ownerElement = element
+    return attr
   })
 }
 
@@ -129,10 +132,10 @@ export class Element extends Node {
 mixin(ParentNode, Element)
 mixin(elementAccess, Element)
 
-Object.defineProperties(Node.prototype, {
+Object.defineProperties(Element.prototype, {
   attributes: {
     get () {
-      return mapToAttributeArray(this.attrs)
+      return mapToAttributeArray(this)
     }
   },
   className: {
@@ -145,10 +148,13 @@ Object.defineProperties(Node.prototype, {
   },
   innerHTML: {
     get () {
-      if (this.nodeType === Node.TEXT_NODE) return htmlEntities(this.data)
-      return this.childNodes.reduce(function (last, current) {
-        return last + current.outerHTML
-      }, '')
+
+      return this.childNodes.map(node => {
+        if (node.nodeType === Node.TEXT_NODE) return htmlEntities(node.data)
+        if (node.nodeType === Node.CDATA_SECTION_NODE) return cdata(node.data)
+        if (node.nodeType === Node.COMMENT_NODE) return comment(node.data)
+        return node.outerHTML
+      }).join('')
     },
     set (str) {
       while (this.firstChild) {
@@ -160,7 +166,6 @@ Object.defineProperties(Node.prototype, {
   },
   outerHTML: {
     get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
       return tag(this)
     },
     set (str) {

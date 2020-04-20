@@ -54,6 +54,14 @@ export function unhtmlEntities (str) {
   return String(str).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace('&quot;', '"')
 }
 
+export function cdata (str) {
+  return `<![CDATA[${str}]]>`
+}
+
+export function comment (str) {
+  return `<!--${str}-->`
+}
+
 export const splitNotInBrackets = (str, delimiter) => {
   var roundBrackets = 0
 

@@ -3,11 +3,11 @@ import { EventTarget } from './EventTarget.js'
 import { Node } from './Node.js'
 import { Document } from './Document.js'
 import { DocumentFragment } from './DocumentFragment.js'
-import { TextNode } from './TextNode.js'
+import { Text } from './Text.js'
 import { CustomEvent } from './CustomEvent.js'
 import { Event } from './Event.js'
 import { Element } from './Element.js'
-import { AttributeNode } from './AttributeNode.js'
+import { Attr } from './Attr.js'
 import { HTMLImageElement } from './html/HTMLImageElement.js'
 import { HTMLLinkElement } from './html/HTMLLinkElement.js'
 import { HTMLScriptElement } from './html/HTMLScriptElement.js'
@@ -58,8 +58,8 @@ const winProps = {
   DocumentFragment,
   Node,
   EventTarget,
-  TextNode,
-  AttributeNode,
+  Text,
+  Attr,
   Element,
   CustomEvent,
   Event,

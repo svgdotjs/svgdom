@@ -1,7 +1,7 @@
 import { Node } from './Node.js'
 import { Comment } from './Comment.js'
-import { TextNode } from './TextNode.js'
-import { AttributeNode } from './AttributeNode.js'
+import { Text } from './Text.js'
+import { Attr } from './Attr.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { HTMLLinkElement } from './html/HTMLLinkElement.js'
 import { HTMLScriptElement } from './html/HTMLScriptElement.js'
@@ -16,6 +16,8 @@ import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
 import { NodeIterator } from './NodeIterator.js'
 import { NodeFilter } from './NodeFilter.js'
+import * as namespaces from '../utils/namespaces.js'
+import { DocumentType } from './DocumentType.js'
 
 export function getChildByTagName (parent, name) {
   for (var child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -24,15 +26,6 @@ export function getChildByTagName (parent, name) {
     }
   }
   return null
-}
-
-export const namespaces = {
-  svg: 'http://www.w3.org/2000/svg',
-  xlink: 'http://www.w3.org/1999/xlink',
-  html: 'http://www.w3.org/1999/xhtml',
-  mathml: 'http://www.w3.org/1998/Math/MathML',
-  xml: 'http://www.w3.org/XML/1998/namespace',
-  xmlns: 'http://www.w3.org/2000/xmlns/'
 }
 
 const getSVGElementForName = (name) => {
@@ -91,7 +84,7 @@ export const DOMImplementation = {
   },
 
   createDocumentType (qualifiedName, publicId, systemId) {
-    throw new Error('createDocumentType not implemented yet')
+    return new DocumentType(qualifiedName, { publicId, systemId, ownerDocument: this })
   },
 
   createDocument (namespace, qualifiedName, doctype) {
@@ -149,11 +142,11 @@ export class Document extends Node {
   }
 
   createTextNode (text) {
-    return new TextNode('#text', { data: text, ownerDocument: this })
+    return new Text('#text', { nodeValue: text, ownerDocument: this })
   }
 
   createComment (text) {
-    return new Comment('#comment', { data: text, ownerDocument: this })
+    return new Comment('#comment', { nodeValue: text, ownerDocument: this })
   }
 
   createAttribute (name) {
@@ -161,7 +154,7 @@ export class Document extends Node {
   }
 
   createAttributeNS (ns, name) {
-    return new AttributeNode(name, { ownerDocument: this }, ns)
+    return new Attr(name, ns)
   }
 
   getElementById (id) {

@@ -3,6 +3,7 @@ import { extend, extendStatic } from '../utils/objectCreationUtils.js'
 import { EventTarget } from './EventTarget.js'
 import { objectToMap } from '../utils/mapUtils.js'
 import { cloneNode } from '../utils/tagUtils.js'
+import { html } from '../utils/namespaces.js'
 
 const nodeTypes = {
   ELEMENT_NODE: 1,
@@ -23,7 +24,8 @@ export class Node extends EventTarget {
   constructor (name = '', props = {}, ns = null) {
     super()
 
-    if (ns === 'http://www.w3.org/1999/xhtml') {
+    // Follow spec and uppercase nodename for html
+    if (ns === html) {
       name = name.toUpperCase()
     }
 
@@ -37,11 +39,10 @@ export class Node extends EventTarget {
 
     this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
-    this.nodeValue = 0
+    this.nodeValue = props.nodeValue != null ? props.nodeValue : null
     this.childNodes = []
 
     this.attrs = objectToMap(props.attrs || {})
-    this.data = props.data || ''
 
     this.ownerDocument = props.ownerDocument || null
     this.parentNode = null
@@ -355,6 +356,8 @@ Object.defineProperties(Node.prototype, {
   textContent: {
     get () {
       if (this.nodeType === Node.TEXT_NODE) return this.data
+      if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
+      if (this.nodeType === Node.COMMENT_NODE) return this.data
 
       return this.childNodes.reduce(function (last, current) {
         return last + current.textContent
