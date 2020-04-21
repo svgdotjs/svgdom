@@ -58,7 +58,7 @@ export const mapToAttributeArray = function (element) {
   const { attrs, ownerDocument, namespaceURI } = element
   return mapMap(attrs, function (value, key) {
     const attr = ownerDocument.createAttributeNS(namespaceURI, key)
-    attr.value = value
+    attr.value = attr.nodeValue = value
     attr.ownerElement = element
     return attr
   })

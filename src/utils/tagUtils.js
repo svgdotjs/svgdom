@@ -1,4 +1,4 @@
-import { mapMap } from './mapUtils.js'
+import { mapMap, mapToObject } from './mapUtils.js'
 import { html } from './namespaces.js'
 
 const htmlEntities = function (str) {
@@ -37,11 +37,11 @@ export const tag = function (node) {
 
 export const cloneNode = function (node) {
 
-  const { name, prefix } = node
+  const { nodeName: name, prefix } = node
   const tagName = prefix ? [ prefix, name ].join(':') : name
 
   var clone = new node.constructor(tagName, {
-    attrs: node.attrs,
+    attrs: mapToObject(node.attrs),
     nodeValue: node.nodeValue,
     ownerDocument: node.ownerDocument
   }, node.namespaceURI)
