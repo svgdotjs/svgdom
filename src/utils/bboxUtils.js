@@ -1,7 +1,6 @@
 import * as pathUtils from './pathUtils.js'
 import * as regex from './regex.js'
 import * as textUtils from './textUtils.js'
-import * as strUtils from './strUtils.js'
 import { NoBox } from '../other/Box.js'
 import { PointCloud } from './PointCloud.js'
 
@@ -111,7 +110,7 @@ const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [ 0 ], dy = [ 0 
     if (node.childNodes[i].nodeType === 3) {
 
       // get text data
-      data = strUtils.unhtmlEntities(node.childNodes[i].data)
+      data = node.childNodes[i].data
 
       let j = 0
       const jl = data.length
