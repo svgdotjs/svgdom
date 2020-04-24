@@ -1,5 +1,5 @@
 import { CssQuery } from '../../other/CssQuery.js'
-import { NodeIterator } from '../NodeIterator.js'
+import { NodeIterator } from '../../utils/NodeIterator.js'
 import { NodeFilter } from '../NodeFilter.js'
 import { nodesToNode } from '../../utils/nodesToNode.js'
 
@@ -11,7 +11,7 @@ const ParentNode = {
 
   query (query, scope, single = false) {
 
-    const iter = new NodeIterator(scope, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => node.matchWithScope(query, scope) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE })
+    const iter = new NodeIterator(scope, NodeFilter.SHOW_ELEMENT, (node) => node.matchWithScope(query, scope) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE, false)
 
     const nodes = []
     for (const node of iter) {

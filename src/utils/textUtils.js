@@ -4,57 +4,10 @@ import * as defaults from './defaults.js'
 import { Box, NoBox } from '../other/Box.js'
 import { getConfig, getFonts } from '../config.js'
 
-const getFontDetails = (node) => {
-  let fontSize = null
-  let fontFamily = null
-  let textAnchor = null
-  let dominantBaseline = null
-
-  const textContentElements = [
-    'text',
-    'tspan',
-    'tref',
-    'textPath',
-    'altGlyph',
-    'g'
-  ]
-
-  do {
-    // TODO: stop on
-    if (!fontSize) { fontSize = node.style.fontSize || node.getAttribute('font-size') }
-    if (!fontFamily) { fontFamily = node.style.fontFamily || node.getAttribute('font-family') }
-    if (!textAnchor) { textAnchor = node.style.textAnchor || node.getAttribute('text-anchor') }
-    if (!dominantBaseline) { dominantBaseline = node.style.dominantBaseline || node.getAttribute('dominant-baseline') }
-    // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
-    // TODO: alignment-adjust, baseline-shift
-    /*
-    if(!alignmentBaseline)
-    alignmentBaseline = this.style.alignmentBaseline || this.getAttribute('alignment-baseline')
-    */
-
-  } while (
-    (node = node.parentNode)
-    && node.nodeType === node.ELEMENT_NODE
-    && (textContentElements.includes(node.nodeName))
-  )
-
-  return {
-    fontFamily,
-    fontSize,
-    textAnchor: textAnchor || 'start',
-    // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
-    dominantBaseline: dominantBaseline || 'alphabetical'
-    // fontFamilyMappings: this.ownerDocument.fontFamilyMappings,
-    // fontDir: this.ownerDocument.fontDir,
-    // preloaded: this.ownerDocument._preloaded
-  }
-}
-
-export const textBBox = function (text, x, y, node) {
+export const textBBox = function (text, x, y, details) {
 
   if (!text) return new NoBox()
 
-  const details = getFontDetails(node)
   const config = getConfig()
   const preloaded = getFonts()
 
