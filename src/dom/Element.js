@@ -37,8 +37,9 @@ const getStyleProxy = (node) => {
     set (target, key, value) {
       key = decamelize(key)
 
-      if (key === 'cssText') {
-        target.setAttribute('style', key)
+      if (key === 'css-text') {
+        // ensure correct spacing and syntax by converting back and forth
+        target.setAttribute('style', mapToCss(cssToMap(value)))
         return true
       } else {
         value = hexToRGB(value.toString())

@@ -5,5 +5,6 @@ export class Attr extends Node {
     super(name, { nodeValue: '' }, ns)
     this.value = this.nodeValue
     this.nodeType = Node.ATTRIBUTE_NODE
+    this.name = name
   }
 }

@@ -144,6 +144,11 @@ export class Node extends EventTarget {
     bool = bool && this.prefix === node.prefix
     bool = bool && this.nodeValue === node.nodeValue
 
+    bool = bool && this.childNodes.length === node.childNodes.length
+
+    // dont check children recursively when the count doesnt event add up
+    if (!bool) return false
+
     bool = bool && !this.childNodes.reduce((last, curr, index) => {
       return last && curr.isEqualNode(node.childNodes[index])
     }, true)
@@ -186,25 +191,52 @@ export class Node extends EventTarget {
   }
 
   normalize () {
-    this.childNodes = this.childNodes.reduce((textNodes, node) => {
-      // FIXME: If first node is an empty textnode, what do we do? -> spec
-      if (!textNodes) return [ node ]
-      var last = textNodes.pop()
-
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (!node.data) return textNodes
-
-        if (last.nodeType === Node.TEXT_NODE) {
-          const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
-          textNodes.push(merged)
-          return textNodes.concat(merged)
+    const childNodes = []
+    for (const node of this.childNodes) {
+      const last = childNodes.shift()
+      if (!last) {
+        if (node.data) {
+          childNodes.unshift(node)
         }
-      } else {
-        textNodes.push(last, node)
+        continue
       }
 
-      return textNodes
-    }, null)
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.data) {
+          childNodes.unshift(last)
+          continue
+        }
+
+        if (last.nodeType === Node.TEXT_NODE) {
+          const merged = this.ownerDocument.createTextNode(last.data + node.data)
+          childNodes.push(merged)
+          continue
+        }
+
+        childNodes.push(last, node)
+      }
+    }
+
+    this.childNodes = childNodes
+    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
+    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
+    //   if (!textNodes) return [ node ]
+    //   var last = textNodes.pop()
+
+    //   if (node.nodeType === Node.TEXT_NODE) {
+    //     if (!node.data) return textNodes
+
+    //     if (last.nodeType === Node.TEXT_NODE) {
+    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
+    //       textNodes.push(merged)
+    //       return textNodes.concat(merged)
+    //     }
+    //   } else {
+    //     textNodes.push(last, node)
+    //   }
+
+    //   return textNodes
+    // }, null)
   }
 
   lookupPrefix (namespaceURI) {

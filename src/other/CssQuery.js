@@ -1,5 +1,6 @@
 import { removeQuotes, splitNotInBrackets } from '../utils/strUtils.js'
 import * as regex from '../utils/regex.js'
+import { html } from '../utils/namespaces.js'
 
 export class CssQuery {
   constructor (query) {
@@ -233,6 +234,11 @@ class CssQueryNode {
     var i
 
     if (node.nodeType !== 1) return false
+
+    // Always this extra code for html -.-
+    if (node.namespaceURI === html) {
+      this.tag = this.tag.toUpperCase()
+    }
 
     if (this.tag && this.tag !== node.nodeName && this.tag !== '*') { return false }
 

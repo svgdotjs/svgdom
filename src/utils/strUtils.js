@@ -8,22 +8,22 @@ export const fullHex = function (hex) {
     ].join('') : hex
 }
 
-export const hexToRGB = function (a) {
-  if (typeof a === 'object') {
-    for (var i in a) {
-      a[i] = hexToRGB(a[i])
+export const hexToRGB = function (valOrMap) {
+  if (typeof valOrMap instanceof Map) {
+    for (const [ key, val ] of valOrMap) {
+      valOrMap.set(key, hexToRGB(val))
     }
-    return a
+    return valOrMap
   }
 
-  if (!/#[0-9a-f]{3,6}/.test(a)) { return a }
+  if (!/#[0-9a-f]{3,6}/.test(valOrMap)) { return valOrMap }
 
-  a = fullHex(a)
+  valOrMap = fullHex(valOrMap)
 
   return 'rgb(' + [
-    parseInt(a.slice(1, 3), 16),
-    parseInt(a.slice(3, 5), 16),
-    parseInt(a.slice(5, 7), 16)
+    parseInt(valOrMap.slice(1, 3), 16),
+    parseInt(valOrMap.slice(3, 5), 16),
+    parseInt(valOrMap.slice(5, 7), 16)
   ].join(',') + ')'
 }
 

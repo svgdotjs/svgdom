@@ -111,7 +111,6 @@ export const DOMImplementation = {
     root.appendChild(d.createElement('body'))
 
     d.appendChild(root)
-    d.documentElement = root
     return d
   }
 }
@@ -165,15 +164,12 @@ Object.defineProperties(Document.prototype, {
   },
   body: {
     get () {
-      return getChildByTagName(this.documentElement, 'body')
-    },
-    set () {
-      throw new Error('setting body not implemented yet')
+      return getChildByTagName(this.documentElement, 'BODY')
     }
   },
   head: {
     get () {
-      return getChildByTagName(this.documentElement, 'head')
+      return getChildByTagName(this.documentElement, 'HEAD')
     }
   },
   documentElement: {
