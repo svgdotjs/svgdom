@@ -38,7 +38,7 @@ npm install @svgdotjs/svg.js svgdom
 
 ```js
 // returns a window with a document and an svg root node
-const window = require('../svgdom')
+const window = require('svgdom')
 const document = window.document
 const {SVG, registerWindow} = require('@svgdotjs/svg.js')
 
