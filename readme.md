@@ -22,7 +22,7 @@ const document = window.document
 const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-canvas.rect(100, 100).fill('yellow').move(50,50)
+canvas.rect(100, 100).fill('yellow').move(50, 50)
 
 // get your svg as string
 console.log(canvas.svg())
@@ -40,7 +40,7 @@ npm install @svgdotjs/svg.js svgdom
 // returns a window with a document and an svg root node
 const window = require('svgdom')
 const document = window.document
-const {SVG, registerWindow} = require('@svgdotjs/svg.js')
+const { SVG, registerWindow } = require('@svgdotjs/svg.js')
 
 // register window and document
 registerWindow(window, document)
@@ -49,7 +49,7 @@ registerWindow(window, document)
 const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-canvas.rect(100, 100).fill('yellow').move(50,50)
+canvas.rect(100, 100).fill('yellow').move(50, 50)
 
 // get your svg as string
 console.log(canvas.svg())
@@ -80,7 +80,7 @@ const window = require(svgdom)
     // your font directory
     .setFontDir('./fonts')
     // map the font-family to the file
-    .setFontFamilyMappings({'Arial': 'arial.ttf'})
+    .setFontFamilyMappings({ 'Arial': 'arial.ttf' })
     // you can preload your fonts to avoid the loading delay
     // when the font is used the first time
     .preloadFonts()
@@ -91,7 +91,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
 
 - font properties like bold, italic... are only supported when you explicitely load that font e.g.
     ```js
-    window.setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
+    window.setFontFamilyMappings({ 'Arial-italic': 'arial_italic.ttf' })
     ```
 - `querySelector` only supports the following pseudo classes:
     - `first-child`
