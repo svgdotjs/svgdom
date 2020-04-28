@@ -13,24 +13,30 @@ const applyTransformation = (cloud, node, applyTransformations) => {
   return cloud
 }
 
-export const getPointCloud = (node, applyTransformations) => {
-  const cloud = getPathCloud(node, applyTransformations)
+export const getPointCloud = (node, applyTransformations, rbox = false) => {
+  const cloud = getPathCloud(node, rbox)
   return applyTransformation(cloud, node, applyTransformations)
 }
 
-const getPathCloud = (node, applyTransformations) => {
+const getPathCloud = (node, rbox) => {
   if (node.nodeType !== 1) return new PointCloud()
 
   switch (node.nodeName) {
   case 'rect':
   case 'image':
+  case 'pattern':
+  case 'mask':
     // Create Path from rect and create PointCloud from Path
     return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
   case 'svg':
-  case 'mask':
-  case 'pattern':
   case 'symbol':
-    return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+    // return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+    if (rbox) {
+      return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+    }
+  // ATTENTION: FALL THROUGH
+  // Because normal bbox is calculated by the content of the element and not its width and height
+  // eslint-disable-next-line
   case 'g':
   case 'clipPath':
   case 'a':
@@ -38,7 +44,7 @@ const getPathCloud = (node, applyTransformations) => {
     // Iterate trough all children and get the point cloud of each
     // Then transform it with viewbox matrix if needed
     return node.childNodes.reduce((cloud, child) => {
-      return cloud.merge(getPointCloud(child, true))
+      return cloud.merge(getPointCloud(child, true).transform(child.generateViewBoxMatrix()))
     }, new PointCloud())
   case 'circle':
     return pathUtils.getCloud(pathUtils.pathFrom.circle(node))
@@ -59,15 +65,14 @@ const getPathCloud = (node, applyTransformations) => {
     // Get the actual referenced Node
     const refNode = node.getRootNode().getElementById(ref.slice(1))
     // Get the BBox of the referenced element and apply the viewbox of <use>
+    // TODO: Do we need to apply the transformations of the element?
+    // Check bbox of transformed element which is reused with <use>
     return getPointCloud(refNode).transform(node.generateViewBoxMatrix())
   }
   case 'tspan':
   case 'text':
   case 'altGlyph': {
     const box = getTextBBox(node)
-
-    /* const boxes = textIterator(node).filter(box => box.x !== 0 || box.y !== 0 || box.width !== 0 || box.height !== 0)
-    const box = boxes.reduce((last, curr) => last.merge(curr), new NoBox()) */
 
     if (box instanceof NoBox) {
       return new PointCloud()

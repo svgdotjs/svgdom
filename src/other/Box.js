@@ -19,6 +19,8 @@ export class Box {
     this.y = this.top = source[1]
     this.width = source[2]
     this.height = source[3]
+    this.right = this.left + this.width
+    this.bottom = this.top + this.height
   }
 
   // Merge rect box with another, return a new instance

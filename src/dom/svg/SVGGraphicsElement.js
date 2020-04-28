@@ -13,7 +13,7 @@ export class SVGGraphicsElement extends SVGElement {
     return getPointCloud(this).bbox()
   }
 
-  // TODO: This is actually pat of Element
+  // TODO: This method actually exists on all Elements
   getBoundingClientRect () {
     // The bounding client rect takes the screen ctm of the element
     // and converts the bounding box with it
@@ -33,7 +33,13 @@ export class SVGGraphicsElement extends SVGElement {
 
     // let m = this.getScreenCTM()
 
-    return getPointCloud(this).transform(m).bbox()
+    // There are a few extra rules regarding rbox and the <svg> element
+    // Namely this is:
+    // BBox is calculated as normal for container elements
+    // Rbox is calculated with the width and height of the <svg>
+    // This could be also true for symbols so this is a:
+    // Todo: ...
+    return getPointCloud(this, false, true).transform(m).bbox()
   }
 
   matrixify () {

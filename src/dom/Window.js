@@ -52,6 +52,21 @@ export class Window extends EventTarget {
   }
 }
 
+let lastTime = 0
+const requestAnimationFrame = callback => {
+  const now = new global.Date().getTime()
+  const timeToCall = Math.max(0, 16 - (now - lastTime))
+  return global.setTimeout(() => {
+    lastTime = now + timeToCall
+    callback(lastTime)
+  }, timeToCall)
+}
+
+const nowOffset = global.Date.now()
+const performance = {
+  now: () => Date.now() - nowOffset
+}
+
 const winProps = {
   Window,
   Document,
@@ -78,8 +93,11 @@ const winProps = {
   setTimeout: global.setTimeout,
   clearTimeout: global.clearTimeout,
   pageXOffset: 0,
-  pageYOffset: 0
-
+  pageYOffset: 0,
+  Date: global.Date,
+  requestAnimationFrame,
+  cancelAnimationFrame: global.clearTimeout,
+  performance
 }
 
 extend(Window, winProps)
