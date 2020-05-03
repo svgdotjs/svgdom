@@ -26,6 +26,7 @@ const getPathCloud = (node, rbox) => {
   case 'image':
   case 'pattern':
   case 'mask':
+  case 'foreignObject':
     // Create Path from rect and create PointCloud from Path
     return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
   case 'svg':
