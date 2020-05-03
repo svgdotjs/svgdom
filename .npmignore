@@ -1,8 +1,0 @@
-.DS_Store
-.idea
-node_modules/
-fonts/
-!fonts/OpenSans-Regular.ttf
-!fonts/Apache License.txt
-spec/
-index.js

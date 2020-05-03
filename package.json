@@ -1,12 +1,18 @@
 {
   "name": "svgdom",
-  "version": "0.0.21",
-  "description": "Straightforward DOM implementation to make SVG.js run headless on Node.js",
-  "main": "dom.js",
+  "version": "0.1.0",
+  "description": "Straightforward DOM implementation for SVG, HTML and XML",
+  "main": "./main-require.cjs",
+  "exports": {
+    "import": "./main-module.js",
+    "require": "./main-require.cjs"
+  },
+  "type": "module",
   "scripts": {
     "test": "mocha",
     "fix": "npx eslint ./ --fix",
-    "lint": "npx eslint ./"
+    "lint": "npx eslint ./",
+    "build": "npx webpack --config webpack.config.cjs"
   },
   "repository": {
     "type": "git",
@@ -15,6 +21,9 @@
   "keywords": [
     "svgjs",
     "dom",
+    "xml",
+    "xmldom",
+    "svgdom",
     "nodejs"
   ],
   "author": "Ulrich-Matthias Schäfer",
@@ -30,16 +39,19 @@
     "sax": "^1.2.2"
   },
   "devDependencies": {
-    "@svgdotjs/svg.js": "^3.0.6",
-    "mocha": "^4.1.0",
-    "puppeteer": "^1.9.0",
-    "reify": "^0.12.3",
-    "xmldom": "^0.1.27",
+    "@svgdotjs/svg.js": "3.x.x",
+    "acorn": "^7.1.1",
+    "circular-dependency-plugin": "^5.2.0",
     "eslint": "^6.6.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
+    "eslint-plugin-standard": "^4.0.1",
+    "mocha": "^4.1.0",
+    "puppeteer": "^1.9.0",
+    "reify": "^0.12.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
   }
 }
