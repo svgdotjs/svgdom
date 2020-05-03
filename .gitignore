@@ -1,7 +1,7 @@
 .DS_Store
 .idea
 node_modules/
-fonts/
+fonts/*
 !fonts/OpenSans-Regular.ttf
 !fonts/Apache License.txt
 spec/
