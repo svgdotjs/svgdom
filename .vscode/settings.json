@@ -5,9 +5,7 @@
   "eslint.enable": true,
   "eslint.quiet": true,
   "eslint.validate": [
-    "javascript",
-    "typescript",
-    "typescriptreact"
+    "javascript"
   ],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true

@@ -2,9 +2,7 @@
 
 > Straightforward DOM implementation to make SVG.js run headless on Node.js
 
-This dom implementation was written for svg.js only. It is neither complete nor does it strictly follows the standards.
-It just has enough to make svg.js work on nodejs.
-
+While this dom implementation was designed to run svg.js on node, it now is much more feature complete and can be used by anyone needing an xml, svg or html dom.
 
 ## Get started with svg.js v2.5
 
@@ -14,7 +12,8 @@ npm install svg.js svgdom
 
 ```js
 // returns a window with a document and an svg root node
-const window   = require('svgdom')
+const { createSVGWindow } = require('svgdom')
+const window = createSVGWindow()
 const SVG      = require('svg.js')(window)
 const document = window.document
 
@@ -22,7 +21,7 @@ const document = window.document
 const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-canvas.rect(100,100).fill('yellow').move(50,50)
+canvas.rect(100, 100).fill('yellow').move(50,50)
 
 // get your svg as string
 console.log(canvas.svg())
@@ -38,18 +37,19 @@ npm install @svgdotjs/svg.js svgdom
 
 ```js
 // returns a window with a document and an svg root node
-const window = require('../svgdom')
+const { createSVGWindow } = require('svgdom')
+const window = createSVGWindow()
 const document = window.document
-const {SVG, registerWindow} = require('@svgdotjs/svg.js')
+const { SVG, registerWindow } = require('@svgdotjs/svg.js')
 
 // register window and document
-registerWindow(window , document)
+registerWindow(window, document)
 
 // create canvas
 const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-canvas.rect(100,100).fill('yellow').move(50,50)
+canvas.rect(100, 100).fill('yellow').move(50,50)
 
 // get your svg as string
 console.log(canvas.svg())
@@ -57,26 +57,35 @@ console.log(canvas.svg())
 console.log(canvas.node.outerHTML)
 ```
 
-The esm and node version of svg.js do not export a global SVG object anymore. Instead every property which was once available through the global SVG is now available via import/require.
-So if you need e.g. extend, you would use `const {SVG, registerWindow, extend} = require('@svgdotjs/svg.js')`.
+## Create an HTML Dom or XML Dom
 
-If you want the old object bag, you can simply build it yourself:
 ```js
-const obj = require('@svgdotjs/svg.js')
-const SVG = (arg) => {
-  return obj.SVG(arg)
-}
+// create HTML window with a document and an html root node
+const { createHTMLWindow } = require('svgdom')
+const window = createHTMLWindow()
 
-Object.assign(SVG, obj)
+// create XML window with a document and a given xml root node
+const { createWindow } = require('svgdom')
+const window = createWindow(namespaceURI, rootNode)
+// e.g. createWindow('http://www.w3.org/1998/Math/MathML', 'math')
+```
+
+## Use svgdom as esm module
+
+svgdom is used best as esm module. So in case you already did the step to esm modules on node, you can just go ahead and import svgdom:
+
+```js
+import { createSVGWindow } from 'svgdom'
 ```
 
 ## Fonts
 
-In order to calculate bounding boxes for text the font needs to be loaded first. `svgdom` loads `OpenSans-Regular` by default when no font file for the specified font was found.
+In order to calculate bounding boxes for text the font needs to be loaded first. `svgdom` loads `Open Sans-Regular` by default when no font file for the specified font was found.
 The following options must be set in order to load your own fonts:
 
 ```js
-const window = require(svgdom)
+const { config } = require(svgdom)
+config.
     // your font directory
     .setFontDir('./fonts')
     // map the font-family to the file
@@ -84,6 +93,12 @@ const window = require(svgdom)
     // you can preload your fonts to avoid the loading delay
     // when the font is used the first time
     .preloadFonts()
+
+// Alternatively you can import the functions itself and use them
+const {setFontDir, setFontFamilyMappings, preloadFonts} = require(svgdom)
+setFontDir('./fonts')
+setFontFamilyMappings({'Arial': 'arial.ttf'})
+preloadFonts()
 ```
 
 ## Limitations
@@ -91,7 +106,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
 
 - font properties like bold, italic... are only supported when you explicitely load that font e.g.
     ```js
-    window.setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
+    setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
     ```
 - `querySelector` only supports the following pseudo classes:
     - `first-child`
@@ -112,7 +127,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
 ## Using svgdom in your own projects
 
 Albeit this dom implementation aims to work with svgjs, it is of course possible to use it in your own projects.
-Keep in mind, that some functions are just not needed in svgjs and therefore not implemented.
+Keep in mind, that some functions are just not needed in svgjs and therefore not implemented or tested.
 If you need a certain feature don't hesistate to open an issue or submit a pull request.
 
-Last thing to say: **childNodes is an array!**
+Last thing to say: **childNodes is an array!** (yet)
