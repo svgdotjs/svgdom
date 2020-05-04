@@ -87,13 +87,13 @@
 /******/ ({
 
 /***/ "./dirname.cjs":
-/*!*******************************************!*\
-  !*** external "./src/utils\\dirname.cjs" ***!
-  \*******************************************/
+/*!******************************************!*\
+  !*** external "./src/utils/dirname.cjs" ***!
+  \******************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = require("./src/utils\\dirname.cjs");
+module.exports = require("./src/utils/dirname.cjs");
 
 /***/ }),
 

@@ -24,7 +24,7 @@ module.exports = {
   // This function is only to make __dirname work properly!!!
   externals: [ nodeModules, function (context, request, callback) {
     if (/dirname.cjs/.test(request)) {
-      return callback(null, 'commonjs ./' + path.join('./', path.relative(__dirname, context), request).replace('\\', '/'))
+      return callback(null, 'commonjs ./' + path.join('./', path.relative(__dirname, context), request).replace(/\\/g, '/'))
     }
     callback()
   } ],
