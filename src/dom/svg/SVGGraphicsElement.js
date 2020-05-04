@@ -63,6 +63,11 @@ export class SVGGraphicsElement extends SVGElement {
 
   // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
   generateViewBoxMatrix () {
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
+    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
+      return new SVGMatrix()
+    }
+
     var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
     var width = parseFloat(this.getAttribute('width')) || 0
     var height = parseFloat(this.getAttribute('height')) || 0

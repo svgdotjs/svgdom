@@ -2364,6 +2364,11 @@ class SVGGraphicsElement extends _SVGElement_js__WEBPACK_IMPORTED_MODULE_0__["SV
 
   // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
   generateViewBoxMatrix () {
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
+    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
+      return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]()
+    }
+
     var view = (this.getAttribute('viewBox') || '').split(_utils_regex_js__WEBPACK_IMPORTED_MODULE_2__["delimiter"]).map(parseFloat).filter(el => !isNaN(el))
     var width = parseFloat(this.getAttribute('width')) || 0
     var height = parseFloat(this.getAttribute('height')) || 0
