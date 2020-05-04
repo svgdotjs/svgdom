@@ -1,6 +1,3 @@
-import mat2d from 'gl-matrix'
-const matrix = mat2d.mat2d
-
 const radians = function (d) {
   return d % 360 * Math.PI / 180
 }
@@ -38,10 +35,37 @@ export class SVGMatrix {
   }
 
   inverse () {
-    var t = matrix.fromValues(this.a, this.b, this.c, this.d, this.e, this.f)
-    var r = matrix.create()
-    matrix.invert(r, t)
-    return matrixFactory(...r)
+    // Get the current parameters out of the matrix
+    var a = this.a
+    var b = this.b
+    var c = this.c
+    var d = this.d
+    var e = this.e
+    var f = this.f
+
+    // Invert the 2x2 matrix in the top left
+    var det = a * d - b * c
+    if (!det) throw new Error('Cannot invert ' + this)
+
+    // Calculate the top 2x2 matrix
+    var na = d / det
+    var nb = -b / det
+    var nc = -c / det
+    var nd = a / det
+
+    // Apply the inverted matrix to the top right
+    var ne = -(na * e + nc * f)
+    var nf = -(nb * e + nd * f)
+
+    // Construct the inverted matrix
+    this.a = na
+    this.b = nb
+    this.c = nc
+    this.d = nd
+    this.e = ne
+    this.f = nf
+
+    return this
   }
 
   toString () {

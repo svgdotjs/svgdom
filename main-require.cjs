@@ -2447,11 +2447,6 @@ Object.defineProperties(SVGGraphicsElement.prototype, {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "matrixFactory", function() { return matrixFactory; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SVGMatrix", function() { return SVGMatrix; });
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! gl-matrix */ "gl-matrix");
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(gl_matrix__WEBPACK_IMPORTED_MODULE_0__);
-
-const matrix = gl_matrix__WEBPACK_IMPORTED_MODULE_0___default.a.mat2d
-
 const radians = function (d) {
   return d % 360 * Math.PI / 180
 }
@@ -2489,10 +2484,37 @@ class SVGMatrix {
   }
 
   inverse () {
-    var t = matrix.fromValues(this.a, this.b, this.c, this.d, this.e, this.f)
-    var r = matrix.create()
-    matrix.invert(r, t)
-    return matrixFactory(...r)
+    // Get the current parameters out of the matrix
+    var a = this.a
+    var b = this.b
+    var c = this.c
+    var d = this.d
+    var e = this.e
+    var f = this.f
+
+    // Invert the 2x2 matrix in the top left
+    var det = a * d - b * c
+    if (!det) throw new Error('Cannot invert ' + this)
+
+    // Calculate the top 2x2 matrix
+    var na = d / det
+    var nb = -b / det
+    var nc = -c / det
+    var nd = a / det
+
+    // Apply the inverted matrix to the top right
+    var ne = -(na * e + nc * f)
+    var nf = -(nb * e + nd * f)
+
+    // Construct the inverted matrix
+    this.a = na
+    this.b = nb
+    this.c = nc
+    this.d = nd
+    this.e = ne
+    this.f = nf
+
+    return this
   }
 
   toString () {
@@ -4869,17 +4891,6 @@ const textBBox = function (text, x, y, details) {
 /***/ (function(module, exports) {
 
 module.exports = require("fontkit");
-
-/***/ }),
-
-/***/ "gl-matrix":
-/*!****************************!*\
-  !*** external "gl-matrix" ***!
-  \****************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-module.exports = require("gl-matrix");
 
 /***/ }),
 
