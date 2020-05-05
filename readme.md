@@ -4,7 +4,7 @@
 
 While this dom implementation was designed to run svg.js on node, it now is much more feature complete and can be used by anyone needing an xml, svg or html dom.
 
-## Get started with svg.js v2.5
+## Get started with svg.js v2.x (x>5)
 
 ```
 npm install svg.js svgdom
@@ -14,7 +14,7 @@ npm install svg.js svgdom
 // returns a window with a document and an svg root node
 const { createSVGWindow } = require('svgdom')
 const window = createSVGWindow()
-const SVG      = require('svg.js')(window)
+const SVG = require('svg.js')(window)
 const document = window.document
 
 // create svg.js instance
@@ -29,7 +29,7 @@ console.log(canvas.svg())
 console.log(canvas.node.outerHTML)
 ```
 
-## Get started with svg.js v3.0
+## Get started with svg.js v3.x
 
 ```
 npm install @svgdotjs/svg.js svgdom
