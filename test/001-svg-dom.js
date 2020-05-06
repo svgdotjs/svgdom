@@ -1,9 +1,9 @@
 /* global describe, it, before, after, beforeEach */
 
-import puppeteer from 'puppeteer'
+// import puppeteer from 'puppeteer'
 import assert from 'assert'
 // import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
-import svgdom from '../dom'
+import { createSVGDocument } from '..'
 // import fs from 'fs'
 
 // var svgString
@@ -167,7 +167,7 @@ describe('svg document', () => {
 
       await page.evaluate(prepare)
     } else {
-      svgDoc = new svgdom.constructor().document
+      svgDoc = createSVGDocument()
       svgRoot = svgDoc.documentElement
 
       prepare()
@@ -183,7 +183,7 @@ describe('svg document', () => {
     assert(svgDoc.createComment('xxx'))
   })
 
-  wrappedIt('should have ownerSVGElement property for nodes', () => {
+  wrappedIt.skip('should have ownerSVGElement property for nodes', () => {
     // this will not work with documents, embedded into html
     // but should work with svg docs as media <object>
     if (svgDoc.documentElement.nodeName === 'svg') { assert(svgRoot.ownerSVGElement) }
@@ -333,6 +333,10 @@ describe('svg document', () => {
     connector.style.fill = 'black'
 
     assert(connector.getAttribute('style').match(/^fill:\s*black\b/))
+
+    connector.style.setProperty('color', 'green')
+
+    assert(connector.getAttribute('style').match(/color:\s*green\b/))
 
     assert([].some.call(connector.attributes, attr => attr.nodeName === 'style'))
   })
