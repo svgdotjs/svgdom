@@ -794,7 +794,7 @@ const getStyleProxy = (node) => {
 
       if (key === 'setProperty') {
         return function (propertyName, value = '', priority = '') {
-          this.style[propertyName] = value + priority ? ` !${priority}` : ''
+          node.style[propertyName] = value + (priority ? ` !${priority}` : '')
         }
       }
 
