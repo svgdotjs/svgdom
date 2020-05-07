@@ -1,12 +1,12 @@
 /* global describe, it */
 
-import svgdom from '../dom'
+import { createSVGDocument } from '..'
 import assert from 'assert'
-const getPointCloud = require('../utils/bboxUtils')
+const getPointCloud = require('../src/utils/bboxUtils')
 
 describe('unescape-bbox', () => {
   it(" bbox('<').x should be less then bbox('WW') ", () => {
-    var svgDoc = new svgdom.constructor().document
+    var svgDoc = createSVGDocument()
     var svgRoot = svgDoc.documentElement
     var textLt = svgDoc.createElement('text')
     textLt.textContent = '<'
