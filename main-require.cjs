@@ -582,6 +582,7 @@ const DOMImplementation = {
       if (doctype.ownerDocument) {
         throw new Error('the object is in the wrong Document, a call to importNode is required')
       }
+      doctype.ownerDocument = doc
       doc.appendChild(doctype)
     }
     if (qualifiedName) {
@@ -622,7 +623,7 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
   }
 
   createDocumentFragment (name) {
-    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]()
+    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]({ ownerDocument: this })
   }
 
   createElement (name) {
@@ -848,6 +849,10 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
   setAttributeNS (ns = '', name, value) {
+    const prefix = this.lookupPrefix(ns)
+    if (!name.includes(':')) {
+      name = [ prefix, name ].join(':')
+    }
     this.setAttribute(name, value)
   }
 
@@ -1343,8 +1348,8 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
     for (const [ key, val ] of this.attrs.entries()) {
       if (!key.includes(':')) continue
 
-      const [ prefix, name ] = key.split(':')
-      if (prefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
+      const [ attrPrefix, name ] = key.split(':')
+      if (attrPrefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
         return name
       }
     }
@@ -1405,12 +1410,13 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
       for (const [ key, val ] of this.attrs.entries()) {
         if (!key.includes(':')) continue
 
-        const [ prefix, name ] = key.split(':')
-        if (prefix === 'xmlns' && name === prefix) {
+        const [ attrPrefix, name ] = key.split(':')
+        if (attrPrefix === 'xmlns' && name === prefix) {
           if (val != null) {
             return val
           }
           return null
+          // FIXME: Look up if prefix or attrPrefix
         } else if (name === 'xmlns' && prefix == null) {
           if (val != null) {
             return val
@@ -2344,7 +2350,7 @@ class SVGGraphicsElement extends _SVGElement_js__WEBPACK_IMPORTED_MODULE_0__["SV
   }
 
   matrixify () {
-    var matrix = (this.getAttribute('transform') || '')
+    var matrix = (this.getAttribute('transform') || '').trim()
       // split transformations
       .split(_utils_regex_js__WEBPACK_IMPORTED_MODULE_2__["transforms"]).slice(0, -1).map(function (str) {
         // generate key => value pairs

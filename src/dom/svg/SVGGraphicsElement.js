@@ -43,7 +43,7 @@ export class SVGGraphicsElement extends SVGElement {
   }
 
   matrixify () {
-    var matrix = (this.getAttribute('transform') || '')
+    var matrix = (this.getAttribute('transform') || '').trim()
       // split transformations
       .split(regex.transforms).slice(0, -1).map(function (str) {
         // generate key => value pairs

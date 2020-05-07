@@ -79,6 +79,10 @@ export class Element extends Node {
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
   setAttributeNS (ns = '', name, value) {
+    const prefix = this.lookupPrefix(ns)
+    if (!name.includes(':')) {
+      name = [ prefix, name ].join(':')
+    }
     this.setAttribute(name, value)
   }
 

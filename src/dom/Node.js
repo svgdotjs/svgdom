@@ -279,8 +279,8 @@ export class Node extends EventTarget {
     for (const [ key, val ] of this.attrs.entries()) {
       if (!key.includes(':')) continue
 
-      const [ prefix, name ] = key.split(':')
-      if (prefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
+      const [ attrPrefix, name ] = key.split(':')
+      if (attrPrefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
         return name
       }
     }
@@ -341,12 +341,13 @@ export class Node extends EventTarget {
       for (const [ key, val ] of this.attrs.entries()) {
         if (!key.includes(':')) continue
 
-        const [ prefix, name ] = key.split(':')
-        if (prefix === 'xmlns' && name === prefix) {
+        const [ attrPrefix, name ] = key.split(':')
+        if (attrPrefix === 'xmlns' && name === prefix) {
           if (val != null) {
             return val
           }
           return null
+          // FIXME: Look up if prefix or attrPrefix
         } else if (name === 'xmlns' && prefix == null) {
           if (val != null) {
             return val

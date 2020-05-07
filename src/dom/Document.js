@@ -92,6 +92,7 @@ export const DOMImplementation = {
       if (doctype.ownerDocument) {
         throw new Error('the object is in the wrong Document, a call to importNode is required')
       }
+      doctype.ownerDocument = doc
       doc.appendChild(doctype)
     }
     if (qualifiedName) {
@@ -132,7 +133,7 @@ export class Document extends Node {
   }
 
   createDocumentFragment (name) {
-    return new DocumentFragment()
+    return new DocumentFragment({ ownerDocument: this })
   }
 
   createElement (name) {
