@@ -149,11 +149,11 @@ export class Document extends Node {
     return new Comment('#comment', { nodeValue: text, ownerDocument: this })
   }
 
-  // Testing showed, that creating an attribute with createAttribute always creates a Attr with namespace=null
-  // and its name lowercase. This is strange since changing the case is usually only involved when handling with html.
-  // However, I couldnt find anything to that in the specs
+  // https://dom.spec.whatwg.org/#dom-document-createattribute
   createAttribute (localName) {
-    localName = localName.toLowerCase()
+    if (this.namespaceURI === html) {
+      localName = localName.toLowerCase()
+    }
     return this.createAttributeNS(null, localName, true)
   }
 

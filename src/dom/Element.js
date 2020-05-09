@@ -11,7 +11,6 @@ import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/str
 import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
 import { ChildNode } from './mixins/ChildNode.js'
 import { html, xml, xmlns } from '../utils/namespaces.js'
-import { Attr } from './Attr.js'
 
 const validateAndExtract = (ns, name) => {
   let prefix = null
@@ -129,9 +128,8 @@ export class Element extends Node {
 
     let attr = this.getAttributeNode(qualifiedName)
     if (!attr) {
-      // attr = this.ownerDocument.createAttribute(qualifiedName)
-      // Because createAttribute has quirks (see there), we have to create an Attr directly here
-      attr = new Attr(qualifiedName, { ownerDocument: this, local: true }, null)
+      // Because createAttribute lowercases the attribute in an html doc we have to use createAttributeNS
+      attr = this.ownerDocument.createAttributeNS(null, qualifiedName, true)
       this.setAttributeNode(attr)
     }
 

@@ -657,11 +657,11 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     return new _Comment_js__WEBPACK_IMPORTED_MODULE_1__["Comment"]('#comment', { nodeValue: text, ownerDocument: this })
   }
 
-  // Testing showed, that creating an attribute with createAttribute always creates a Attr with namespace=null
-  // and its name lowercase. This is strange since changing the case is usually only involved when handling with html.
-  // However, I couldnt find anything to that in the specs
+  // https://dom.spec.whatwg.org/#dom-document-createattribute
   createAttribute (localName) {
-    localName = localName.toLowerCase()
+    if (this.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_16__["html"]) {
+      localName = localName.toLowerCase()
+    }
     return this.createAttributeNS(null, localName, true)
   }
 
@@ -923,9 +923,8 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
 
     let attr = this.getAttributeNode(qualifiedName)
     if (!attr) {
-      // attr = this.ownerDocument.createAttribute(qualifiedName)
-      // Because createAttribute has quirks (see there), we have to create an Attr directly here
-      attr = new _Attr_js__WEBPACK_IMPORTED_MODULE_12__["Attr"](qualifiedName, { ownerDocument: this, local: true }, null)
+      // Because createAttribute lowercases the attribute in an html doc we have to use createAttributeNS
+      attr = this.ownerDocument.createAttributeNS(null, qualifiedName, true)
       this.setAttributeNode(attr)
     }
 
