@@ -131,3 +131,5 @@ Keep in mind, that some functions are just not needed in svgjs and therefore not
 If you need a certain feature don't hesistate to open an issue or submit a pull request.
 
 Last thing to say: **childNodes is an array!** (yet)
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=ulima.ums%40googlemail.com&lc=US&item_name=SVG.JS&currency_code=EUR&bn=PP-DonationsBF%3Abtn_donate_74x21.png%3ANonHostedGuest) or [![Sponsor](https://img.shields.io/badge/Sponsor-svgdom-green.svg)](https://github.com/sponsors/Fuzzyma)
