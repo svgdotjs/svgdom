@@ -1848,8 +1848,6 @@ Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_0__["extend"])(Win
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HTMLElement", function() { return HTMLElement; });
 /* harmony import */ var _Element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Element.js */ "./src/dom/Element.js");
-/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../utils/namespaces.js */ "./src/utils/namespaces.js");
-
 
 
 class HTMLElement extends _Element_js__WEBPACK_IMPORTED_MODULE_0__["Element"] {}
@@ -1997,13 +1995,13 @@ const HTMLParser = function (str, el) {
 
   // sax expects a root element but we also missuse it to parse fragments
   if (el.nodeType !== el.DOCUMENT_NODE) {
-    str = '<svgdom:wrapper>' + str + '</svgdom:wrapper>'
+    str = '<svgdom:wrapper xmlns:svgdom="svgdom:rocks">' + str + '</svgdom:wrapper>'
   } else {
     document = el
   }
 
-  const parser = sax__WEBPACK_IMPORTED_MODULE_0___default.a.parser(false, {
-    lowercase: true,
+  const parser = sax__WEBPACK_IMPORTED_MODULE_0___default.a.parser(true, {
+    // lowercase: true,
     xmlns: true,
     strictEntities: true
   })

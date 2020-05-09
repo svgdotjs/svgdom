@@ -9,13 +9,13 @@ export const HTMLParser = function (str, el) {
 
   // sax expects a root element but we also missuse it to parse fragments
   if (el.nodeType !== el.DOCUMENT_NODE) {
-    str = '<svgdom:wrapper>' + str + '</svgdom:wrapper>'
+    str = '<svgdom:wrapper xmlns:svgdom="svgdom:rocks">' + str + '</svgdom:wrapper>'
   } else {
     document = el
   }
 
-  const parser = sax.parser(false, {
-    lowercase: true,
+  const parser = sax.parser(true, {
+    // lowercase: true,
     xmlns: true,
     strictEntities: true
   })
