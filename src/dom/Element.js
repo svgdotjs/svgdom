@@ -99,16 +99,7 @@ const getStyleProxy = (node) => {
   })
 }
 
-/* export const mapToAttributeArray = function (element) {
-  const { attrs, ownerDocument, namespaceURI } = element
-  return mapMap(attrs, function (value, key) {
-    const attr = ownerDocument.createAttributeNS(namespaceURI, key)
-    attr.value = attr.nodeValue = value
-    attr.ownerElement = element
-    return attr
-  })
-} */
-
+// https://dom.spec.whatwg.org/#dom-element-setattributens
 export class Element extends Node {
   constructor (name, props, ns) {
     super(name, props, ns)

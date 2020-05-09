@@ -1,4 +1,4 @@
-/* global describe, it, before, after, beforeEach */
+/* global describe, it, before, after, beforeEach, puppeteer */
 
 // import puppeteer from 'puppeteer'
 import assert from 'assert'
