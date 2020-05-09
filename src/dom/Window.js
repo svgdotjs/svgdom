@@ -28,6 +28,15 @@ export class Window extends EventTarget {
     this.document = new Document()
     this.document.defaultView = this
     this.self = this
+    const doc = this.document
+    this.Image = class {
+      constructor (width, height) {
+        const img = doc.createElement('img')
+        if (width != null) img.setAttribute('width', width)
+        if (height != null) img.setAttribute('height', height)
+        return img
+      }
+    }
   }
 
   getComputedStyle (node) {
@@ -82,7 +91,7 @@ const winProps = {
   HTMLLinkElement,
   HTMLScriptElement,
   HTMLImageElement,
-  Image: HTMLImageElement,
+  // Image: HTMLImageElement, // is set on construction
   SVGMatrix,
   SVGPoint,
   SVGElement,

@@ -101,7 +101,7 @@ module.exports = require("./src/utils/dirname.cjs");
 /*!************************!*\
   !*** ./main-module.js ***!
   \************************/
-/*! exports provided: Attr, CharacterData, Comment, CustomEvent, getChildByTagName, DOMImplementation, Document, DocumentFragment, mapToAttributeArray, Element, Event, EventTarget, Node, NodeFilter, Text, Window, HTMLElement, HTMLImageElement, HTMLLinkElement, HTMLParser, HTMLScriptElement, elementAccess, ParentNode, SVGElement, SVGGraphicsElement, matrixFactory, SVGMatrix, SVGPathElement, SVGPoint, SVGSVGElement, SVGTextContentElement, setFontDir, setFontFamilyMappings, preloadFonts, getConfig, getFonts, config, createDocument, createHTMLDocument, createSVGDocument, createWindow, createHTMLWindow, createSVGWindow, defaults */
+/*! exports provided: Attr, CharacterData, Comment, CustomEvent, getChildByTagName, DOMImplementation, Document, DocumentFragment, Element, Event, EventTarget, Node, NodeFilter, Text, Window, HTMLElement, HTMLImageElement, HTMLLinkElement, HTMLParser, HTMLScriptElement, elementAccess, ParentNode, SVGElement, SVGGraphicsElement, matrixFactory, SVGMatrix, SVGPathElement, SVGPoint, SVGSVGElement, SVGTextContentElement, setFontDir, setFontFamilyMappings, preloadFonts, getConfig, getFonts, config, createDocument, createHTMLDocument, createSVGDocument, createWindow, createHTMLWindow, createSVGWindow, defaults */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -131,8 +131,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "DocumentFragment", function() { return _src_dom_DocumentFragment_js__WEBPACK_IMPORTED_MODULE_6__["DocumentFragment"]; });
 
 /* harmony import */ var _src_dom_Element_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./src/dom/Element.js */ "./src/dom/Element.js");
-/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "mapToAttributeArray", function() { return _src_dom_Element_js__WEBPACK_IMPORTED_MODULE_7__["mapToAttributeArray"]; });
-
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "Element", function() { return _src_dom_Element_js__WEBPACK_IMPORTED_MODULE_7__["Element"]; });
 
 /* harmony import */ var _src_dom_Event_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./src/dom/Event.js */ "./src/dom/Event.js");
@@ -336,16 +334,36 @@ const config = {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Attr", function() { return Attr; });
 /* harmony import */ var _Node_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Node.js */ "./src/dom/Node.js");
+/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/namespaces.js */ "./src/utils/namespaces.js");
+
 
 
 class Attr extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
-  constructor (name, ns) {
-    super(name, { nodeValue: '' }, ns)
-    this.value = this.nodeValue
+  constructor (name, props, ns) {
+    super(name, { nodeValue: '', ...props }, ns)
+
+    // Follow spec and lowercase nodeName for html
+    this.nodeName = ns === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_1__["html"] ? name.toLowerCase() : name
     this.nodeType = _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].ATTRIBUTE_NODE
-    this.name = name
+    this.ownerElement = null
   }
 }
+
+Object.defineProperties(Attr.prototype, {
+  value: {
+    get () {
+      return this.nodeValue
+    },
+    set (val) {
+      this.nodeValue = val
+    }
+  },
+  name: {
+    get () {
+      return this.nodeName
+    }
+  }
+})
 
 
 /***/ }),
@@ -577,7 +595,7 @@ const DOMImplementation = {
   },
 
   createDocument (namespace, qualifiedName, doctype) {
-    var doc = new Document()
+    var doc = new Document(namespace)
     if (doctype) {
       if (doctype.ownerDocument) {
         throw new Error('the object is in the wrong Document, a call to importNode is required')
@@ -592,7 +610,7 @@ const DOMImplementation = {
   },
 
   createHTMLDocument (titleText = '') {
-    const d = new Document('html')
+    const d = new Document(_utils_namespaces_js__WEBPACK_IMPORTED_MODULE_16__["html"])
     const root = d.createElement('html')
     const head = d.createElement('head')
     const title = d.createElement('title')
@@ -607,27 +625,28 @@ const DOMImplementation = {
 }
 
 class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
-  constructor () {
-    super('#document')
+  constructor (ns) {
+    super('#document', {}, ns)
     this.nodeType = _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].DOCUMENT_NODE
     this.implementation = DOMImplementation
     this.defaultView = null
   }
 
-  createElementNS (ns, name) {
-    const Element = getElementForNamespace(ns, name)
+  createElement (localName) {
+    return this.createElementNS(this.namespaceURI, localName, true)
+  }
 
-    return new Element(name, {
-      ownerDocument: this
+  createElementNS (ns, qualifiedName, local = false) {
+    const Element = getElementForNamespace(ns, qualifiedName)
+
+    return new Element(qualifiedName, {
+      ownerDocument: this,
+      local
     }, ns)
   }
 
   createDocumentFragment (name) {
     return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]({ ownerDocument: this })
-  }
-
-  createElement (name) {
-    return this.createElementNS(_utils_namespaces_js__WEBPACK_IMPORTED_MODULE_16__["html"], name)
   }
 
   createTextNode (text) {
@@ -638,12 +657,16 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     return new _Comment_js__WEBPACK_IMPORTED_MODULE_1__["Comment"]('#comment', { nodeValue: text, ownerDocument: this })
   }
 
-  createAttribute (name) {
-    return this.createAttributeNS(null, name)
+  // Testing showed, that creating an attribute with createAttribute always creates a Attr with namespace=null
+  // and its name lowercase. This is strange since changing the case is usually only involved when handling with html.
+  // However, I couldnt find anything to that in the specs
+  createAttribute (localName) {
+    localName = localName.toLowerCase()
+    return this.createAttributeNS(null, localName, true)
   }
 
-  createAttributeNS (ns, name) {
-    return new _Attr_js__WEBPACK_IMPORTED_MODULE_3__["Attr"](name, ns)
+  createAttributeNS (ns, qualifiedName, local = false) {
+    return new _Attr_js__WEBPACK_IMPORTED_MODULE_3__["Attr"](qualifiedName, { ownerDocument: this, local }, ns)
   }
 }
 
@@ -750,12 +773,11 @@ Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_1__["mixin"])(_mix
 /*!****************************!*\
   !*** ./src/dom/Element.js ***!
   \****************************/
-/*! exports provided: mapToAttributeArray, Element */
+/*! exports provided: Element */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "mapToAttributeArray", function() { return mapToAttributeArray; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Element", function() { return Element; });
 /* harmony import */ var _Node_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Node.js */ "./src/dom/Node.js");
 /* harmony import */ var _mixins_ParentNode_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./mixins/ParentNode.js */ "./src/dom/mixins/ParentNode.js");
@@ -768,6 +790,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../utils/strUtils.js */ "./src/utils/strUtils.js");
 /* harmony import */ var _mixins_NonDocumentTypeChildNode_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./mixins/NonDocumentTypeChildNode.js */ "./src/dom/mixins/NonDocumentTypeChildNode.js");
 /* harmony import */ var _mixins_ChildNode_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./mixins/ChildNode.js */ "./src/dom/mixins/ChildNode.js");
+/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/namespaces.js */ "./src/utils/namespaces.js");
+/* harmony import */ var _Attr_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./Attr.js */ "./src/dom/Attr.js");
 
 
 
@@ -780,6 +804,50 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+const validateAndExtract = (ns, name) => {
+  let prefix = null
+  let localname = name
+
+  if (!ns) ns = null
+
+  if (name.includes(':')) {
+    [ prefix, localname ] = name.split(':')
+  }
+
+  if (!ns && prefix) {
+    throw new Error('Namespace Error')
+  }
+
+  if (prefix === 'xml' && ns !== _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["xml"]) {
+    throw new Error('Namespace Error')
+  }
+
+  if ((prefix === 'xmlns' || name === 'xmlns') && ns !== _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["xmlns"]) {
+    throw new Error('Namespace Error')
+  }
+
+  if (prefix !== 'xmlns' && name !== 'xmlns' && ns === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["xmlns"]) {
+    throw new Error('Namespace Error')
+  }
+
+  return [ ns, prefix, localname ]
+}
+
+const getAttributeByNsAndLocalName = (el, ns, localName) => {
+  if (!ns) ns = null
+  return [ ...el.attrs ].find((node) => node.localName === localName && node.namespaceURI === ns)
+}
+
+const getAttributeByQualifiedName = (el, qualifiedName) => {
+  if (el.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["html"] && el.ownerDocument.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["html"]) {
+    qualifiedName = qualifiedName.toLowerCase()
+  }
+
+  return [ ...el.attrs ].find((node) => node.name === qualifiedName)
+}
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
 const getStyleProxy = (node) => {
@@ -825,15 +893,15 @@ const getStyleProxy = (node) => {
   })
 }
 
-const mapToAttributeArray = function (element) {
+/* export const mapToAttributeArray = function (element) {
   const { attrs, ownerDocument, namespaceURI } = element
-  return Object(_utils_mapUtils_js__WEBPACK_IMPORTED_MODULE_7__["mapMap"])(attrs, function (value, key) {
+  return mapMap(attrs, function (value, key) {
     const attr = ownerDocument.createAttributeNS(namespaceURI, key)
     attr.value = attr.nodeValue = value
     attr.ownerElement = element
     return attr
   })
-}
+} */
 
 class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
   constructor (name, props, ns) {
@@ -843,57 +911,119 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.tagName = this.nodeName
   }
 
-  setAttribute (name, value) {
-    this.attrs.set(name, value)
+  /* The setAttribute(qualifiedName, value) method, when invoked, must run these steps:
+
+    If qualifiedName does not match the Name production in XML, then throw an "InvalidCharacterError" DOMException.
+
+    If this is in the HTML namespace and its node document is an HTML document, then set qualifiedName to qualifiedName in ASCII lowercase.
+
+    Let attribute be the first attribute in this’s attribute list whose qualified name is qualifiedName, and null otherwise.
+
+    If attribute is null, create an attribute whose local name is qualifiedName, value is value, and node document is this’s node document, then append this attribute to this, and then return.
+
+    Change attribute to value.
+  */
+  setAttribute (qualifiedName, value) {
+    // We have to do that here because we cannot check if `this` is in the correct namespace
+    // when doing it in createAttribute
+    if (this.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["html"] && this.ownerDocument.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__["html"]) {
+      qualifiedName = qualifiedName.toLowerCase()
+    }
+
+    let attr = this.getAttributeNode(qualifiedName)
+    if (!attr) {
+      // attr = this.ownerDocument.createAttribute(qualifiedName)
+      // Because createAttribute has quirks (see there), we have to create an Attr directly here
+      attr = new _Attr_js__WEBPACK_IMPORTED_MODULE_12__["Attr"](qualifiedName, { ownerDocument: this, local: true }, null)
+      this.setAttributeNode(attr)
+    }
+
+    attr.value = value
   }
+
+  /*
+    Let namespace, prefix, and localName be the result of passing namespace and qualifiedName to validate and extract.
+
+    Set an attribute value for this using localName, value, and also prefix and namespace.
+
+    If prefix is not given, set it to null.
+    If namespace is not given, set it to null.
+    Let attribute be the result of getting an attribute given namespace, localName, and element.
+    If attribute is null, create an attribute whose namespace is namespace, namespace prefix is prefix, local name is localName, value is value, and node document is element’s node document, then append this attribute to element, and then return.
+
+    Change attribute to value.
+  */
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
-  setAttributeNS (ns = '', name, value) {
-    const prefix = this.lookupPrefix(ns)
-    if (!name.includes(':')) {
-      name = [ prefix, name ].join(':')
+  setAttributeNS (namespace, name, value) {
+
+    // eslint-disable-next-line
+    const [ ns, prefix, localName ] = validateAndExtract(namespace, name)
+
+    let attr = this.getAttributeNodeNS(ns, localName)
+    if (!attr) {
+      attr = this.ownerDocument.createAttributeNS(ns, name)
+      this.setAttributeNode(attr) // setAttributeNodeNS is a synonym of setAttributeNode
     }
-    this.setAttribute(name, value)
+
+    attr.value = value
+
+    this.attrs.add(attr)
   }
 
-  removeAttribute (name) {
-    this.attrs.delete(name)
+  setAttributeNode (node) {
+    this.attrs.add(node)
+    node.ownerElement = this
+  }
+
+  removeAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
   }
 
   // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.removeAttribute(name)
+  removeAttributeNS (ns, name) {
+    const attr = this.getAttributeNode(ns, name)
+    if (attr) {
+      this.removeAttributeNode(attr)
     }
-
-    this.removeAttribute([ ns, name ].join(':'))
+    return attr
   }
 
-  hasAttribute (name) {
-    return this.attrs.has(name)
+  removeAttributeNode (node) {
+    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+    return node
   }
 
-  hasAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.hasAttribute(name)
-    }
-
-    return this.hasAttribute([ ns, name ].join(':'))
+  hasAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return !!attr
   }
 
-  getAttribute (name) {
-    return this.hasAttribute(name) ? this.attrs.get(name) : null
+  hasAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return !!attr
   }
 
-  getAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.getAttribute(name)
-    }
+  getAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return attr ? attr.value : null
+  }
 
-    return this.getAttribute([ prefix, name ].join(':'))
+  getAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return attr ? attr.value : null
+  }
+
+  getAttributeNode (qualifiedName) {
+    return getAttributeByQualifiedName(this, qualifiedName)
+  }
+
+  getAttributeNodeNS (ns, localName) {
+    return getAttributeByNsAndLocalName(this, ns, localName)
   }
 
   matches (query) {
@@ -909,7 +1039,7 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
 Object.defineProperties(Element.prototype, {
   attributes: {
     get () {
-      return mapToAttributeArray(this)
+      return [ ...this.attrs ]
     }
   },
   className: {
@@ -1064,10 +1194,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Node", function() { return Node; });
 /* harmony import */ var _utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/objectCreationUtils.js */ "./src/utils/objectCreationUtils.js");
 /* harmony import */ var _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./EventTarget.js */ "./src/dom/EventTarget.js");
-/* harmony import */ var _utils_mapUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/mapUtils.js */ "./src/utils/mapUtils.js");
-/* harmony import */ var _utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/tagUtils.js */ "./src/utils/tagUtils.js");
-/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../utils/namespaces.js */ "./src/utils/namespaces.js");
-
+/* harmony import */ var _utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/tagUtils.js */ "./src/utils/tagUtils.js");
+/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/namespaces.js */ "./src/utils/namespaces.js");
 
 
 
@@ -1093,28 +1221,34 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
   constructor (name = '', props = {}, ns = null) {
     super()
 
-    // Follow spec and uppercase nodename for html
-    if (ns === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_4__["html"]) {
-      name = name.toUpperCase()
-    }
-
-    this.prefix = null
-    this.nodeName = this.localName = name
-
-    if (name.includes(':')) {
+    // If props.local is true, the element was Node was created with the non-namespace function
+    // that means whatever was passed as name is the local name even though it might look like a prefix
+    if (name.includes(':') && !props.local) {
       ;[ this.prefix, this.localName ] = name.split(':')
-      this.nodeName = this.localName
+    } else {
+      this.localName = name
+      this.prefix = null
     }
+
+    // Follow spec and uppercase nodeName for html
+    this.nodeName = ns === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_3__["html"] ? name.toUpperCase() : name
 
     this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
     this.nodeValue = props.nodeValue != null ? props.nodeValue : null
     this.childNodes = []
 
-    this.attrs = Object(_utils_mapUtils_js__WEBPACK_IMPORTED_MODULE_2__["objectToMap"])(props.attrs || {})
+    this.attrs = props.attrs || new Set()
 
     this.ownerDocument = props.ownerDocument || null
     this.parentNode = null
+
+    // this.namespaces = {}
+    // if (this.prefix) {
+    //   this.namespaces[this.prefix] = ns
+    // } else {
+    //   this.namespaces.default = ns
+    // }
 
     if (props.childNodes) {
       for (var i = 0, il = props.childNodes.length; i < il; ++i) {
@@ -1124,48 +1258,40 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
   }
 
   appendChild (node) {
-    if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      for (var i = 0, il = node.childNodes.length; i < il; ++i) {
-        node.parentNode = this
-        this.childNodes.push(node.childNodes[i])
-      }
-      node.childNodes.splice(0)
-      return node
-    }
-
-    if (node.parentNode) { node.parentNode.removeChild(node) }
-
-    node.parentNode = this
-
-    this.childNodes.push(node)
-    return node
+    return this.insertBefore(node)
   }
 
   insertBefore (node, before) {
+    let index = this.childNodes.indexOf(before)
+    if (index === -1) {
+      index = this.childNodes.length
+    }
+
     if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      const index = this.childNodes.indexOf(before)
-      if (index === -1) return this.appendChild(node)
-
-      this.childNodes = this.childNodes.slice(0, index).concat(node.childNodes, this.childNodes.slice(index))
-
-      node.childNodes.splice(0)
+      let child
+      let oldChild = before
+      while ((child = node.childNodes.pop())) {
+        this.insertBefore(child, oldChild)
+        oldChild = child
+      }
       return node
     }
 
-    if (node.parentNode) { node.parentNode.removeChild(node) }
+    if (node.parentNode) {
+      node.parentNode.removeChild(node)
+    }
 
     node.parentNode = this
+    // Object.setPrototypeOf(node.namespaces.prototype, this.namespaces.prototype)
 
-    const index = this.childNodes.indexOf(before)
-    if (index === -1) return this.appendChild(node)
-
-    this.childNodes = this.childNodes.slice(0, index).concat(node, this.childNodes.slice(index))
+    this.childNodes.splice(index, 0, node)
     return node
   }
 
   removeChild (node) {
 
     node.parentNode = null
+    // Object.setPrototypeOf(node, null)
     var index = this.childNodes.indexOf(node)
     if (index === -1) return node
     this.childNodes.splice(index, 1)
@@ -1173,8 +1299,6 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
   }
 
   replaceChild (newChild, oldChild) {
-    newChild.parentNode && newChild.parentNode.removeChild(newChild)
-
     var before = oldChild.nextSibling
     this.removeChild(oldChild)
     this.insertBefore(newChild, before)
@@ -1186,7 +1310,7 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
   }
 
   cloneNode (deep = false) {
-    var clone = Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_3__["cloneNode"])(this)
+    var clone = Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_2__["cloneNode"])(this)
 
     if (deep) {
       this.childNodes.forEach(function (el) {
@@ -1222,10 +1346,11 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
       return last && curr.isEqualNode(node.childNodes[index])
     }, true)
 
-    bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
+    // FIXME: Use attr nodes
+    /* bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
       const [ key, val ] = node.attrs.entries()
       return last && curr[0] === key && curr[1] === val
-    }, true)
+    }, true) */
 
     /*
     TODO:
@@ -1626,6 +1751,15 @@ class Window extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"]
     this.document = new _Document_js__WEBPACK_IMPORTED_MODULE_3__["Document"]()
     this.document.defaultView = this
     this.self = this
+    const doc = this.document
+    this.Image = class {
+      constructor (width, height) {
+        const img = doc.createElement('img')
+        if (width != null) img.setAttribute('width', width)
+        if (height != null) img.setAttribute('height', height)
+        return img
+      }
+    }
   }
 
   getComputedStyle (node) {
@@ -1680,7 +1814,7 @@ const winProps = {
   HTMLLinkElement: _html_HTMLLinkElement_js__WEBPACK_IMPORTED_MODULE_11__["HTMLLinkElement"],
   HTMLScriptElement: _html_HTMLScriptElement_js__WEBPACK_IMPORTED_MODULE_12__["HTMLScriptElement"],
   HTMLImageElement: _html_HTMLImageElement_js__WEBPACK_IMPORTED_MODULE_10__["HTMLImageElement"],
-  Image: _html_HTMLImageElement_js__WEBPACK_IMPORTED_MODULE_10__["HTMLImageElement"],
+  // Image: HTMLImageElement, // is set on construction
   SVGMatrix: _svg_SVGMatrix_js__WEBPACK_IMPORTED_MODULE_15__["SVGMatrix"],
   SVGPoint: _svg_SVGPoint_js__WEBPACK_IMPORTED_MODULE_14__["SVGPoint"],
   SVGElement: _svg_SVGElement_js__WEBPACK_IMPORTED_MODULE_16__["SVGElement"],
@@ -1714,6 +1848,8 @@ Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_0__["extend"])(Win
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HTMLElement", function() { return HTMLElement; });
 /* harmony import */ var _Element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Element.js */ "./src/dom/Element.js");
+/* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../utils/namespaces.js */ "./src/utils/namespaces.js");
+
 
 
 class HTMLElement extends _Element_js__WEBPACK_IMPORTED_MODULE_0__["Element"] {}
@@ -1742,8 +1878,8 @@ __webpack_require__.r(__webpack_exports__);
 // import path from 'path'
 
 class HTMLImageElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_2__["HTMLElement"] {
-  constructor () {
-    super('img')
+  constructor (...args) {
+    super(...args)
     this.naturalWidth = 0
     this.naturalHeight = 0
     this.complete = false
@@ -1753,10 +1889,10 @@ class HTMLImageElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_2__["HTM
 Object.defineProperties(HTMLImageElement.prototype, {
   src: {
     get () {
-      return this.attrs.get('src')
+      return this.getAttribute('src')
     },
     set (val) {
-      this.attrs.set('src', val)
+      this.setAttribute('src', val)
       // const url = path.resolve(this.ownerDocument.defaultView.location, val)
       // getFileBufferFromURL(url, (buffer) => {
       image_size__WEBPACK_IMPORTED_MODULE_0___default()(val, (err, size) => {
@@ -1774,18 +1910,18 @@ Object.defineProperties(HTMLImageElement.prototype, {
   },
   height: {
     get () {
-      return this.attrs.get('height') || this.naturalHeight
+      return this.getAttribute('height') || this.naturalHeight
     },
     set (val) {
-      this.attrs.set('height', val)
+      this.setAttribute('height', val)
     }
   },
   width: {
     get () {
-      return this.attrs.get('width') || this.naturalWidth
+      return this.getAttribute('width') || this.naturalWidth
     },
     set (val) {
-      this.attrs.set('width', val)
+      this.setAttribute('width', val)
     }
   }
 })
@@ -1806,35 +1942,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./HTMLElement.js */ "./src/dom/html/HTMLElement.js");
 
 
-class HTMLLinkElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__["HTMLElement"] {
-  constructor () {
-    super('link')
-  }
-}
+class HTMLLinkElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__["HTMLElement"] {}
 
 Object.defineProperties(HTMLLinkElement.prototype, {
   href: {
     get () {
-      return this.attrs.get('href')
+      return this.getAttribute('href')
     },
     set (val) {
-      this.attrs.set('href', val)
+      this.setAttribute('href', val)
     }
   },
   rel: {
     get () {
-      return this.attrs.get('rel')
+      return this.getAttribute('rel')
     },
     set (val) {
-      this.attrs.set('rel', val)
+      this.setAttribute('rel', val)
     }
   },
   type: {
     get () {
-      return this.attrs.get('type')
+      return this.getAttribute('type')
     },
     set (val) {
-      this.attrs.set('type', val)
+      this.setAttribute('type', val)
     }
   }
 })
@@ -1951,27 +2083,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./HTMLElement.js */ "./src/dom/html/HTMLElement.js");
 
 
-class HTMLScriptElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__["HTMLElement"] {
-  constructor () {
-    super('script')
-  }
-}
+class HTMLScriptElement extends _HTMLElement_js__WEBPACK_IMPORTED_MODULE_0__["HTMLElement"] {}
 
 Object.defineProperties(HTMLScriptElement.prototype, {
   src: {
     get () {
-      return this.attrs.get('src')
+      return this.getAttribute('src')
     },
     set (val) {
-      this.attrs.set('src', val)
+      this.setAttribute('src', val)
     }
   },
   type: {
     get () {
-      return this.attrs.get('type')
+      return this.getAttribute('type')
     },
     set (val) {
-      this.attrs.set('type', val)
+      this.setAttribute('type', val)
     }
   }
 })
@@ -4734,11 +4862,6 @@ const splitNotInBrackets = (str, delimiter) => {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tag", function() { return tag; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "cloneNode", function() { return cloneNode; });
-/* harmony import */ var _mapUtils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./mapUtils.js */ "./src/utils/mapUtils.js");
-/* harmony import */ var _namespaces_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./namespaces.js */ "./src/utils/namespaces.js");
-
-
-
 const htmlEntities = function (str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -4751,38 +4874,34 @@ var emptyElements = {
 }
 
 const tag = function (node) {
-
-  let { nodeName: name, prefix } = node
-
-  // Follow browser behavior and lowercase tagnames on innerHTML
-  if (node.namespaceURI === _namespaces_js__WEBPACK_IMPORTED_MODULE_1__["html"]) {
-    name = name.toLowerCase()
-  }
-
-  // We need no prefix if it is the default namespace
-  if (node.isDefaultNamespace(node.lookupNamespaceURI(prefix))) {
-    prefix = null
-  }
-
-  const attrs = Object(_mapUtils_js__WEBPACK_IMPORTED_MODULE_0__["mapMap"])(node.attrs, function (value, key) {
-    return key + '="' + htmlEntities(value) + '"'
+  const attrs = [ ...node.attrs ].map(function (node) {
+    return (node.prefix ? node.prefix + ':' : '') + node.localName + '="' + htmlEntities(node.value) + '"'
   })
 
-  const tagName = prefix ? [ prefix, name ].join(':') : name
+  const { prefix, localName } = node
+  const qualifiedName = (prefix ? prefix + ':' : '') + localName
 
-  return '<' + [].concat(tagName, attrs).join(' ') + '>' + (emptyElements[name] ? '' : node.innerHTML + '</' + tagName + '>')
+  return '<' + [].concat(qualifiedName, attrs).join(' ') + '>' + (emptyElements[qualifiedName.toLowerCase()] ? '' : node.innerHTML + '</' + qualifiedName + '>')
 }
 
 const cloneNode = function (node) {
 
-  const { nodeName: name, prefix } = node
-  const tagName = prefix ? [ prefix, name ].join(':') : name
+  const { prefix, localName, namespaceURI: ns, nodeValue, ownerDocument } = node
 
-  var clone = new node.constructor(tagName, {
-    attrs: Object(_mapUtils_js__WEBPACK_IMPORTED_MODULE_0__["mapToObject"])(node.attrs),
-    nodeValue: node.nodeValue,
-    ownerDocument: node.ownerDocument
-  }, node.namespaceURI)
+  // Build up the correctly cased qualified name
+  const qualifiedName = (prefix ? prefix + ':' : '') + localName
+
+  // Check if node was created using non-namespace function which can lead to : in the localName.
+  // This check allows false negatives because `local` only matters IF there are : in the localName
+  // and we dont care about it when there are non
+  const local = localName.includes(':')
+
+  var clone = new node.constructor(qualifiedName, {
+    attrs: new Set([ ...node.attrs ].map(node => node.cloneNode())),
+    nodeValue,
+    ownerDocument,
+    local
+  }, ns)
 
   return clone
 }

@@ -14,7 +14,7 @@ import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
-import * as namespaces from '../utils/namespaces.js'
+import { svg, html } from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 
@@ -58,9 +58,9 @@ const getHTMLElementForName = (name) => {
 
 const getElementForNamespace = (ns, name) => {
   switch (ns) {
-  case namespaces.svg:
+  case svg:
     return getSVGElementForName(name)
-  case namespaces.html:
+  case html:
   case null:
   case '':
   default:
@@ -87,7 +87,7 @@ export const DOMImplementation = {
   },
 
   createDocument (namespace, qualifiedName, doctype) {
-    var doc = new Document()
+    var doc = new Document(namespace)
     if (doctype) {
       if (doctype.ownerDocument) {
         throw new Error('the object is in the wrong Document, a call to importNode is required')
@@ -102,7 +102,7 @@ export const DOMImplementation = {
   },
 
   createHTMLDocument (titleText = '') {
-    const d = new Document('html')
+    const d = new Document(html)
     const root = d.createElement('html')
     const head = d.createElement('head')
     const title = d.createElement('title')
@@ -117,27 +117,28 @@ export const DOMImplementation = {
 }
 
 export class Document extends Node {
-  constructor () {
-    super('#document')
+  constructor (ns) {
+    super('#document', {}, ns)
     this.nodeType = Node.DOCUMENT_NODE
     this.implementation = DOMImplementation
     this.defaultView = null
   }
 
-  createElementNS (ns, name) {
-    const Element = getElementForNamespace(ns, name)
+  createElement (localName) {
+    return this.createElementNS(this.namespaceURI, localName, true)
+  }
 
-    return new Element(name, {
-      ownerDocument: this
+  createElementNS (ns, qualifiedName, local = false) {
+    const Element = getElementForNamespace(ns, qualifiedName)
+
+    return new Element(qualifiedName, {
+      ownerDocument: this,
+      local
     }, ns)
   }
 
   createDocumentFragment (name) {
     return new DocumentFragment({ ownerDocument: this })
-  }
-
-  createElement (name) {
-    return this.createElementNS(namespaces.html, name)
   }
 
   createTextNode (text) {
@@ -148,12 +149,16 @@ export class Document extends Node {
     return new Comment('#comment', { nodeValue: text, ownerDocument: this })
   }
 
-  createAttribute (name) {
-    return this.createAttributeNS(null, name)
+  // Testing showed, that creating an attribute with createAttribute always creates a Attr with namespace=null
+  // and its name lowercase. This is strange since changing the case is usually only involved when handling with html.
+  // However, I couldnt find anything to that in the specs
+  createAttribute (localName) {
+    localName = localName.toLowerCase()
+    return this.createAttributeNS(null, localName, true)
   }
 
-  createAttributeNS (ns, name) {
-    return new Attr(name, ns)
+  createAttributeNS (ns, qualifiedName, local = false) {
+    return new Attr(qualifiedName, { ownerDocument: this, local }, ns)
   }
 }
 

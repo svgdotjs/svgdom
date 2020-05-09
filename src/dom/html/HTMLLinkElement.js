@@ -1,34 +1,30 @@
 import { HTMLElement } from './HTMLElement.js'
 
-export class HTMLLinkElement extends HTMLElement {
-  constructor () {
-    super('link')
-  }
-}
+export class HTMLLinkElement extends HTMLElement {}
 
 Object.defineProperties(HTMLLinkElement.prototype, {
   href: {
     get () {
-      return this.attrs.get('href')
+      return this.getAttribute('href')
     },
     set (val) {
-      this.attrs.set('href', val)
+      this.setAttribute('href', val)
     }
   },
   rel: {
     get () {
-      return this.attrs.get('rel')
+      return this.getAttribute('rel')
     },
     set (val) {
-      this.attrs.set('rel', val)
+      this.setAttribute('rel', val)
     }
   },
   type: {
     get () {
-      return this.attrs.get('type')
+      return this.getAttribute('type')
     },
     set (val) {
-      this.attrs.set('type', val)
+      this.setAttribute('type', val)
     }
   }
 })

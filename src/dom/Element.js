@@ -6,10 +6,54 @@ import { HTMLParser } from './html/HTMLParser.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
-import { cssToMap, mapToCss, mapMap } from '../utils/mapUtils.js'
+import { cssToMap, mapToCss } from '../utils/mapUtils.js'
 import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/strUtils.js'
 import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
 import { ChildNode } from './mixins/ChildNode.js'
+import { html, xml, xmlns } from '../utils/namespaces.js'
+import { Attr } from './Attr.js'
+
+const validateAndExtract = (ns, name) => {
+  let prefix = null
+  let localname = name
+
+  if (!ns) ns = null
+
+  if (name.includes(':')) {
+    [ prefix, localname ] = name.split(':')
+  }
+
+  if (!ns && prefix) {
+    throw new Error('Namespace Error')
+  }
+
+  if (prefix === 'xml' && ns !== xml) {
+    throw new Error('Namespace Error')
+  }
+
+  if ((prefix === 'xmlns' || name === 'xmlns') && ns !== xmlns) {
+    throw new Error('Namespace Error')
+  }
+
+  if (prefix !== 'xmlns' && name !== 'xmlns' && ns === xmlns) {
+    throw new Error('Namespace Error')
+  }
+
+  return [ ns, prefix, localname ]
+}
+
+const getAttributeByNsAndLocalName = (el, ns, localName) => {
+  if (!ns) ns = null
+  return [ ...el.attrs ].find((node) => node.localName === localName && node.namespaceURI === ns)
+}
+
+const getAttributeByQualifiedName = (el, qualifiedName) => {
+  if (el.namespaceURI === html && el.ownerDocument.namespaceURI === html) {
+    qualifiedName = qualifiedName.toLowerCase()
+  }
+
+  return [ ...el.attrs ].find((node) => node.name === qualifiedName)
+}
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
 const getStyleProxy = (node) => {
@@ -55,7 +99,7 @@ const getStyleProxy = (node) => {
   })
 }
 
-export const mapToAttributeArray = function (element) {
+/* export const mapToAttributeArray = function (element) {
   const { attrs, ownerDocument, namespaceURI } = element
   return mapMap(attrs, function (value, key) {
     const attr = ownerDocument.createAttributeNS(namespaceURI, key)
@@ -63,7 +107,7 @@ export const mapToAttributeArray = function (element) {
     attr.ownerElement = element
     return attr
   })
-}
+} */
 
 export class Element extends Node {
   constructor (name, props, ns) {
@@ -73,57 +117,119 @@ export class Element extends Node {
     this.tagName = this.nodeName
   }
 
-  setAttribute (name, value) {
-    this.attrs.set(name, value)
+  /* The setAttribute(qualifiedName, value) method, when invoked, must run these steps:
+
+    If qualifiedName does not match the Name production in XML, then throw an "InvalidCharacterError" DOMException.
+
+    If this is in the HTML namespace and its node document is an HTML document, then set qualifiedName to qualifiedName in ASCII lowercase.
+
+    Let attribute be the first attribute in this’s attribute list whose qualified name is qualifiedName, and null otherwise.
+
+    If attribute is null, create an attribute whose local name is qualifiedName, value is value, and node document is this’s node document, then append this attribute to this, and then return.
+
+    Change attribute to value.
+  */
+  setAttribute (qualifiedName, value) {
+    // We have to do that here because we cannot check if `this` is in the correct namespace
+    // when doing it in createAttribute
+    if (this.namespaceURI === html && this.ownerDocument.namespaceURI === html) {
+      qualifiedName = qualifiedName.toLowerCase()
+    }
+
+    let attr = this.getAttributeNode(qualifiedName)
+    if (!attr) {
+      // attr = this.ownerDocument.createAttribute(qualifiedName)
+      // Because createAttribute has quirks (see there), we have to create an Attr directly here
+      attr = new Attr(qualifiedName, { ownerDocument: this, local: true }, null)
+      this.setAttributeNode(attr)
+    }
+
+    attr.value = value
   }
+
+  /*
+    Let namespace, prefix, and localName be the result of passing namespace and qualifiedName to validate and extract.
+
+    Set an attribute value for this using localName, value, and also prefix and namespace.
+
+    If prefix is not given, set it to null.
+    If namespace is not given, set it to null.
+    Let attribute be the result of getting an attribute given namespace, localName, and element.
+    If attribute is null, create an attribute whose namespace is namespace, namespace prefix is prefix, local name is localName, value is value, and node document is element’s node document, then append this attribute to element, and then return.
+
+    Change attribute to value.
+  */
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
-  setAttributeNS (ns = '', name, value) {
-    const prefix = this.lookupPrefix(ns)
-    if (!name.includes(':')) {
-      name = [ prefix, name ].join(':')
+  setAttributeNS (namespace, name, value) {
+
+    // eslint-disable-next-line
+    const [ ns, prefix, localName ] = validateAndExtract(namespace, name)
+
+    let attr = this.getAttributeNodeNS(ns, localName)
+    if (!attr) {
+      attr = this.ownerDocument.createAttributeNS(ns, name)
+      this.setAttributeNode(attr) // setAttributeNodeNS is a synonym of setAttributeNode
     }
-    this.setAttribute(name, value)
+
+    attr.value = value
+
+    this.attrs.add(attr)
   }
 
-  removeAttribute (name) {
-    this.attrs.delete(name)
+  setAttributeNode (node) {
+    this.attrs.add(node)
+    node.ownerElement = this
+  }
+
+  removeAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
   }
 
   // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.removeAttribute(name)
+  removeAttributeNS (ns, name) {
+    const attr = this.getAttributeNode(ns, name)
+    if (attr) {
+      this.removeAttributeNode(attr)
     }
-
-    this.removeAttribute([ ns, name ].join(':'))
+    return attr
   }
 
-  hasAttribute (name) {
-    return this.attrs.has(name)
+  removeAttributeNode (node) {
+    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+    return node
   }
 
-  hasAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.hasAttribute(name)
-    }
-
-    return this.hasAttribute([ ns, name ].join(':'))
+  hasAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return !!attr
   }
 
-  getAttribute (name) {
-    return this.hasAttribute(name) ? this.attrs.get(name) : null
+  hasAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return !!attr
   }
 
-  getAttributeNS (ns = '', name) {
-    const prefix = this.lookupPrefix(ns)
-    if (name.includes(':') || !prefix) {
-      return this.getAttribute(name)
-    }
+  getAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return attr ? attr.value : null
+  }
 
-    return this.getAttribute([ prefix, name ].join(':'))
+  getAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return attr ? attr.value : null
+  }
+
+  getAttributeNode (qualifiedName) {
+    return getAttributeByQualifiedName(this, qualifiedName)
+  }
+
+  getAttributeNodeNS (ns, localName) {
+    return getAttributeByNsAndLocalName(this, ns, localName)
   }
 
   matches (query) {
@@ -139,7 +245,7 @@ export class Element extends Node {
 Object.defineProperties(Element.prototype, {
   attributes: {
     get () {
-      return mapToAttributeArray(this)
+      return [ ...this.attrs ]
     }
   },
   className: {

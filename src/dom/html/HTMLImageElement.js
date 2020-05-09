@@ -5,8 +5,8 @@ import { HTMLElement } from './HTMLElement.js'
 // import path from 'path'
 
 export class HTMLImageElement extends HTMLElement {
-  constructor () {
-    super('img')
+  constructor (...args) {
+    super(...args)
     this.naturalWidth = 0
     this.naturalHeight = 0
     this.complete = false
@@ -16,10 +16,10 @@ export class HTMLImageElement extends HTMLElement {
 Object.defineProperties(HTMLImageElement.prototype, {
   src: {
     get () {
-      return this.attrs.get('src')
+      return this.getAttribute('src')
     },
     set (val) {
-      this.attrs.set('src', val)
+      this.setAttribute('src', val)
       // const url = path.resolve(this.ownerDocument.defaultView.location, val)
       // getFileBufferFromURL(url, (buffer) => {
       sizeOf(val, (err, size) => {
@@ -37,18 +37,18 @@ Object.defineProperties(HTMLImageElement.prototype, {
   },
   height: {
     get () {
-      return this.attrs.get('height') || this.naturalHeight
+      return this.getAttribute('height') || this.naturalHeight
     },
     set (val) {
-      this.attrs.set('height', val)
+      this.setAttribute('height', val)
     }
   },
   width: {
     get () {
-      return this.attrs.get('width') || this.naturalWidth
+      return this.getAttribute('width') || this.naturalWidth
     },
     set (val) {
-      this.attrs.set('width', val)
+      this.setAttribute('width', val)
     }
   }
 })

@@ -1,7 +1,6 @@
 import { extend, extendStatic } from '../utils/objectCreationUtils.js'
 
 import { EventTarget } from './EventTarget.js'
-import { objectToMap } from '../utils/mapUtils.js'
 import { cloneNode } from '../utils/tagUtils.js'
 import { html } from '../utils/namespaces.js'
 
@@ -24,28 +23,34 @@ export class Node extends EventTarget {
   constructor (name = '', props = {}, ns = null) {
     super()
 
-    // Follow spec and uppercase nodename for html
-    if (ns === html) {
-      name = name.toUpperCase()
-    }
-
-    this.prefix = null
-    this.nodeName = this.localName = name
-
-    if (name.includes(':')) {
+    // If props.local is true, the element was Node was created with the non-namespace function
+    // that means whatever was passed as name is the local name even though it might look like a prefix
+    if (name.includes(':') && !props.local) {
       ;[ this.prefix, this.localName ] = name.split(':')
-      this.nodeName = this.localName
+    } else {
+      this.localName = name
+      this.prefix = null
     }
+
+    // Follow spec and uppercase nodeName for html
+    this.nodeName = ns === html ? name.toUpperCase() : name
 
     this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
     this.nodeValue = props.nodeValue != null ? props.nodeValue : null
     this.childNodes = []
 
-    this.attrs = objectToMap(props.attrs || {})
+    this.attrs = props.attrs || new Set()
 
     this.ownerDocument = props.ownerDocument || null
     this.parentNode = null
+
+    // this.namespaces = {}
+    // if (this.prefix) {
+    //   this.namespaces[this.prefix] = ns
+    // } else {
+    //   this.namespaces.default = ns
+    // }
 
     if (props.childNodes) {
       for (var i = 0, il = props.childNodes.length; i < il; ++i) {
@@ -55,48 +60,40 @@ export class Node extends EventTarget {
   }
 
   appendChild (node) {
-    if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      for (var i = 0, il = node.childNodes.length; i < il; ++i) {
-        node.parentNode = this
-        this.childNodes.push(node.childNodes[i])
-      }
-      node.childNodes.splice(0)
-      return node
-    }
-
-    if (node.parentNode) { node.parentNode.removeChild(node) }
-
-    node.parentNode = this
-
-    this.childNodes.push(node)
-    return node
+    return this.insertBefore(node)
   }
 
   insertBefore (node, before) {
+    let index = this.childNodes.indexOf(before)
+    if (index === -1) {
+      index = this.childNodes.length
+    }
+
     if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      const index = this.childNodes.indexOf(before)
-      if (index === -1) return this.appendChild(node)
-
-      this.childNodes = this.childNodes.slice(0, index).concat(node.childNodes, this.childNodes.slice(index))
-
-      node.childNodes.splice(0)
+      let child
+      let oldChild = before
+      while ((child = node.childNodes.pop())) {
+        this.insertBefore(child, oldChild)
+        oldChild = child
+      }
       return node
     }
 
-    if (node.parentNode) { node.parentNode.removeChild(node) }
+    if (node.parentNode) {
+      node.parentNode.removeChild(node)
+    }
 
     node.parentNode = this
+    // Object.setPrototypeOf(node.namespaces.prototype, this.namespaces.prototype)
 
-    const index = this.childNodes.indexOf(before)
-    if (index === -1) return this.appendChild(node)
-
-    this.childNodes = this.childNodes.slice(0, index).concat(node, this.childNodes.slice(index))
+    this.childNodes.splice(index, 0, node)
     return node
   }
 
   removeChild (node) {
 
     node.parentNode = null
+    // Object.setPrototypeOf(node, null)
     var index = this.childNodes.indexOf(node)
     if (index === -1) return node
     this.childNodes.splice(index, 1)
@@ -104,8 +101,6 @@ export class Node extends EventTarget {
   }
 
   replaceChild (newChild, oldChild) {
-    newChild.parentNode && newChild.parentNode.removeChild(newChild)
-
     var before = oldChild.nextSibling
     this.removeChild(oldChild)
     this.insertBefore(newChild, before)
@@ -153,10 +148,11 @@ export class Node extends EventTarget {
       return last && curr.isEqualNode(node.childNodes[index])
     }, true)
 
-    bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
+    // FIXME: Use attr nodes
+    /* bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
       const [ key, val ] = node.attrs.entries()
       return last && curr[0] === key && curr[1] === val
-    }, true)
+    }, true) */
 
     /*
     TODO:
