@@ -28,6 +28,10 @@
   ],
   "author": "Ulrich-Matthias Schäfer",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Fuzzyma"
+  },
   "bugs": {
     "url": "https://github.com/svgdotjs/svgdom/issues"
   },
