@@ -13,6 +13,19 @@ export class EventTarget {
     this[$].listeners[type].push(callback)
   }
 
+  dispatchEvent (event) {
+    if (!(event.type in this[$].listeners)) { return true }
+
+    var stack = this[$].listeners[event.type]
+    event.target = this
+
+    stack.forEach(function (el) {
+      el(event)
+    })
+
+    return !event.defaultPrevented
+  }
+
   removeEventListener (type, callback) {
     if (!(type in this[$].listeners)) {
       return
@@ -25,19 +38,6 @@ export class EventTarget {
         return
       }
     }
-  }
-
-  dispatchEvent (event) {
-    if (!(event.type in this[$].listeners)) { return true }
-
-    var stack = this[$].listeners[event.type]
-    event.target = this
-
-    stack.forEach(function (el) {
-      el(event)
-    })
-
-    return !event.defaultPrevented
   }
 
 }

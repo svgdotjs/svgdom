@@ -17,9 +17,48 @@ export class Point {
     this.y = source.y
   }
 
+  abs () {
+    return Math.sqrt(this.absQuad())
+  }
+
+  absQuad () {
+    return this.x * this.x + this.y * this.y
+  }
+
+  add (x, y) {
+    var p = new Point(x, y)
+    return new Point(this.x + p.x, this.y + p.y)
+  }
+
+  angleTo (p) {
+    var sign = Math.sign(this.x * p.y - this.y * p.x)
+    sign = sign || 1
+    return sign * Math.acos(Math.round((this.dot(p) / (this.abs() * p.abs())) * 1000000) / 1000000)
+  }
+
   // Clone point
   clone () {
     return new Point(this)
+  }
+
+  closeTo (p, eta = 0.00001) {
+    return this.equals(p) || (Math.abs(this.x - p.x) < eta && Math.abs(this.y - p.y) < eta)
+  }
+
+  div (factor) {
+    return new Point(this.x / factor, this.y / factor)
+  }
+
+  dot (p) {
+    return this.x * p.x + this.y * p.y
+  }
+
+  equals (p) {
+    return this.x === p.x && this.y === p.y
+  }
+
+  mul (factor) {
+    return new Point(this.x * factor, this.y * factor)
   }
 
   // Convert to native SVGPoint
@@ -34,35 +73,8 @@ export class Point {
     return point
   }
 
-  // transform point with matrix
-  transform (matrix) {
-    return new Point(this.native().matrixTransform(matrix))
-  }
-
-  add (x, y) {
-    var p = new Point(x, y)
-    return new Point(this.x + p.x, this.y + p.y)
-  }
-
-  sub (x, y) {
-    var p = new Point(x, y)
-    return new Point(this.x - p.x, this.y - p.y)
-  }
-
-  mul (factor) {
-    return new Point(this.x * factor, this.y * factor)
-  }
-
-  div (factor) {
-    return new Point(this.x / factor, this.y / factor)
-  }
-
-  absQuad () {
-    return this.x * this.x + this.y * this.y
-  }
-
-  abs () {
-    return Math.sqrt(this.absQuad())
+  normal () {
+    return new Point(this.y, -this.x)
   }
 
   normalize () {
@@ -71,37 +83,26 @@ export class Point {
     return this.div(abs)
   }
 
-  normal () {
-    return new Point(this.y, -this.x)
+  reflectAt (p) {
+    return p.add(p.sub(this))
+  }
+
+  sub (x, y) {
+    var p = new Point(x, y)
+    return new Point(this.x - p.x, this.y - p.y)
   }
 
   toArray () {
     return [ this.x, this.y ]
   }
 
-  reflectAt (p) {
-    return p.add(p.sub(this))
-  }
-
   toPath () {
     return [ 'M', this.x, this.y ].join(' ')
   }
 
-  equals (p) {
-    return this.x === p.x && this.y === p.y
+  // transform point with matrix
+  transform (matrix) {
+    return new Point(this.native().matrixTransform(matrix))
   }
 
-  closeTo (p, eta = 0.00001) {
-    return this.equals(p) || (Math.abs(this.x - p.x) < eta && Math.abs(this.y - p.y) < eta)
-  }
-
-  angleTo (p) {
-    var sign = Math.sign(this.x * p.y - this.y * p.x)
-    sign = sign || 1
-    return sign * Math.acos(Math.round((this.dot(p) / (this.abs() * p.abs())) * 1000000) / 1000000)
-  }
-
-  dot (p) {
-    return this.x * p.x + this.y * p.y
-  }
 }

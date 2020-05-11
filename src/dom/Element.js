@@ -107,6 +107,64 @@ export class Element extends Node {
     this.tagName = this.nodeName
   }
 
+  getAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return attr ? attr.value : null
+  }
+
+  getAttributeNode (qualifiedName) {
+    return getAttributeByQualifiedName(this, qualifiedName)
+  }
+
+  getAttributeNodeNS (ns, localName) {
+    return getAttributeByNsAndLocalName(this, ns, localName)
+  }
+
+  getAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return attr ? attr.value : null
+  }
+
+  getBoundingClientRect () {
+    throw new Error('Only implemented for SVG Elements')
+  }
+
+  hasAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return !!attr
+  }
+
+  hasAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return !!attr
+  }
+
+  matches (query) {
+    return this.matchWithScope(query, this)
+  }
+
+  removeAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
+  }
+
+  removeAttributeNode (node) {
+    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+    return node
+  }
+
+  // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
+  removeAttributeNS (ns, name) {
+    const attr = this.getAttributeNode(ns, name)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
+  }
+
   /* The setAttribute(qualifiedName, value) method, when invoked, must run these steps:
 
     If qualifiedName does not match the Name production in XML, then throw an "InvalidCharacterError" DOMException.
@@ -149,6 +207,11 @@ export class Element extends Node {
     Change attribute to value.
   */
 
+  setAttributeNode (node) {
+    this.attrs.add(node)
+    node.ownerElement = this
+  }
+
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
   setAttributeNS (namespace, name, value) {
 
@@ -166,123 +229,56 @@ export class Element extends Node {
     this.attrs.add(attr)
   }
 
-  setAttributeNode (node) {
-    this.attrs.add(node)
-    node.ownerElement = this
+  get attributes () {
+    return [ ...this.attrs ]
   }
 
-  removeAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    if (attr) {
-      this.removeAttributeNode(attr)
+  get className () {
+    return this.getAttribute('class')
+  }
+
+  set className (c) {
+    this.setAttribute('class', c)
+  }
+
+  get id () {
+    return this.getAttribute('id') || ''
+  }
+
+  set id (id) {
+    return this.setAttribute('id', id)
+  }
+
+  get innerHTML () {
+
+    return this.childNodes.map(node => {
+      if (node.nodeType === Node.TEXT_NODE) return htmlEntities(node.data)
+      if (node.nodeType === Node.CDATA_SECTION_NODE) return cdata(node.data)
+      if (node.nodeType === Node.COMMENT_NODE) return comment(node.data)
+      return node.outerHTML
+    }).join('')
+  }
+
+  set innerHTML (str) {
+    while (this.firstChild) {
+      this.removeChild(this.firstChild)
     }
-    return attr
+    // The parser adds the html to this
+    HTMLParser(str, this)
   }
 
-  // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns, name) {
-    const attr = this.getAttributeNode(ns, name)
-    if (attr) {
-      this.removeAttributeNode(attr)
-    }
-    return attr
+  get outerHTML () {
+    return tag(this)
   }
 
-  removeAttributeNode (node) {
-    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
-    return node
-  }
-
-  hasAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    return !!attr
-  }
-
-  hasAttributeNS (ns, localName) {
-    const attr = this.getAttributeNodeNS(ns, localName)
-    return !!attr
-  }
-
-  getAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    return attr ? attr.value : null
-  }
-
-  getAttributeNS (ns, localName) {
-    const attr = this.getAttributeNodeNS(ns, localName)
-    return attr ? attr.value : null
-  }
-
-  getAttributeNode (qualifiedName) {
-    return getAttributeByQualifiedName(this, qualifiedName)
-  }
-
-  getAttributeNodeNS (ns, localName) {
-    return getAttributeByNsAndLocalName(this, ns, localName)
-  }
-
-  matches (query) {
-    return this.matchWithScope(query, this)
-  }
-
-  getBoundingClientRect () {
-    throw new Error('Only implemented for SVG Elements')
+  set outerHTML (str) {
+    var well = new DocumentFragment()
+    HTMLParser(str, well)
+    this.parentNode.insertBefore(well, this)
+    this.parentNode.removeChild(this)
   }
 
 }
-
-Object.defineProperties(Element.prototype, {
-  attributes: {
-    get () {
-      return [ ...this.attrs ]
-    }
-  },
-  className: {
-    get () {
-      return this.getAttribute('class')
-    },
-    set (c) {
-      this.setAttribute('class', c)
-    }
-  },
-  innerHTML: {
-    get () {
-
-      return this.childNodes.map(node => {
-        if (node.nodeType === Node.TEXT_NODE) return htmlEntities(node.data)
-        if (node.nodeType === Node.CDATA_SECTION_NODE) return cdata(node.data)
-        if (node.nodeType === Node.COMMENT_NODE) return comment(node.data)
-        return node.outerHTML
-      }).join('')
-    },
-    set (str) {
-      while (this.firstChild) {
-        this.removeChild(this.firstChild)
-      }
-      // The parser adds the html to this
-      HTMLParser(str, this)
-    }
-  },
-  outerHTML: {
-    get () {
-      return tag(this)
-    },
-    set (str) {
-      var well = new DocumentFragment()
-      HTMLParser(str, well)
-      this.parentNode.insertBefore(well, this)
-      this.parentNode.removeChild(this)
-    }
-  },
-  id: {
-    get () {
-      return this.getAttribute('id') || ''
-    },
-    set (id) {
-      return this.setAttribute('id', id)
-    }
-  }
-})
 
 mixin(ParentNode, Element)
 mixin(elementAccess, Element)

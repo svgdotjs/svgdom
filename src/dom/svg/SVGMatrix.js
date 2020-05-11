@@ -19,21 +19,6 @@ export class SVGMatrix {
     this.b = this.c = this.e = this.f = 0
   }
 
-  multiply (m) {
-    var r = new SVGMatrix()
-    r.a = this.a * m.a + this.c * m.b + this.e * 0
-    r.b = this.b * m.a + this.d * m.b + this.f * 0
-    r.c = this.a * m.c + this.c * m.d + this.e * 0
-    r.d = this.b * m.c + this.d * m.d + this.f * 0
-    r.e = this.a * m.e + this.c * m.f + this.e * 1
-    r.f = this.b * m.e + this.d * m.f + this.f * 1
-    return r
-  }
-
-  translate (x = 0, y = 0) {
-    return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
-  }
-
   inverse () {
     // Get the current parameters out of the matrix
     var a = this.a
@@ -68,12 +53,15 @@ export class SVGMatrix {
     return this
   }
 
-  toString () {
-    return 'SVGMatrix'
-  }
-
-  scale (scaleX, scaleY = scaleX) {
-    return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
+  multiply (m) {
+    var r = new SVGMatrix()
+    r.a = this.a * m.a + this.c * m.b + this.e * 0
+    r.b = this.b * m.a + this.d * m.b + this.f * 0
+    r.c = this.a * m.c + this.c * m.d + this.e * 0
+    r.d = this.b * m.c + this.d * m.d + this.f * 0
+    r.e = this.a * m.e + this.c * m.f + this.e * 1
+    r.f = this.b * m.e + this.d * m.f + this.f * 1
+    return r
   }
 
   rotate (r, x, y) {
@@ -88,6 +76,10 @@ export class SVGMatrix {
     ))
   }
 
+  scale (scaleX, scaleY = scaleX) {
+    return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
+  }
+
   skew (x, y) {
     return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))
   }
@@ -99,4 +91,13 @@ export class SVGMatrix {
   skewY (y) {
     return this.skew(0, y)
   }
+
+  toString () {
+    return 'SVGMatrix'
+  }
+
+  translate (x = 0, y = 0) {
+    return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
+  }
+
 }

@@ -10,20 +10,16 @@ export class Attr extends Node {
     this.nodeType = Node.ATTRIBUTE_NODE
     this.ownerElement = null
   }
-}
 
-Object.defineProperties(Attr.prototype, {
-  value: {
-    get () {
-      return this.nodeValue
-    },
-    set (val) {
-      this.nodeValue = val
-    }
-  },
-  name: {
-    get () {
-      return this.nodeName
-    }
+  get value () {
+    return this.nodeValue
   }
-})
+
+  set value (val) {
+    this.nodeValue = val
+  }
+
+  get name () {
+    return this.nodeName
+  }
+}

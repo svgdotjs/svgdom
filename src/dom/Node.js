@@ -63,6 +63,38 @@ export class Node extends EventTarget {
     return this.insertBefore(node)
   }
 
+  cloneNode (deep = false) {
+    var clone = cloneNode(this)
+
+    if (deep) {
+      this.childNodes.forEach(function (el) {
+        var node = el.cloneNode(deep)
+        clone.appendChild(node)
+      })
+    }
+
+    return clone
+  }
+
+  contains (node) {
+    if (node === this) return false
+
+    while (node.parentNode) {
+      if (node === this) return true
+      node = node.parentNode
+    }
+    return false
+  }
+
+  getRootNode () {
+    if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
+    return this.parentNode.getRootNode()
+  }
+
+  hasChildNodes () {
+    return !!this.childNodes.length
+  }
+
   insertBefore (node, before) {
     let index = this.childNodes.indexOf(before)
     if (index === -1) {
@@ -90,43 +122,42 @@ export class Node extends EventTarget {
     return node
   }
 
-  removeChild (node) {
+  isDefaultNamespace (namespaceURI) {
+    switch (this.nodeType) {
+    case Node.ELEMENT_NODE:
+      if (!this.prefix) {
+        return this.namespaceURI === namespaceURI
+      }
 
-    node.parentNode = null
-    // Object.setPrototypeOf(node, null)
-    var index = this.childNodes.indexOf(node)
-    if (index === -1) return node
-    this.childNodes.splice(index, 1)
-    return node
-  }
+      if (this.hasAttribute('xmlns')) {
+        return this.getAttribute('xmlns')
+      }
 
-  replaceChild (newChild, oldChild) {
-    var before = oldChild.nextSibling
-    this.removeChild(oldChild)
-    this.insertBefore(newChild, before)
-    return oldChild
-  }
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
+      }
 
-  hasChildNodes () {
-    return !!this.childNodes.length
-  }
-
-  cloneNode (deep = false) {
-    var clone = cloneNode(this)
-
-    if (deep) {
-      this.childNodes.forEach(function (el) {
-        var node = el.cloneNode(deep)
-        clone.appendChild(node)
-      })
+      return false
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.isDefaultNamespace(namespaceURI)
+    case Node.ENTITY_NODE:
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+      return false
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.isDefaultNamespace(namespaceURI)
+      }
+      return false
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
+      }
+      return false
     }
-
-    return clone
-  }
-
-  getRootNode () {
-    if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
-    return this.parentNode.getRootNode()
   }
 
   isEqualNode (node) {
@@ -176,96 +207,6 @@ export class Node extends EventTarget {
     return this === node
   }
 
-  contains (node) {
-    if (node === this) return false
-
-    while (node.parentNode) {
-      if (node === this) return true
-      node = node.parentNode
-    }
-    return false
-  }
-
-  normalize () {
-    const childNodes = []
-    for (const node of this.childNodes) {
-      const last = childNodes.shift()
-      if (!last) {
-        if (node.data) {
-          childNodes.unshift(node)
-        }
-        continue
-      }
-
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (!node.data) {
-          childNodes.unshift(last)
-          continue
-        }
-
-        if (last.nodeType === Node.TEXT_NODE) {
-          const merged = this.ownerDocument.createTextNode(last.data + node.data)
-          childNodes.push(merged)
-          continue
-        }
-
-        childNodes.push(last, node)
-      }
-    }
-
-    this.childNodes = childNodes
-    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
-    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
-    //   if (!textNodes) return [ node ]
-    //   var last = textNodes.pop()
-
-    //   if (node.nodeType === Node.TEXT_NODE) {
-    //     if (!node.data) return textNodes
-
-    //     if (last.nodeType === Node.TEXT_NODE) {
-    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
-    //       textNodes.push(merged)
-    //       return textNodes.concat(merged)
-    //     }
-    //   } else {
-    //     textNodes.push(last, node)
-    //   }
-
-    //   return textNodes
-    // }, null)
-  }
-
-  lookupPrefix (namespaceURI) {
-    if (!namespaceURI) {
-      return null
-    }
-
-    const type = this.nodeType
-
-    switch (type) {
-    case Node.ELEMENT_NODE:
-      return this.lookupNamespacePrefix(namespaceURI, this)
-    case Node.DOCUMENT_NODE:
-      return this.documentElement.lookupNamespacePrefix(namespaceURI)
-    case Node.ENTITY_NODE :
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-      return null // type is unknown
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
-      }
-      return null
-    default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.lookupNamespacePrefix(namespaceURI)
-      }
-      return null
-    }
-  }
-
   lookupNamespacePrefix (namespaceURI, originalElement) {
     if (this.namespaceURI && this.namespaceURI === namespaceURI && this.prefix
          && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
@@ -286,44 +227,6 @@ export class Node extends EventTarget {
       return this.parentNode.lookupNamespacePrefix(namespaceURI, originalElement)
     }
     return null
-  }
-
-  isDefaultNamespace (namespaceURI) {
-    switch (this.nodeType) {
-    case Node.ELEMENT_NODE:
-      if (!this.prefix) {
-        return this.namespaceURI === namespaceURI
-      }
-
-      if (this.hasAttribute('xmlns')) {
-        return this.getAttribute('xmlns')
-      }
-
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-
-      return false
-    case Node.DOCUMENT_NODE:
-      return this.documentElement.isDefaultNamespace(namespaceURI)
-    case Node.ENTITY_NODE:
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-      return false
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    }
   }
 
   lookupNamespaceURI (prefix) {
@@ -378,47 +281,135 @@ export class Node extends EventTarget {
     }
   }
 
-}
+  lookupPrefix (namespaceURI) {
+    if (!namespaceURI) {
+      return null
+    }
 
-// Define dynamic properties
-Object.defineProperties(Node.prototype, {
-  textContent: {
-    get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
-      if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
-      if (this.nodeType === Node.COMMENT_NODE) return this.data
+    const type = this.nodeType
 
-      return this.childNodes.reduce(function (last, current) {
-        return last + current.textContent
-      }, '')
-    },
-    set (text) {
-      this.childNodes = [ this.ownerDocument.createTextNode(text) ]
-    }
-  },
-  firstChild: {
-    get () {
-      return this.childNodes[0] || null
-    }
-  },
-  lastChild: {
-    get () {
-      return this.childNodes[this.childNodes.length - 1] || null
-    }
-  },
-  nextSibling: {
-    get () {
-      const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
-      return child || null
-    }
-  },
-  previousSibling: {
-    get () {
-      const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
-      return child || null
+    switch (type) {
+    case Node.ELEMENT_NODE:
+      return this.lookupNamespacePrefix(namespaceURI, this)
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.lookupNamespacePrefix(namespaceURI)
+    case Node.ENTITY_NODE :
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+      return null // type is unknown
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
     }
   }
-})
+
+  normalize () {
+    const childNodes = []
+    for (const node of this.childNodes) {
+      const last = childNodes.shift()
+      if (!last) {
+        if (node.data) {
+          childNodes.unshift(node)
+        }
+        continue
+      }
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.data) {
+          childNodes.unshift(last)
+          continue
+        }
+
+        if (last.nodeType === Node.TEXT_NODE) {
+          const merged = this.ownerDocument.createTextNode(last.data + node.data)
+          childNodes.push(merged)
+          continue
+        }
+
+        childNodes.push(last, node)
+      }
+    }
+
+    this.childNodes = childNodes
+    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
+    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
+    //   if (!textNodes) return [ node ]
+    //   var last = textNodes.pop()
+
+    //   if (node.nodeType === Node.TEXT_NODE) {
+    //     if (!node.data) return textNodes
+
+    //     if (last.nodeType === Node.TEXT_NODE) {
+    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
+    //       textNodes.push(merged)
+    //       return textNodes.concat(merged)
+    //     }
+    //   } else {
+    //     textNodes.push(last, node)
+    //   }
+
+    //   return textNodes
+    // }, null)
+  }
+
+  removeChild (node) {
+
+    node.parentNode = null
+    // Object.setPrototypeOf(node, null)
+    var index = this.childNodes.indexOf(node)
+    if (index === -1) return node
+    this.childNodes.splice(index, 1)
+    return node
+  }
+
+  replaceChild (newChild, oldChild) {
+    var before = oldChild.nextSibling
+    this.removeChild(oldChild)
+    this.insertBefore(newChild, before)
+    return oldChild
+  }
+
+  get nextSibling () {
+    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
+    return child || null
+  }
+
+  get previousSibling () {
+    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
+    return child || null
+  }
+
+  get textContent () {
+    if (this.nodeType === Node.TEXT_NODE) return this.data
+    if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
+    if (this.nodeType === Node.COMMENT_NODE) return this.data
+
+    return this.childNodes.reduce(function (last, current) {
+      return last + current.textContent
+    }, '')
+  }
+
+  set textContent (text) {
+    this.childNodes = [ this.ownerDocument.createTextNode(text) ]
+  }
+
+  get lastChild () {
+    return this.childNodes[this.childNodes.length - 1] || null
+  }
+
+  get firstChild () {
+    return this.childNodes[0] || null
+  }
+}
 
 extendStatic(Node, nodeTypes)
 extend(Node, nodeTypes)

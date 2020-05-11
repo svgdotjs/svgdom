@@ -101,7 +101,7 @@ module.exports = require("./src/utils/dirname.cjs");
 /*!************************!*\
   !*** ./main-module.js ***!
   \************************/
-/*! exports provided: Attr, CharacterData, Comment, CustomEvent, getChildByTagName, DOMImplementation, Document, DocumentFragment, Element, Event, EventTarget, Node, NodeFilter, Text, Window, HTMLElement, HTMLImageElement, HTMLLinkElement, HTMLParser, HTMLScriptElement, elementAccess, ParentNode, SVGElement, SVGGraphicsElement, matrixFactory, SVGMatrix, SVGPathElement, SVGPoint, SVGSVGElement, SVGTextContentElement, setFontDir, setFontFamilyMappings, preloadFonts, getConfig, getFonts, config, createDocument, createHTMLDocument, createSVGDocument, createWindow, createHTMLWindow, createSVGWindow, defaults */
+/*! exports provided: Attr, CharacterData, Comment, CustomEvent, DOMImplementation, Document, DocumentFragment, Element, Event, EventTarget, Node, NodeFilter, Text, Window, HTMLElement, HTMLImageElement, HTMLLinkElement, HTMLParser, HTMLScriptElement, elementAccess, ParentNode, SVGElement, SVGGraphicsElement, matrixFactory, SVGMatrix, SVGPathElement, SVGPoint, SVGSVGElement, SVGTextContentElement, setFontDir, setFontFamilyMappings, preloadFonts, getConfig, getFonts, config, createDocument, createHTMLDocument, createSVGDocument, createWindow, createHTMLWindow, createSVGWindow, defaults */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -121,8 +121,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "CustomEvent", function() { return _src_dom_CustomEvent_js__WEBPACK_IMPORTED_MODULE_4__["CustomEvent"]; });
 
 /* harmony import */ var _src_dom_Document_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./src/dom/Document.js */ "./src/dom/Document.js");
-/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getChildByTagName", function() { return _src_dom_Document_js__WEBPACK_IMPORTED_MODULE_5__["getChildByTagName"]; });
-
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "DOMImplementation", function() { return _src_dom_Document_js__WEBPACK_IMPORTED_MODULE_5__["DOMImplementation"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "Document", function() { return _src_dom_Document_js__WEBPACK_IMPORTED_MODULE_5__["Document"]; });
@@ -347,23 +345,19 @@ class Attr extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.nodeType = _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].ATTRIBUTE_NODE
     this.ownerElement = null
   }
-}
 
-Object.defineProperties(Attr.prototype, {
-  value: {
-    get () {
-      return this.nodeValue
-    },
-    set (val) {
-      this.nodeValue = val
-    }
-  },
-  name: {
-    get () {
-      return this.nodeName
-    }
+  get value () {
+    return this.nodeValue
   }
-})
+
+  set value (val) {
+    this.nodeValue = val
+  }
+
+  get name () {
+    return this.nodeName
+  }
+}
 
 
 /***/ }),
@@ -398,29 +392,27 @@ class CharacterData extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.data += data
   }
 
-  substringData (offset, count) {
-    this.data = this.data.substr(offset, count)
+  deleteData (offset, count) {
+    this.data = this.data.slice(0, offset) + this.data.slice(0, offset + count)
   }
 
   insertData (offset, data) {
     this.data = this.data.slice(0, offset) + data + this.data.slice(offset)
   }
 
-  deleteData (offset, count) {
-    this.data = this.data.slice(0, offset) + this.data.slice(0, offset + count)
-  }
-
   replaceData (offset, count, data) {
     this.deleteData(offset, count)
     this.insertData(offset, data)
   }
-}
 
-Object.defineProperty(CharacterData, 'length', {
-  get () {
+  substringData (offset, count) {
+    this.data = this.data.substr(offset, count)
+  }
+
+  get length () {
     return this.data.length
   }
-})
+}
 
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_1__["mixin"])(_mixins_NonDocumentTypeChildNode_js__WEBPACK_IMPORTED_MODULE_2__["NonDocumentTypeChildNode"], CharacterData)
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_1__["mixin"])(_mixins_ChildNode_js__WEBPACK_IMPORTED_MODULE_3__["ChildNode"], CharacterData)
@@ -479,12 +471,11 @@ class CustomEvent extends _Event_js__WEBPACK_IMPORTED_MODULE_0__["Event"] {
 /*!*****************************!*\
   !*** ./src/dom/Document.js ***!
   \*****************************/
-/*! exports provided: getChildByTagName, DOMImplementation, Document */
+/*! exports provided: DOMImplementation, Document */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getChildByTagName", function() { return getChildByTagName; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "DOMImplementation", function() { return DOMImplementation; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Document", function() { return Document; });
 /* harmony import */ var _Node_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Node.js */ "./src/dom/Node.js");
@@ -551,6 +542,7 @@ const getSVGElementForName = (name) => {
     return _svg_SVGGraphicsElement_js__WEBPACK_IMPORTED_MODULE_14__["SVGGraphicsElement"]
   }
 }
+
 const getHTMLElementForName = (name) => {
   switch (name.toLowerCase()) {
   case 'img':
@@ -632,6 +624,26 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.defaultView = null
   }
 
+  // https://dom.spec.whatwg.org/#dom-document-createattribute
+  createAttribute (localName) {
+    if (this.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_16__["html"]) {
+      localName = localName.toLowerCase()
+    }
+    return this.createAttributeNS(null, localName, true)
+  }
+
+  createAttributeNS (ns, qualifiedName, local = false) {
+    return new _Attr_js__WEBPACK_IMPORTED_MODULE_3__["Attr"](qualifiedName, { ownerDocument: this, local }, ns)
+  }
+
+  createComment (text) {
+    return new _Comment_js__WEBPACK_IMPORTED_MODULE_1__["Comment"]('#comment', { nodeValue: text, ownerDocument: this })
+  }
+
+  createDocumentFragment (name) {
+    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]({ ownerDocument: this })
+  }
+
   createElement (localName) {
     return this.createElementNS(this.namespaceURI, localName, true)
   }
@@ -645,53 +657,26 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     }, ns)
   }
 
-  createDocumentFragment (name) {
-    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]({ ownerDocument: this })
-  }
-
   createTextNode (text) {
     return new _Text_js__WEBPACK_IMPORTED_MODULE_2__["Text"]('#text', { nodeValue: text, ownerDocument: this })
   }
 
-  createComment (text) {
-    return new _Comment_js__WEBPACK_IMPORTED_MODULE_1__["Comment"]('#comment', { nodeValue: text, ownerDocument: this })
+  get compatMode () {
+    return 'CSS1Compat' // always be in standards-mode
   }
 
-  // https://dom.spec.whatwg.org/#dom-document-createattribute
-  createAttribute (localName) {
-    if (this.namespaceURI === _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_16__["html"]) {
-      localName = localName.toLowerCase()
-    }
-    return this.createAttributeNS(null, localName, true)
+  get body () {
+    return getChildByTagName(this.documentElement, 'BODY')
   }
 
-  createAttributeNS (ns, qualifiedName, local = false) {
-    return new _Attr_js__WEBPACK_IMPORTED_MODULE_3__["Attr"](qualifiedName, { ownerDocument: this, local }, ns)
+  get head () {
+    return getChildByTagName(this.documentElement, 'HEAD')
+  }
+
+  get documentElement () {
+    return this.lastChild
   }
 }
-
-Object.defineProperties(Document.prototype, {
-  compatMode: {
-    get () {
-      return 'CSS1Compat' // always be in standards-mode
-    }
-  },
-  body: {
-    get () {
-      return getChildByTagName(this.documentElement, 'BODY')
-    }
-  },
-  head: {
-    get () {
-      return getChildByTagName(this.documentElement, 'HEAD')
-    }
-  },
-  documentElement: {
-    get () {
-      return this.lastChild
-    }
-  }
-})
 
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_10__["mixin"])(_mixins_elementAccess_js__WEBPACK_IMPORTED_MODULE_9__["elementAccess"], Document)
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_10__["mixin"])(_mixins_ParentNode_js__WEBPACK_IMPORTED_MODULE_15__["ParentNode"], Document)
@@ -791,8 +776,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _mixins_NonDocumentTypeChildNode_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./mixins/NonDocumentTypeChildNode.js */ "./src/dom/mixins/NonDocumentTypeChildNode.js");
 /* harmony import */ var _mixins_ChildNode_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./mixins/ChildNode.js */ "./src/dom/mixins/ChildNode.js");
 /* harmony import */ var _utils_namespaces_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../utils/namespaces.js */ "./src/utils/namespaces.js");
-/* harmony import */ var _Attr_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./Attr.js */ "./src/dom/Attr.js");
-
 
 
 
@@ -902,6 +885,64 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.tagName = this.nodeName
   }
 
+  getAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return attr ? attr.value : null
+  }
+
+  getAttributeNode (qualifiedName) {
+    return getAttributeByQualifiedName(this, qualifiedName)
+  }
+
+  getAttributeNodeNS (ns, localName) {
+    return getAttributeByNsAndLocalName(this, ns, localName)
+  }
+
+  getAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return attr ? attr.value : null
+  }
+
+  getBoundingClientRect () {
+    throw new Error('Only implemented for SVG Elements')
+  }
+
+  hasAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    return !!attr
+  }
+
+  hasAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
+    return !!attr
+  }
+
+  matches (query) {
+    return this.matchWithScope(query, this)
+  }
+
+  removeAttribute (qualifiedName) {
+    const attr = this.getAttributeNode(qualifiedName)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
+  }
+
+  removeAttributeNode (node) {
+    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+    return node
+  }
+
+  // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
+  removeAttributeNS (ns, name) {
+    const attr = this.getAttributeNode(ns, name)
+    if (attr) {
+      this.removeAttributeNode(attr)
+    }
+    return attr
+  }
+
   /* The setAttribute(qualifiedName, value) method, when invoked, must run these steps:
 
     If qualifiedName does not match the Name production in XML, then throw an "InvalidCharacterError" DOMException.
@@ -944,6 +985,11 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     Change attribute to value.
   */
 
+  setAttributeNode (node) {
+    this.attrs.add(node)
+    node.ownerElement = this
+  }
+
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
   setAttributeNS (namespace, name, value) {
 
@@ -961,123 +1007,56 @@ class Element extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
     this.attrs.add(attr)
   }
 
-  setAttributeNode (node) {
-    this.attrs.add(node)
-    node.ownerElement = this
+  get attributes () {
+    return [ ...this.attrs ]
   }
 
-  removeAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    if (attr) {
-      this.removeAttributeNode(attr)
+  get className () {
+    return this.getAttribute('class')
+  }
+
+  set className (c) {
+    this.setAttribute('class', c)
+  }
+
+  get id () {
+    return this.getAttribute('id') || ''
+  }
+
+  set id (id) {
+    return this.setAttribute('id', id)
+  }
+
+  get innerHTML () {
+
+    return this.childNodes.map(node => {
+      if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].TEXT_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["htmlEntities"])(node.data)
+      if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].CDATA_SECTION_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["cdata"])(node.data)
+      if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].COMMENT_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["comment"])(node.data)
+      return node.outerHTML
+    }).join('')
+  }
+
+  set innerHTML (str) {
+    while (this.firstChild) {
+      this.removeChild(this.firstChild)
     }
-    return attr
+    // The parser adds the html to this
+    Object(_html_HTMLParser_js__WEBPACK_IMPORTED_MODULE_3__["HTMLParser"])(str, this)
   }
 
-  // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns, name) {
-    const attr = this.getAttributeNode(ns, name)
-    if (attr) {
-      this.removeAttributeNode(attr)
-    }
-    return attr
+  get outerHTML () {
+    return Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_6__["tag"])(this)
   }
 
-  removeAttributeNode (node) {
-    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
-    return node
-  }
-
-  hasAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    return !!attr
-  }
-
-  hasAttributeNS (ns, localName) {
-    const attr = this.getAttributeNodeNS(ns, localName)
-    return !!attr
-  }
-
-  getAttribute (qualifiedName) {
-    const attr = this.getAttributeNode(qualifiedName)
-    return attr ? attr.value : null
-  }
-
-  getAttributeNS (ns, localName) {
-    const attr = this.getAttributeNodeNS(ns, localName)
-    return attr ? attr.value : null
-  }
-
-  getAttributeNode (qualifiedName) {
-    return getAttributeByQualifiedName(this, qualifiedName)
-  }
-
-  getAttributeNodeNS (ns, localName) {
-    return getAttributeByNsAndLocalName(this, ns, localName)
-  }
-
-  matches (query) {
-    return this.matchWithScope(query, this)
-  }
-
-  getBoundingClientRect () {
-    throw new Error('Only implemented for SVG Elements')
+  set outerHTML (str) {
+    var well = new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]()
+    Object(_html_HTMLParser_js__WEBPACK_IMPORTED_MODULE_3__["HTMLParser"])(str, well)
+    this.parentNode.insertBefore(well, this)
+    this.parentNode.removeChild(this)
   }
 
 }
-
-Object.defineProperties(Element.prototype, {
-  attributes: {
-    get () {
-      return [ ...this.attrs ]
-    }
-  },
-  className: {
-    get () {
-      return this.getAttribute('class')
-    },
-    set (c) {
-      this.setAttribute('class', c)
-    }
-  },
-  innerHTML: {
-    get () {
-
-      return this.childNodes.map(node => {
-        if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].TEXT_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["htmlEntities"])(node.data)
-        if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].CDATA_SECTION_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["cdata"])(node.data)
-        if (node.nodeType === _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].COMMENT_NODE) return Object(_utils_strUtils_js__WEBPACK_IMPORTED_MODULE_8__["comment"])(node.data)
-        return node.outerHTML
-      }).join('')
-    },
-    set (str) {
-      while (this.firstChild) {
-        this.removeChild(this.firstChild)
-      }
-      // The parser adds the html to this
-      Object(_html_HTMLParser_js__WEBPACK_IMPORTED_MODULE_3__["HTMLParser"])(str, this)
-    }
-  },
-  outerHTML: {
-    get () {
-      return Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_6__["tag"])(this)
-    },
-    set (str) {
-      var well = new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]()
-      Object(_html_HTMLParser_js__WEBPACK_IMPORTED_MODULE_3__["HTMLParser"])(str, well)
-      this.parentNode.insertBefore(well, this)
-      this.parentNode.removeChild(this)
-    }
-  },
-  id: {
-    get () {
-      return this.getAttribute('id') || ''
-    },
-    set (id) {
-      return this.setAttribute('id', id)
-    }
-  }
-})
 
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_5__["mixin"])(_mixins_ParentNode_js__WEBPACK_IMPORTED_MODULE_1__["ParentNode"], Element)
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_5__["mixin"])(_mixins_elementAccess_js__WEBPACK_IMPORTED_MODULE_2__["elementAccess"], Element)
@@ -1140,6 +1119,19 @@ class EventTarget {
     this[$].listeners[type].push(callback)
   }
 
+  dispatchEvent (event) {
+    if (!(event.type in this[$].listeners)) { return true }
+
+    var stack = this[$].listeners[event.type]
+    event.target = this
+
+    stack.forEach(function (el) {
+      el(event)
+    })
+
+    return !event.defaultPrevented
+  }
+
   removeEventListener (type, callback) {
     if (!(type in this[$].listeners)) {
       return
@@ -1152,19 +1144,6 @@ class EventTarget {
         return
       }
     }
-  }
-
-  dispatchEvent (event) {
-    if (!(event.type in this[$].listeners)) { return true }
-
-    var stack = this[$].listeners[event.type]
-    event.target = this
-
-    stack.forEach(function (el) {
-      el(event)
-    })
-
-    return !event.defaultPrevented
   }
 
 }
@@ -1251,6 +1230,38 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
     return this.insertBefore(node)
   }
 
+  cloneNode (deep = false) {
+    var clone = Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_2__["cloneNode"])(this)
+
+    if (deep) {
+      this.childNodes.forEach(function (el) {
+        var node = el.cloneNode(deep)
+        clone.appendChild(node)
+      })
+    }
+
+    return clone
+  }
+
+  contains (node) {
+    if (node === this) return false
+
+    while (node.parentNode) {
+      if (node === this) return true
+      node = node.parentNode
+    }
+    return false
+  }
+
+  getRootNode () {
+    if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
+    return this.parentNode.getRootNode()
+  }
+
+  hasChildNodes () {
+    return !!this.childNodes.length
+  }
+
   insertBefore (node, before) {
     let index = this.childNodes.indexOf(before)
     if (index === -1) {
@@ -1278,43 +1289,42 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
     return node
   }
 
-  removeChild (node) {
+  isDefaultNamespace (namespaceURI) {
+    switch (this.nodeType) {
+    case Node.ELEMENT_NODE:
+      if (!this.prefix) {
+        return this.namespaceURI === namespaceURI
+      }
 
-    node.parentNode = null
-    // Object.setPrototypeOf(node, null)
-    var index = this.childNodes.indexOf(node)
-    if (index === -1) return node
-    this.childNodes.splice(index, 1)
-    return node
-  }
+      if (this.hasAttribute('xmlns')) {
+        return this.getAttribute('xmlns')
+      }
 
-  replaceChild (newChild, oldChild) {
-    var before = oldChild.nextSibling
-    this.removeChild(oldChild)
-    this.insertBefore(newChild, before)
-    return oldChild
-  }
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
+      }
 
-  hasChildNodes () {
-    return !!this.childNodes.length
-  }
-
-  cloneNode (deep = false) {
-    var clone = Object(_utils_tagUtils_js__WEBPACK_IMPORTED_MODULE_2__["cloneNode"])(this)
-
-    if (deep) {
-      this.childNodes.forEach(function (el) {
-        var node = el.cloneNode(deep)
-        clone.appendChild(node)
-      })
+      return false
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.isDefaultNamespace(namespaceURI)
+    case Node.ENTITY_NODE:
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+      return false
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.isDefaultNamespace(namespaceURI)
+      }
+      return false
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.isDefaultNamespace(namespaceURI)
+      }
+      return false
     }
-
-    return clone
-  }
-
-  getRootNode () {
-    if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
-    return this.parentNode.getRootNode()
   }
 
   isEqualNode (node) {
@@ -1364,96 +1374,6 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
     return this === node
   }
 
-  contains (node) {
-    if (node === this) return false
-
-    while (node.parentNode) {
-      if (node === this) return true
-      node = node.parentNode
-    }
-    return false
-  }
-
-  normalize () {
-    const childNodes = []
-    for (const node of this.childNodes) {
-      const last = childNodes.shift()
-      if (!last) {
-        if (node.data) {
-          childNodes.unshift(node)
-        }
-        continue
-      }
-
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (!node.data) {
-          childNodes.unshift(last)
-          continue
-        }
-
-        if (last.nodeType === Node.TEXT_NODE) {
-          const merged = this.ownerDocument.createTextNode(last.data + node.data)
-          childNodes.push(merged)
-          continue
-        }
-
-        childNodes.push(last, node)
-      }
-    }
-
-    this.childNodes = childNodes
-    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
-    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
-    //   if (!textNodes) return [ node ]
-    //   var last = textNodes.pop()
-
-    //   if (node.nodeType === Node.TEXT_NODE) {
-    //     if (!node.data) return textNodes
-
-    //     if (last.nodeType === Node.TEXT_NODE) {
-    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
-    //       textNodes.push(merged)
-    //       return textNodes.concat(merged)
-    //     }
-    //   } else {
-    //     textNodes.push(last, node)
-    //   }
-
-    //   return textNodes
-    // }, null)
-  }
-
-  lookupPrefix (namespaceURI) {
-    if (!namespaceURI) {
-      return null
-    }
-
-    const type = this.nodeType
-
-    switch (type) {
-    case Node.ELEMENT_NODE:
-      return this.lookupNamespacePrefix(namespaceURI, this)
-    case Node.DOCUMENT_NODE:
-      return this.documentElement.lookupNamespacePrefix(namespaceURI)
-    case Node.ENTITY_NODE :
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-      return null // type is unknown
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
-      }
-      return null
-    default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.lookupNamespacePrefix(namespaceURI)
-      }
-      return null
-    }
-  }
-
   lookupNamespacePrefix (namespaceURI, originalElement) {
     if (this.namespaceURI && this.namespaceURI === namespaceURI && this.prefix
          && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
@@ -1474,44 +1394,6 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
       return this.parentNode.lookupNamespacePrefix(namespaceURI, originalElement)
     }
     return null
-  }
-
-  isDefaultNamespace (namespaceURI) {
-    switch (this.nodeType) {
-    case Node.ELEMENT_NODE:
-      if (!this.prefix) {
-        return this.namespaceURI === namespaceURI
-      }
-
-      if (this.hasAttribute('xmlns')) {
-        return this.getAttribute('xmlns')
-      }
-
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-
-      return false
-    case Node.DOCUMENT_NODE:
-      return this.documentElement.isDefaultNamespace(namespaceURI)
-    case Node.ENTITY_NODE:
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-      return false
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    }
   }
 
   lookupNamespaceURI (prefix) {
@@ -1566,47 +1448,135 @@ class Node extends _EventTarget_js__WEBPACK_IMPORTED_MODULE_1__["EventTarget"] {
     }
   }
 
-}
+  lookupPrefix (namespaceURI) {
+    if (!namespaceURI) {
+      return null
+    }
 
-// Define dynamic properties
-Object.defineProperties(Node.prototype, {
-  textContent: {
-    get () {
-      if (this.nodeType === Node.TEXT_NODE) return this.data
-      if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
-      if (this.nodeType === Node.COMMENT_NODE) return this.data
+    const type = this.nodeType
 
-      return this.childNodes.reduce(function (last, current) {
-        return last + current.textContent
-      }, '')
-    },
-    set (text) {
-      this.childNodes = [ this.ownerDocument.createTextNode(text) ]
-    }
-  },
-  firstChild: {
-    get () {
-      return this.childNodes[0] || null
-    }
-  },
-  lastChild: {
-    get () {
-      return this.childNodes[this.childNodes.length - 1] || null
-    }
-  },
-  nextSibling: {
-    get () {
-      const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
-      return child || null
-    }
-  },
-  previousSibling: {
-    get () {
-      const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
-      return child || null
+    switch (type) {
+    case Node.ELEMENT_NODE:
+      return this.lookupNamespacePrefix(namespaceURI, this)
+    case Node.DOCUMENT_NODE:
+      return this.documentElement.lookupNamespacePrefix(namespaceURI)
+    case Node.ENTITY_NODE :
+    case Node.NOTATION_NODE:
+    case Node.DOCUMENT_FRAGMENT_NODE:
+    case Node.DOCUMENT_TYPE_NODE:
+      return null // type is unknown
+    case Node.ATTRIBUTE_NODE:
+      if (this.ownerElement) {
+        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
+    default:
+      // EntityReferences may have to be skipped to get to it
+      if (this.parentNode) {
+        return this.parentNode.lookupNamespacePrefix(namespaceURI)
+      }
+      return null
     }
   }
-})
+
+  normalize () {
+    const childNodes = []
+    for (const node of this.childNodes) {
+      const last = childNodes.shift()
+      if (!last) {
+        if (node.data) {
+          childNodes.unshift(node)
+        }
+        continue
+      }
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.data) {
+          childNodes.unshift(last)
+          continue
+        }
+
+        if (last.nodeType === Node.TEXT_NODE) {
+          const merged = this.ownerDocument.createTextNode(last.data + node.data)
+          childNodes.push(merged)
+          continue
+        }
+
+        childNodes.push(last, node)
+      }
+    }
+
+    this.childNodes = childNodes
+    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
+    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
+    //   if (!textNodes) return [ node ]
+    //   var last = textNodes.pop()
+
+    //   if (node.nodeType === Node.TEXT_NODE) {
+    //     if (!node.data) return textNodes
+
+    //     if (last.nodeType === Node.TEXT_NODE) {
+    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
+    //       textNodes.push(merged)
+    //       return textNodes.concat(merged)
+    //     }
+    //   } else {
+    //     textNodes.push(last, node)
+    //   }
+
+    //   return textNodes
+    // }, null)
+  }
+
+  removeChild (node) {
+
+    node.parentNode = null
+    // Object.setPrototypeOf(node, null)
+    var index = this.childNodes.indexOf(node)
+    if (index === -1) return node
+    this.childNodes.splice(index, 1)
+    return node
+  }
+
+  replaceChild (newChild, oldChild) {
+    var before = oldChild.nextSibling
+    this.removeChild(oldChild)
+    this.insertBefore(newChild, before)
+    return oldChild
+  }
+
+  get nextSibling () {
+    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
+    return child || null
+  }
+
+  get previousSibling () {
+    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
+    return child || null
+  }
+
+  get textContent () {
+    if (this.nodeType === Node.TEXT_NODE) return this.data
+    if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
+    if (this.nodeType === Node.COMMENT_NODE) return this.data
+
+    return this.childNodes.reduce(function (last, current) {
+      return last + current.textContent
+    }, '')
+  }
+
+  set textContent (text) {
+    this.childNodes = [ this.ownerDocument.createTextNode(text) ]
+  }
+
+  get lastChild () {
+    return this.childNodes[this.childNodes.length - 1] || null
+  }
+
+  get firstChild () {
+    return this.childNodes[0] || null
+  }
+}
 
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_0__["extendStatic"])(Node, nodeTypes)
 Object(_utils_objectCreationUtils_js__WEBPACK_IMPORTED_MODULE_0__["extend"])(Node, nodeTypes)
@@ -2373,36 +2343,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Element.js */ "./src/dom/Element.js");
 
 class SVGElement extends _Element_js__WEBPACK_IMPORTED_MODULE_0__["Element"] {
-
-}
-
-Object.defineProperties(SVGElement.prototype, {
-  ownerSVGElement: {
-    get () {
-      let owner = null
-      let parent
-      while ((parent = this.parentNode)) {
-        if (parent.nodeName === 'svg') {
-          owner = parent
-        }
+  get ownerSVGElement () {
+    let owner = null
+    let parent
+    while ((parent = this.parentNode)) {
+      if (parent.nodeName === 'svg') {
+        owner = parent
       }
-      return owner
     }
-  },
-  viewportElement: {
-    get () {
-      let owner = null
-      let parent
-      while ((parent = this.parentNode)) {
-        // TODO: and others
-        if ([ 'svg', 'symbol' ].conains(parent.nodeName)) {
-          owner = parent
-        }
-      }
-      return owner
-    }
+    return owner
   }
-})
+
+  get viewportElement () {
+    let owner = null
+    let parent
+    while ((parent = this.parentNode)) {
+      // TODO: and others
+      if ([ 'svg', 'symbol' ].conains(parent.nodeName)) {
+        owner = parent
+      }
+    }
+    return owner
+  }
+}
 
 
 /***/ }),
@@ -2432,6 +2395,32 @@ function arrayToMatrix (a) {
 }
 
 class SVGGraphicsElement extends _SVGElement_js__WEBPACK_IMPORTED_MODULE_0__["SVGElement"] {
+  // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
+  generateViewBoxMatrix () {
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
+    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
+      return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]()
+    }
+
+    var view = (this.getAttribute('viewBox') || '').split(_utils_regex_js__WEBPACK_IMPORTED_MODULE_2__["delimiter"]).map(parseFloat).filter(el => !isNaN(el))
+    var width = parseFloat(this.getAttribute('width')) || 0
+    var height = parseFloat(this.getAttribute('height')) || 0
+    var x = parseFloat(this.getAttribute('x')) || 0
+    var y = parseFloat(this.getAttribute('y')) || 0
+
+    // TODO: If no width and height is given, width and height of the outer svg element is used
+    if (!width || !height) {
+      return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]().translate(x, y)
+    }
+
+    if (view.length !== 4) {
+      view = [ 0, 0, width, height ]
+    }
+
+    // first apply x and y if nested, then viewbox scale, then viewBox move
+    return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
+  }
+
   getBBox () {
     return Object(_utils_bboxUtils_js__WEBPACK_IMPORTED_MODULE_1__["getPointCloud"])(this).bbox()
   }
@@ -2465,6 +2454,42 @@ class SVGGraphicsElement extends _SVGElement_js__WEBPACK_IMPORTED_MODULE_0__["SV
     return Object(_utils_bboxUtils_js__WEBPACK_IMPORTED_MODULE_1__["getPointCloud"])(this, false, true).transform(m).bbox()
   }
 
+  getCTM () {
+    var m = this.matrixify()
+
+    var node = this
+    while ((node = node.parentNode)) {
+      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
+      m = m.multiply(node.matrixify())
+      if (node.nodeName === '#document') return this.getScreenCTM()
+    }
+
+    return node.generateViewBoxMatrix().multiply(m)
+  }
+
+  getInnerMatrix () {
+    var m = this.matrixify()
+
+    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
+      m = this.generateViewBoxMatrix().multiply(m)
+    }
+    return m
+  }
+
+  getScreenCTM () {
+    // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
+    // We follow Chromes behavior and include the viewbox in the screenCTM
+    var m = this.getInnerMatrix()
+
+    // TODO: We have to loop until document, however html elements dont have getScreenCTM implemented
+    // they also dont have a transform attribute. Therefore we need a different way of figuring out their (css) transform
+    if (this.parentNode && this.parentNode instanceof SVGGraphicsElement) {
+      return this.parentNode.getScreenCTM().multiply(m)
+    }
+
+    return m
+  }
+
   matrixify () {
     var matrix = (this.getAttribute('transform') || '').trim()
       // split transformations
@@ -2484,76 +2509,11 @@ class SVGGraphicsElement extends _SVGElement_js__WEBPACK_IMPORTED_MODULE_0__["SV
     return matrix
   }
 
-  // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
-  generateViewBoxMatrix () {
-    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
-    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
-      return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]()
-    }
-
-    var view = (this.getAttribute('viewBox') || '').split(_utils_regex_js__WEBPACK_IMPORTED_MODULE_2__["delimiter"]).map(parseFloat).filter(el => !isNaN(el))
-    var width = parseFloat(this.getAttribute('width')) || 0
-    var height = parseFloat(this.getAttribute('height')) || 0
-    var x = parseFloat(this.getAttribute('x')) || 0
-    var y = parseFloat(this.getAttribute('y')) || 0
-
-    // TODO: If no width and height is given, width and height of the outer svg element is used
-    if (!width || !height) {
-      return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]().translate(x, y)
-    }
-
-    if (view.length !== 4) {
-      view = [ 0, 0, width, height ]
-    }
-
-    // first apply x and y if nested, then viewbox scale, then viewBox move
-    return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["SVGMatrix"]().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
+  get transform () {
+    throw new Error('Not implemented')
   }
 
-  getCTM () {
-    var m = this.matrixify()
-
-    var node = this
-    while ((node = node.parentNode)) {
-      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
-      m = m.multiply(node.matrixify())
-      if (node.nodeName === '#document') return this.getScreenCTM()
-    }
-
-    return node.generateViewBoxMatrix().multiply(m)
-  }
-
-  getScreenCTM () {
-    // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
-    // We follow Chromes behavior and include the viewbox in the screenCTM
-    var m = this.getInnerMatrix()
-
-    // TODO: We have to loop until document, however html elements dont have getScreenCTM implemented
-    // they also dont have a transform attribute. Therefore we need a different way of figuring out their (css) transform
-    if (this.parentNode && this.parentNode instanceof SVGGraphicsElement) {
-      return this.parentNode.getScreenCTM().multiply(m)
-    }
-
-    return m
-  }
-
-  getInnerMatrix () {
-    var m = this.matrixify()
-
-    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
-      m = this.generateViewBoxMatrix().multiply(m)
-    }
-    return m
-  }
 }
-
-Object.defineProperties(SVGGraphicsElement.prototype, {
-  transorm: {
-    get () {
-      throw new Error('Not implemented')
-    }
-  }
-})
 
 
 /***/ }),
@@ -2590,21 +2550,6 @@ class SVGMatrix {
     this.b = this.c = this.e = this.f = 0
   }
 
-  multiply (m) {
-    var r = new SVGMatrix()
-    r.a = this.a * m.a + this.c * m.b + this.e * 0
-    r.b = this.b * m.a + this.d * m.b + this.f * 0
-    r.c = this.a * m.c + this.c * m.d + this.e * 0
-    r.d = this.b * m.c + this.d * m.d + this.f * 0
-    r.e = this.a * m.e + this.c * m.f + this.e * 1
-    r.f = this.b * m.e + this.d * m.f + this.f * 1
-    return r
-  }
-
-  translate (x = 0, y = 0) {
-    return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
-  }
-
   inverse () {
     // Get the current parameters out of the matrix
     var a = this.a
@@ -2639,12 +2584,15 @@ class SVGMatrix {
     return this
   }
 
-  toString () {
-    return 'SVGMatrix'
-  }
-
-  scale (scaleX, scaleY = scaleX) {
-    return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
+  multiply (m) {
+    var r = new SVGMatrix()
+    r.a = this.a * m.a + this.c * m.b + this.e * 0
+    r.b = this.b * m.a + this.d * m.b + this.f * 0
+    r.c = this.a * m.c + this.c * m.d + this.e * 0
+    r.d = this.b * m.c + this.d * m.d + this.f * 0
+    r.e = this.a * m.e + this.c * m.f + this.e * 1
+    r.f = this.b * m.e + this.d * m.f + this.f * 1
+    return r
   }
 
   rotate (r, x, y) {
@@ -2659,6 +2607,10 @@ class SVGMatrix {
     ))
   }
 
+  scale (scaleX, scaleY = scaleX) {
+    return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
+  }
+
   skew (x, y) {
     return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))
   }
@@ -2670,6 +2622,15 @@ class SVGMatrix {
   skewY (y) {
     return this.skew(0, y)
   }
+
+  toString () {
+    return 'SVGMatrix'
+  }
+
+  translate (x = 0, y = 0) {
+    return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
+  }
+
 }
 
 
@@ -2750,10 +2711,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class SVGSVGElement extends _SVGGraphicsElement_js__WEBPACK_IMPORTED_MODULE_0__["SVGGraphicsElement"] {
-  createSVGRect () {
-    return new _other_Box_js__WEBPACK_IMPORTED_MODULE_1__["Box"]()
-  }
-
   createSVGMatrix () {
     return new _SVGMatrix_js__WEBPACK_IMPORTED_MODULE_2__["SVGMatrix"]()
   }
@@ -2761,6 +2718,11 @@ class SVGSVGElement extends _SVGGraphicsElement_js__WEBPACK_IMPORTED_MODULE_0__[
   createSVGPoint () {
     return new _SVGPoint_js__WEBPACK_IMPORTED_MODULE_3__["SVGPoint"]()
   }
+
+  createSVGRect () {
+    return new _other_Box_js__WEBPACK_IMPORTED_MODULE_1__["Box"]()
+  }
+
 }
 
 
@@ -3253,9 +3215,48 @@ class Point {
     this.y = source.y
   }
 
+  abs () {
+    return Math.sqrt(this.absQuad())
+  }
+
+  absQuad () {
+    return this.x * this.x + this.y * this.y
+  }
+
+  add (x, y) {
+    var p = new Point(x, y)
+    return new Point(this.x + p.x, this.y + p.y)
+  }
+
+  angleTo (p) {
+    var sign = Math.sign(this.x * p.y - this.y * p.x)
+    sign = sign || 1
+    return sign * Math.acos(Math.round((this.dot(p) / (this.abs() * p.abs())) * 1000000) / 1000000)
+  }
+
   // Clone point
   clone () {
     return new Point(this)
+  }
+
+  closeTo (p, eta = 0.00001) {
+    return this.equals(p) || (Math.abs(this.x - p.x) < eta && Math.abs(this.y - p.y) < eta)
+  }
+
+  div (factor) {
+    return new Point(this.x / factor, this.y / factor)
+  }
+
+  dot (p) {
+    return this.x * p.x + this.y * p.y
+  }
+
+  equals (p) {
+    return this.x === p.x && this.y === p.y
+  }
+
+  mul (factor) {
+    return new Point(this.x * factor, this.y * factor)
   }
 
   // Convert to native SVGPoint
@@ -3270,35 +3271,8 @@ class Point {
     return point
   }
 
-  // transform point with matrix
-  transform (matrix) {
-    return new Point(this.native().matrixTransform(matrix))
-  }
-
-  add (x, y) {
-    var p = new Point(x, y)
-    return new Point(this.x + p.x, this.y + p.y)
-  }
-
-  sub (x, y) {
-    var p = new Point(x, y)
-    return new Point(this.x - p.x, this.y - p.y)
-  }
-
-  mul (factor) {
-    return new Point(this.x * factor, this.y * factor)
-  }
-
-  div (factor) {
-    return new Point(this.x / factor, this.y / factor)
-  }
-
-  absQuad () {
-    return this.x * this.x + this.y * this.y
-  }
-
-  abs () {
-    return Math.sqrt(this.absQuad())
+  normal () {
+    return new Point(this.y, -this.x)
   }
 
   normalize () {
@@ -3307,39 +3281,28 @@ class Point {
     return this.div(abs)
   }
 
-  normal () {
-    return new Point(this.y, -this.x)
+  reflectAt (p) {
+    return p.add(p.sub(this))
+  }
+
+  sub (x, y) {
+    var p = new Point(x, y)
+    return new Point(this.x - p.x, this.y - p.y)
   }
 
   toArray () {
     return [ this.x, this.y ]
   }
 
-  reflectAt (p) {
-    return p.add(p.sub(this))
-  }
-
   toPath () {
     return [ 'M', this.x, this.y ].join(' ')
   }
 
-  equals (p) {
-    return this.x === p.x && this.y === p.y
+  // transform point with matrix
+  transform (matrix) {
+    return new Point(this.native().matrixTransform(matrix))
   }
 
-  closeTo (p, eta = 0.00001) {
-    return this.equals(p) || (Math.abs(this.x - p.x) < eta && Math.abs(this.y - p.y) < eta)
-  }
-
-  angleTo (p) {
-    var sign = Math.sign(this.x * p.y - this.y * p.x)
-    sign = sign || 1
-    return sign * Math.acos(Math.round((this.dot(p) / (this.abs() * p.abs())) * 1000000) / 1000000)
-  }
-
-  dot (p) {
-    return this.x * p.x + this.y * p.y
-  }
 }
 
 
@@ -3431,10 +3394,6 @@ class PointCloud extends Array {
     }, this)
   }
 
-  transform (m) {
-    return new PointCloud(this.map((p) => p.transform(m)))
-  }
-
   bbox () {
     if (!this.length) {
       return new _other_Box_js__WEBPACK_IMPORTED_MODULE_0__["NoBox"]()
@@ -3462,6 +3421,11 @@ class PointCloud extends Array {
   merge (cloud) {
     return new PointCloud(this, cloud)
   }
+
+  transform (m) {
+    return new PointCloud(this.map((p) => p.transform(m)))
+  }
+
 }
 
 
@@ -4148,14 +4112,14 @@ class Move {
     this.p1 = p.clone()
   }
 
-  getCloud () {
-    return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"]([ this.p1 ])
-  }
-
   // FIXME: Use pointcloud
   bbox () {
     const p = this.p1
     return new _other_Box_js__WEBPACK_IMPORTED_MODULE_0__["Box"](p.x, p.y, 0, 0)
+  }
+
+  getCloud () {
+    return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"]([ this.p1 ])
   }
 
   length () { return 0 }
@@ -4244,40 +4208,30 @@ class Arc {
     this.sinφ = sinφ
   }
 
-  pointAt (t) {
-    const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
-    const sinθ = Math.sin(tInAngle)
-    const cosθ = Math.cos(tInAngle)
+  static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
+    var cosφ = Math.cos(φ / 180 * Math.PI)
+    var sinφ = Math.sin(φ / 180 * Math.PI)
+    var m = Object(_dom_svg_SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["matrixFactory"])(cosφ, sinφ, -sinφ, cosφ, 0, 0)
 
-    return new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
-      this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
-      this.sinφ * this.rx * cosθ + this.cosφ * this.ry * sinθ + this.c.y
-    )
+    var p1 = new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
+      rx * Math.cos(θ / 180 * Math.PI),
+      ry * Math.sin(θ / 180 * Math.PI)
+    ).transform(m).add(c)
+
+    var p2 = new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
+      rx * Math.cos((θ + Δθ) / 180 * Math.PI),
+      ry * Math.sin((θ + Δθ) / 180 * Math.PI)
+    ).transform(m).add(c)
+
+    var arc = Math.abs(Δθ) > 180 ? 1 : 0
+    var sweep = Δθ > 0 ? 1 : 0
+
+    return new Arc(p1, p2, rx, ry, φ, arc, sweep)
   }
 
-  length () {
-    var length = this.p2.sub(this.p1).abs()
-
-    var ret = this.splitAt(0.5)
-    var len1 = ret[0].p2.sub(ret[0].p1).abs()
-    var len2 = ret[1].p2.sub(ret[1].p1).abs()
-
-    if (len1 + len2 - length < 0.00001) {
-      return len1 + len2
-    }
-
-    return ret[0].length() + ret[1].length()
-  }
-
-  splitAt (t) {
-    var absDelta = Math.abs(this.delta)
-    var delta1 = absDelta * t
-    var delta2 = absDelta * (1 - t)
-
-    return [
-      new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
-      new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
-    ]
+  bbox () {
+    const cloud = this.getCloud()
+    return cloud.bbox()
   }
 
   clone () {
@@ -4321,39 +4275,50 @@ class Arc {
     return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"](points)
   }
 
-  bbox () {
-    const cloud = this.getCloud()
-    return cloud.bbox()
+  length () {
+    var length = this.p2.sub(this.p1).abs()
+
+    var ret = this.splitAt(0.5)
+    var len1 = ret[0].p2.sub(ret[0].p1).abs()
+    var len2 = ret[1].p2.sub(ret[1].p1).abs()
+
+    if (len1 + len2 - length < 0.00001) {
+      return len1 + len2
+    }
+
+    return ret[0].length() + ret[1].length()
   }
 
-  toPathFragment () {
-    return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
+  pointAt (t) {
+    const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
+    const sinθ = Math.sin(tInAngle)
+    const cosθ = Math.cos(tInAngle)
+
+    return new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
+      this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
+      this.sinφ * this.rx * cosθ + this.cosφ * this.ry * sinθ + this.c.y
+    )
+  }
+
+  splitAt (t) {
+    var absDelta = Math.abs(this.delta)
+    var delta1 = absDelta * t
+    var delta2 = absDelta * (1 - t)
+
+    return [
+      new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
+      new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
+    ]
   }
 
   toPath () {
     return [ 'M', this.p1.x, this.p1.y, 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ].join(' ')
   }
 
-  static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
-    var cosφ = Math.cos(φ / 180 * Math.PI)
-    var sinφ = Math.sin(φ / 180 * Math.PI)
-    var m = Object(_dom_svg_SVGMatrix_js__WEBPACK_IMPORTED_MODULE_3__["matrixFactory"])(cosφ, sinφ, -sinφ, cosφ, 0, 0)
-
-    var p1 = new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
-      rx * Math.cos(θ / 180 * Math.PI),
-      ry * Math.sin(θ / 180 * Math.PI)
-    ).transform(m).add(c)
-
-    var p2 = new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
-      rx * Math.cos((θ + Δθ) / 180 * Math.PI),
-      ry * Math.sin((θ + Δθ) / 180 * Math.PI)
-    ).transform(m).add(c)
-
-    var arc = Math.abs(Δθ) > 180 ? 1 : 0
-    var sweep = Δθ > 0 ? 1 : 0
-
-    return new Arc(p1, p2, rx, ry, φ, arc, sweep)
+  toPathFragment () {
+    return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
   }
+
 }
 
 class Cubic {
@@ -4371,19 +4336,22 @@ class Cubic {
     }
   }
 
-  pointAt (t) {
-    return new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
-      (1 - t) * (1 - t) * (1 - t) * this.p1.x + 3 * (1 - t) * (1 - t) * t * this.c1.x + 3 * (1 - t) * t * t * this.c2.x + t * t * t * this.p2.x,
-      (1 - t) * (1 - t) * (1 - t) * this.p1.y + 3 * (1 - t) * (1 - t) * t * this.c1.y + 3 * (1 - t) * t * t * this.c2.y + t * t * t * this.p2.y
-    )
+  static fromQuad (p1, c, p2) {
+    var c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
+    var c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
+    return new Cubic(p1, c1, c2, p2)
+  }
+
+  bbox () {
+    return this.getCloud().bbox()
+  }
+
+  findRoots () {
+    return this.findRootsX().concat(this.findRootsY())
   }
 
   findRootsX () {
     return this.findRootsXY(this.p1.x, this.c1.x, this.c2.x, this.p2.x)
-  }
-
-  findRootsY () {
-    return this.findRootsXY(this.p1.y, this.c1.y, this.c2.y, this.p2.y)
   }
 
   findRootsXY (p1, p2, p3, p4) {
@@ -4402,23 +4370,8 @@ class Cubic {
     ].filter(function (el) { return el > 0 && el < 1 })
   }
 
-  findRoots () {
-    return this.findRootsX().concat(this.findRootsY())
-  }
-
-  lengthAt (t = 1) {
-    var curves = this.splitAt(t)[0].makeFlat(t)
-
-    var length = 0
-    for (var i = 0, len = curves.length; i < len; ++i) {
-      length += curves[i].p2.sub(curves[i].p1).abs()
-    }
-
-    return length
-  }
-
-  length () {
-    return this.lengthAt()
+  findRootsY () {
+    return this.findRootsXY(this.p1.y, this.c1.y, this.c2.y, this.p2.y)
   }
 
   flatness () {
@@ -4433,6 +4386,30 @@ class Cubic {
     return ux + uy
   }
 
+  getCloud () {
+    var points = this.findRoots()
+      .filter(root => root !== 0 && root !== 1)
+      .map(root => this.pointAt(root))
+      .concat(this.p1, this.p2)
+
+    return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"](points)
+  }
+
+  length () {
+    return this.lengthAt()
+  }
+
+  lengthAt (t = 1) {
+    var curves = this.splitAt(t)[0].makeFlat(t)
+
+    var length = 0
+    for (var i = 0, len = curves.length; i < len; ++i) {
+      length += curves[i].p2.sub(curves[i].p1).abs()
+    }
+
+    return length
+  }
+
   makeFlat (t) {
     if (this.flatness() > 0.15) {
       return this.splitAt(0.5)
@@ -4442,6 +4419,34 @@ class Cubic {
       this.t_value = t
       return [ this ]
     }
+  }
+
+  pointAt (t) {
+    return new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](
+      (1 - t) * (1 - t) * (1 - t) * this.p1.x + 3 * (1 - t) * (1 - t) * t * this.c1.x + 3 * (1 - t) * t * t * this.c2.x + t * t * t * this.p2.x,
+      (1 - t) * (1 - t) * (1 - t) * this.p1.y + 3 * (1 - t) * (1 - t) * t * this.c1.y + 3 * (1 - t) * t * t * this.c2.y + t * t * t * this.p2.y
+    )
+  }
+
+  splitAt (z) {
+    var x = this.splitAtScalar(z, 'x')
+    var y = this.splitAtScalar(z, 'y')
+
+    var a = new Cubic(
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][0], y[0][0]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][1], y[0][1]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][2], y[0][2]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][3], y[0][3])
+    )
+
+    var b = new Cubic(
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][0], y[1][0]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][1], y[1][1]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][2], y[1][2]),
+      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][3], y[1][3])
+    )
+
+    return [ a, b ]
   }
 
   splitAtScalar (z, p) {
@@ -4468,53 +4473,14 @@ class Cubic {
     ]
   }
 
-  splitAt (z) {
-    var x = this.splitAtScalar(z, 'x')
-    var y = this.splitAtScalar(z, 'y')
-
-    var a = new Cubic(
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][0], y[0][0]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][1], y[0][1]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][2], y[0][2]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[0][3], y[0][3])
-    )
-
-    var b = new Cubic(
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][0], y[1][0]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][1], y[1][1]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][2], y[1][2]),
-      new _other_Point_js__WEBPACK_IMPORTED_MODULE_1__["Point"](x[1][3], y[1][3])
-    )
-
-    return [ a, b ]
-  }
-
-  getCloud () {
-    var points = this.findRoots()
-      .filter(root => root !== 0 && root !== 1)
-      .map(root => this.pointAt(root))
-      .concat(this.p1, this.p2)
-
-    return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"](points)
-  }
-
-  bbox () {
-    return this.getCloud().bbox()
+  toPath () {
+    return [ 'M', this.p1.x, this.p1.y ].concat(this.toPathFragment()).join(' ')
   }
 
   toPathFragment () {
     return [ 'C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y ]
   }
 
-  toPath () {
-    return [ 'M', this.p1.x, this.p1.y ].concat(this.toPathFragment()).join(' ')
-  }
-
-  static fromQuad (p1, c, p2) {
-    var c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
-    var c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
-    return new Cubic(p1, c1, c2, p2)
-  }
 }
 
 class Line {
@@ -4528,21 +4494,21 @@ class Line {
     }
   }
 
+  bbox () {
+    return this.getCloud().bbox()
+  }
+
   getCloud () {
     return new _PointCloud_js__WEBPACK_IMPORTED_MODULE_4__["PointCloud"]([ this.p1, this.p2 ])
   }
 
-  bbox () {
-    return this.getCloud().bbox()
+  length () {
+    return this.p2.sub(this.p1).abs()
   }
 
   pointAt (t) {
     var vec = this.p2.sub(this.p1).mul(t)
     return this.p1.add(vec)
-  }
-
-  length () {
-    return this.p2.sub(this.p1).abs()
   }
 
   toPath () {

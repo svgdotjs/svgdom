@@ -145,14 +145,14 @@ class Move {
     this.p1 = p.clone()
   }
 
-  getCloud () {
-    return new PointCloud([ this.p1 ])
-  }
-
   // FIXME: Use pointcloud
   bbox () {
     const p = this.p1
     return new Box(p.x, p.y, 0, 0)
+  }
+
+  getCloud () {
+    return new PointCloud([ this.p1 ])
   }
 
   length () { return 0 }
@@ -241,40 +241,30 @@ export class Arc {
     this.sinφ = sinφ
   }
 
-  pointAt (t) {
-    const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
-    const sinθ = Math.sin(tInAngle)
-    const cosθ = Math.cos(tInAngle)
+  static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
+    var cosφ = Math.cos(φ / 180 * Math.PI)
+    var sinφ = Math.sin(φ / 180 * Math.PI)
+    var m = matrixFactory(cosφ, sinφ, -sinφ, cosφ, 0, 0)
 
-    return new Point(
-      this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
-      this.sinφ * this.rx * cosθ + this.cosφ * this.ry * sinθ + this.c.y
-    )
+    var p1 = new Point(
+      rx * Math.cos(θ / 180 * Math.PI),
+      ry * Math.sin(θ / 180 * Math.PI)
+    ).transform(m).add(c)
+
+    var p2 = new Point(
+      rx * Math.cos((θ + Δθ) / 180 * Math.PI),
+      ry * Math.sin((θ + Δθ) / 180 * Math.PI)
+    ).transform(m).add(c)
+
+    var arc = Math.abs(Δθ) > 180 ? 1 : 0
+    var sweep = Δθ > 0 ? 1 : 0
+
+    return new Arc(p1, p2, rx, ry, φ, arc, sweep)
   }
 
-  length () {
-    var length = this.p2.sub(this.p1).abs()
-
-    var ret = this.splitAt(0.5)
-    var len1 = ret[0].p2.sub(ret[0].p1).abs()
-    var len2 = ret[1].p2.sub(ret[1].p1).abs()
-
-    if (len1 + len2 - length < 0.00001) {
-      return len1 + len2
-    }
-
-    return ret[0].length() + ret[1].length()
-  }
-
-  splitAt (t) {
-    var absDelta = Math.abs(this.delta)
-    var delta1 = absDelta * t
-    var delta2 = absDelta * (1 - t)
-
-    return [
-      new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
-      new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
-    ]
+  bbox () {
+    const cloud = this.getCloud()
+    return cloud.bbox()
   }
 
   clone () {
@@ -318,39 +308,50 @@ export class Arc {
     return new PointCloud(points)
   }
 
-  bbox () {
-    const cloud = this.getCloud()
-    return cloud.bbox()
+  length () {
+    var length = this.p2.sub(this.p1).abs()
+
+    var ret = this.splitAt(0.5)
+    var len1 = ret[0].p2.sub(ret[0].p1).abs()
+    var len2 = ret[1].p2.sub(ret[1].p1).abs()
+
+    if (len1 + len2 - length < 0.00001) {
+      return len1 + len2
+    }
+
+    return ret[0].length() + ret[1].length()
   }
 
-  toPathFragment () {
-    return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
+  pointAt (t) {
+    const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
+    const sinθ = Math.sin(tInAngle)
+    const cosθ = Math.cos(tInAngle)
+
+    return new Point(
+      this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
+      this.sinφ * this.rx * cosθ + this.cosφ * this.ry * sinθ + this.c.y
+    )
+  }
+
+  splitAt (t) {
+    var absDelta = Math.abs(this.delta)
+    var delta1 = absDelta * t
+    var delta2 = absDelta * (1 - t)
+
+    return [
+      new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
+      new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
+    ]
   }
 
   toPath () {
     return [ 'M', this.p1.x, this.p1.y, 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ].join(' ')
   }
 
-  static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
-    var cosφ = Math.cos(φ / 180 * Math.PI)
-    var sinφ = Math.sin(φ / 180 * Math.PI)
-    var m = matrixFactory(cosφ, sinφ, -sinφ, cosφ, 0, 0)
-
-    var p1 = new Point(
-      rx * Math.cos(θ / 180 * Math.PI),
-      ry * Math.sin(θ / 180 * Math.PI)
-    ).transform(m).add(c)
-
-    var p2 = new Point(
-      rx * Math.cos((θ + Δθ) / 180 * Math.PI),
-      ry * Math.sin((θ + Δθ) / 180 * Math.PI)
-    ).transform(m).add(c)
-
-    var arc = Math.abs(Δθ) > 180 ? 1 : 0
-    var sweep = Δθ > 0 ? 1 : 0
-
-    return new Arc(p1, p2, rx, ry, φ, arc, sweep)
+  toPathFragment () {
+    return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
   }
+
 }
 
 class Cubic {
@@ -368,19 +369,22 @@ class Cubic {
     }
   }
 
-  pointAt (t) {
-    return new Point(
-      (1 - t) * (1 - t) * (1 - t) * this.p1.x + 3 * (1 - t) * (1 - t) * t * this.c1.x + 3 * (1 - t) * t * t * this.c2.x + t * t * t * this.p2.x,
-      (1 - t) * (1 - t) * (1 - t) * this.p1.y + 3 * (1 - t) * (1 - t) * t * this.c1.y + 3 * (1 - t) * t * t * this.c2.y + t * t * t * this.p2.y
-    )
+  static fromQuad (p1, c, p2) {
+    var c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
+    var c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
+    return new Cubic(p1, c1, c2, p2)
+  }
+
+  bbox () {
+    return this.getCloud().bbox()
+  }
+
+  findRoots () {
+    return this.findRootsX().concat(this.findRootsY())
   }
 
   findRootsX () {
     return this.findRootsXY(this.p1.x, this.c1.x, this.c2.x, this.p2.x)
-  }
-
-  findRootsY () {
-    return this.findRootsXY(this.p1.y, this.c1.y, this.c2.y, this.p2.y)
   }
 
   findRootsXY (p1, p2, p3, p4) {
@@ -399,23 +403,8 @@ class Cubic {
     ].filter(function (el) { return el > 0 && el < 1 })
   }
 
-  findRoots () {
-    return this.findRootsX().concat(this.findRootsY())
-  }
-
-  lengthAt (t = 1) {
-    var curves = this.splitAt(t)[0].makeFlat(t)
-
-    var length = 0
-    for (var i = 0, len = curves.length; i < len; ++i) {
-      length += curves[i].p2.sub(curves[i].p1).abs()
-    }
-
-    return length
-  }
-
-  length () {
-    return this.lengthAt()
+  findRootsY () {
+    return this.findRootsXY(this.p1.y, this.c1.y, this.c2.y, this.p2.y)
   }
 
   flatness () {
@@ -430,6 +419,30 @@ class Cubic {
     return ux + uy
   }
 
+  getCloud () {
+    var points = this.findRoots()
+      .filter(root => root !== 0 && root !== 1)
+      .map(root => this.pointAt(root))
+      .concat(this.p1, this.p2)
+
+    return new PointCloud(points)
+  }
+
+  length () {
+    return this.lengthAt()
+  }
+
+  lengthAt (t = 1) {
+    var curves = this.splitAt(t)[0].makeFlat(t)
+
+    var length = 0
+    for (var i = 0, len = curves.length; i < len; ++i) {
+      length += curves[i].p2.sub(curves[i].p1).abs()
+    }
+
+    return length
+  }
+
   makeFlat (t) {
     if (this.flatness() > 0.15) {
       return this.splitAt(0.5)
@@ -439,6 +452,34 @@ class Cubic {
       this.t_value = t
       return [ this ]
     }
+  }
+
+  pointAt (t) {
+    return new Point(
+      (1 - t) * (1 - t) * (1 - t) * this.p1.x + 3 * (1 - t) * (1 - t) * t * this.c1.x + 3 * (1 - t) * t * t * this.c2.x + t * t * t * this.p2.x,
+      (1 - t) * (1 - t) * (1 - t) * this.p1.y + 3 * (1 - t) * (1 - t) * t * this.c1.y + 3 * (1 - t) * t * t * this.c2.y + t * t * t * this.p2.y
+    )
+  }
+
+  splitAt (z) {
+    var x = this.splitAtScalar(z, 'x')
+    var y = this.splitAtScalar(z, 'y')
+
+    var a = new Cubic(
+      new Point(x[0][0], y[0][0]),
+      new Point(x[0][1], y[0][1]),
+      new Point(x[0][2], y[0][2]),
+      new Point(x[0][3], y[0][3])
+    )
+
+    var b = new Cubic(
+      new Point(x[1][0], y[1][0]),
+      new Point(x[1][1], y[1][1]),
+      new Point(x[1][2], y[1][2]),
+      new Point(x[1][3], y[1][3])
+    )
+
+    return [ a, b ]
   }
 
   splitAtScalar (z, p) {
@@ -465,53 +506,14 @@ class Cubic {
     ]
   }
 
-  splitAt (z) {
-    var x = this.splitAtScalar(z, 'x')
-    var y = this.splitAtScalar(z, 'y')
-
-    var a = new Cubic(
-      new Point(x[0][0], y[0][0]),
-      new Point(x[0][1], y[0][1]),
-      new Point(x[0][2], y[0][2]),
-      new Point(x[0][3], y[0][3])
-    )
-
-    var b = new Cubic(
-      new Point(x[1][0], y[1][0]),
-      new Point(x[1][1], y[1][1]),
-      new Point(x[1][2], y[1][2]),
-      new Point(x[1][3], y[1][3])
-    )
-
-    return [ a, b ]
-  }
-
-  getCloud () {
-    var points = this.findRoots()
-      .filter(root => root !== 0 && root !== 1)
-      .map(root => this.pointAt(root))
-      .concat(this.p1, this.p2)
-
-    return new PointCloud(points)
-  }
-
-  bbox () {
-    return this.getCloud().bbox()
+  toPath () {
+    return [ 'M', this.p1.x, this.p1.y ].concat(this.toPathFragment()).join(' ')
   }
 
   toPathFragment () {
     return [ 'C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y ]
   }
 
-  toPath () {
-    return [ 'M', this.p1.x, this.p1.y ].concat(this.toPathFragment()).join(' ')
-  }
-
-  static fromQuad (p1, c, p2) {
-    var c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
-    var c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
-    return new Cubic(p1, c1, c2, p2)
-  }
 }
 
 class Line {
@@ -525,21 +527,21 @@ class Line {
     }
   }
 
+  bbox () {
+    return this.getCloud().bbox()
+  }
+
   getCloud () {
     return new PointCloud([ this.p1, this.p2 ])
   }
 
-  bbox () {
-    return this.getCloud().bbox()
+  length () {
+    return this.p2.sub(this.p1).abs()
   }
 
   pointAt (t) {
     var vec = this.p2.sub(this.p1).mul(t)
     return this.p1.add(vec)
-  }
-
-  length () {
-    return this.p2.sub(this.p1).abs()
   }
 
   toPath () {

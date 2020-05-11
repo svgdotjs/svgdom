@@ -4,10 +4,6 @@ import { SVGMatrix } from './SVGMatrix.js'
 import { SVGPoint } from './SVGPoint.js'
 
 export class SVGSVGElement extends SVGGraphicsElement {
-  createSVGRect () {
-    return new Box()
-  }
-
   createSVGMatrix () {
     return new SVGMatrix()
   }
@@ -15,4 +11,9 @@ export class SVGSVGElement extends SVGGraphicsElement {
   createSVGPoint () {
     return new SVGPoint()
   }
+
+  createSVGRect () {
+    return new Box()
+  }
+
 }

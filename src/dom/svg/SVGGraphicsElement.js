@@ -9,6 +9,32 @@ function arrayToMatrix (a) {
 }
 
 export class SVGGraphicsElement extends SVGElement {
+  // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
+  generateViewBoxMatrix () {
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
+    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
+      return new SVGMatrix()
+    }
+
+    var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
+    var width = parseFloat(this.getAttribute('width')) || 0
+    var height = parseFloat(this.getAttribute('height')) || 0
+    var x = parseFloat(this.getAttribute('x')) || 0
+    var y = parseFloat(this.getAttribute('y')) || 0
+
+    // TODO: If no width and height is given, width and height of the outer svg element is used
+    if (!width || !height) {
+      return new SVGMatrix().translate(x, y)
+    }
+
+    if (view.length !== 4) {
+      view = [ 0, 0, width, height ]
+    }
+
+    // first apply x and y if nested, then viewbox scale, then viewBox move
+    return new SVGMatrix().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
+  }
+
   getBBox () {
     return getPointCloud(this).bbox()
   }
@@ -42,6 +68,42 @@ export class SVGGraphicsElement extends SVGElement {
     return getPointCloud(this, false, true).transform(m).bbox()
   }
 
+  getCTM () {
+    var m = this.matrixify()
+
+    var node = this
+    while ((node = node.parentNode)) {
+      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
+      m = m.multiply(node.matrixify())
+      if (node.nodeName === '#document') return this.getScreenCTM()
+    }
+
+    return node.generateViewBoxMatrix().multiply(m)
+  }
+
+  getInnerMatrix () {
+    var m = this.matrixify()
+
+    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
+      m = this.generateViewBoxMatrix().multiply(m)
+    }
+    return m
+  }
+
+  getScreenCTM () {
+    // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
+    // We follow Chromes behavior and include the viewbox in the screenCTM
+    var m = this.getInnerMatrix()
+
+    // TODO: We have to loop until document, however html elements dont have getScreenCTM implemented
+    // they also dont have a transform attribute. Therefore we need a different way of figuring out their (css) transform
+    if (this.parentNode && this.parentNode instanceof SVGGraphicsElement) {
+      return this.parentNode.getScreenCTM().multiply(m)
+    }
+
+    return m
+  }
+
   matrixify () {
     var matrix = (this.getAttribute('transform') || '').trim()
       // split transformations
@@ -61,73 +123,8 @@ export class SVGGraphicsElement extends SVGElement {
     return matrix
   }
 
-  // TODO: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
-  generateViewBoxMatrix () {
-    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox
-    if (![ 'marker', 'symbol', 'pattern', 'svg', 'view' ].includes(this.nodeName)) {
-      return new SVGMatrix()
-    }
-
-    var view = (this.getAttribute('viewBox') || '').split(regex.delimiter).map(parseFloat).filter(el => !isNaN(el))
-    var width = parseFloat(this.getAttribute('width')) || 0
-    var height = parseFloat(this.getAttribute('height')) || 0
-    var x = parseFloat(this.getAttribute('x')) || 0
-    var y = parseFloat(this.getAttribute('y')) || 0
-
-    // TODO: If no width and height is given, width and height of the outer svg element is used
-    if (!width || !height) {
-      return new SVGMatrix().translate(x, y)
-    }
-
-    if (view.length !== 4) {
-      view = [ 0, 0, width, height ]
-    }
-
-    // first apply x and y if nested, then viewbox scale, then viewBox move
-    return new SVGMatrix().translate(x, y).scale(width / view[2], height / view[3]).translate(-view[0], -view[1])
+  get transform () {
+    throw new Error('Not implemented')
   }
 
-  getCTM () {
-    var m = this.matrixify()
-
-    var node = this
-    while ((node = node.parentNode)) {
-      if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(node.nodeName) > -1) break
-      m = m.multiply(node.matrixify())
-      if (node.nodeName === '#document') return this.getScreenCTM()
-    }
-
-    return node.generateViewBoxMatrix().multiply(m)
-  }
-
-  getScreenCTM () {
-    // ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1344537
-    // We follow Chromes behavior and include the viewbox in the screenCTM
-    var m = this.getInnerMatrix()
-
-    // TODO: We have to loop until document, however html elements dont have getScreenCTM implemented
-    // they also dont have a transform attribute. Therefore we need a different way of figuring out their (css) transform
-    if (this.parentNode && this.parentNode instanceof SVGGraphicsElement) {
-      return this.parentNode.getScreenCTM().multiply(m)
-    }
-
-    return m
-  }
-
-  getInnerMatrix () {
-    var m = this.matrixify()
-
-    if ([ 'svg', 'symbol', 'image', 'pattern', 'marker' ].indexOf(this.nodeName) > -1) {
-      m = this.generateViewBoxMatrix().multiply(m)
-    }
-    return m
-  }
 }
-
-Object.defineProperties(SVGGraphicsElement.prototype, {
-  transorm: {
-    get () {
-      throw new Error('Not implemented')
-    }
-  }
-})

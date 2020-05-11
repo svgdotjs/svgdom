@@ -18,7 +18,7 @@ import { svg, html } from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 
-export function getChildByTagName (parent, name) {
+function getChildByTagName (parent, name) {
   for (var child = parent.firstChild; child != null; child = child.nextSibling) {
     if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === name) {
       return child
@@ -43,6 +43,7 @@ const getSVGElementForName = (name) => {
     return SVGGraphicsElement
   }
 }
+
 const getHTMLElementForName = (name) => {
   switch (name.toLowerCase()) {
   case 'img':
@@ -124,6 +125,26 @@ export class Document extends Node {
     this.defaultView = null
   }
 
+  // https://dom.spec.whatwg.org/#dom-document-createattribute
+  createAttribute (localName) {
+    if (this.namespaceURI === html) {
+      localName = localName.toLowerCase()
+    }
+    return this.createAttributeNS(null, localName, true)
+  }
+
+  createAttributeNS (ns, qualifiedName, local = false) {
+    return new Attr(qualifiedName, { ownerDocument: this, local }, ns)
+  }
+
+  createComment (text) {
+    return new Comment('#comment', { nodeValue: text, ownerDocument: this })
+  }
+
+  createDocumentFragment (name) {
+    return new DocumentFragment({ ownerDocument: this })
+  }
+
   createElement (localName) {
     return this.createElementNS(this.namespaceURI, localName, true)
   }
@@ -137,53 +158,26 @@ export class Document extends Node {
     }, ns)
   }
 
-  createDocumentFragment (name) {
-    return new DocumentFragment({ ownerDocument: this })
-  }
-
   createTextNode (text) {
     return new Text('#text', { nodeValue: text, ownerDocument: this })
   }
 
-  createComment (text) {
-    return new Comment('#comment', { nodeValue: text, ownerDocument: this })
+  get compatMode () {
+    return 'CSS1Compat' // always be in standards-mode
   }
 
-  // https://dom.spec.whatwg.org/#dom-document-createattribute
-  createAttribute (localName) {
-    if (this.namespaceURI === html) {
-      localName = localName.toLowerCase()
-    }
-    return this.createAttributeNS(null, localName, true)
+  get body () {
+    return getChildByTagName(this.documentElement, 'BODY')
   }
 
-  createAttributeNS (ns, qualifiedName, local = false) {
-    return new Attr(qualifiedName, { ownerDocument: this, local }, ns)
+  get head () {
+    return getChildByTagName(this.documentElement, 'HEAD')
+  }
+
+  get documentElement () {
+    return this.lastChild
   }
 }
-
-Object.defineProperties(Document.prototype, {
-  compatMode: {
-    get () {
-      return 'CSS1Compat' // always be in standards-mode
-    }
-  },
-  body: {
-    get () {
-      return getChildByTagName(this.documentElement, 'BODY')
-    }
-  },
-  head: {
-    get () {
-      return getChildByTagName(this.documentElement, 'HEAD')
-    }
-  },
-  documentElement: {
-    get () {
-      return this.lastChild
-    }
-  }
-})
 
 mixin(elementAccess, Document)
 mixin(ParentNode, Document)

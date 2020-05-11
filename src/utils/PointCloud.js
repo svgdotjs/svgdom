@@ -15,10 +15,6 @@ export class PointCloud extends Array {
     }, this)
   }
 
-  transform (m) {
-    return new PointCloud(this.map((p) => p.transform(m)))
-  }
-
   bbox () {
     if (!this.length) {
       return new NoBox()
@@ -46,4 +42,9 @@ export class PointCloud extends Array {
   merge (cloud) {
     return new PointCloud(this, cloud)
   }
+
+  transform (m) {
+    return new PointCloud(this.map((p) => p.transform(m)))
+  }
+
 }
