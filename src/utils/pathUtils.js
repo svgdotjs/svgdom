@@ -5,7 +5,7 @@ import * as regex from './regex.js'
 import { matrixFactory } from './../dom/svg/SVGMatrix.js'
 import { PointCloud } from './PointCloud.js'
 
-var pathHandlers = {
+const pathHandlers = {
   M (c, p, r, p0) {
     p.x = p0.x = c[0]
     p.y = p0.y = c[1]
@@ -13,7 +13,7 @@ var pathHandlers = {
     return new Move(p)
   },
   L (c, p) {
-    var ret = new Line(p.x, p.y, c[0], c[1])// .offset(o)
+    const ret = new Line(p.x, p.y, c[0], c[1])// .offset(o)
     p.x = c[0]
     p.y = c[1]
     return ret
@@ -25,11 +25,11 @@ var pathHandlers = {
     return pathHandlers.L([ p.x, c[0] ], p)
   },
   Q (c, p, r) {
-    var ret = Cubic.fromQuad(p, new Point(c[0], c[1]), new Point(c[2], c[3]))// .offset(o)
+    const ret = Cubic.fromQuad(p, new Point(c[0], c[1]), new Point(c[2], c[3]))// .offset(o)
     p.x = c[2]
     p.y = c[3]
 
-    var reflect = new Point(c[0], c[1]).reflectAt(p)
+    const reflect = new Point(c[0], c[1]).reflectAt(p)
     r.x = reflect.x
     r.y = reflect.y
 
@@ -40,10 +40,10 @@ var pathHandlers = {
     return pathHandlers.Q(c, p, r)
   },
   C (c, p, r) {
-    var ret = new Cubic(p, new Point(c[0], c[1]), new Point(c[2], c[3]), new Point(c[4], c[5]))// .offset(o)
+    const ret = new Cubic(p, new Point(c[0], c[1]), new Point(c[2], c[3]), new Point(c[4], c[5]))// .offset(o)
     p.x = c[4]
     p.y = c[5]
-    var reflect = new Point(c[2], c[3]).reflectAt(p)
+    const reflect = new Point(c[2], c[3]).reflectAt(p)
     r.x = reflect.x
     r.y = reflect.y
     return ret
@@ -58,16 +58,16 @@ var pathHandlers = {
     return pathHandlers.L([ p0.x, p0.y ], p)
   },
   A (c, p, r) {
-    var ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
+    const ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
     p.x = c[5]
     p.y = c[6]
     return ret
   }
 }
 
-var mlhvqtcsa = 'mlhvqtcsaz'.split('')
+const mlhvqtcsa = 'mlhvqtcsaz'.split('')
 
-for (var i = 0, il = mlhvqtcsa.length; i < il; ++i) {
+for (let i = 0, il = mlhvqtcsa.length; i < il; ++i) {
   pathHandlers[mlhvqtcsa[i]] = (function (i) {
     return function (c, p, r, p0, reflectionIsPossible) {
       if (i === 'H') c[0] = c[0] + p.x
@@ -76,7 +76,7 @@ for (var i = 0, il = mlhvqtcsa.length; i < il; ++i) {
         c[5] = c[5] + p.x
         c[6] = c[6] + p.y
       } else {
-        for (var j = 0, jl = c.length; j < jl; ++j) {
+        for (let j = 0, jl = c.length; j < jl; ++j) {
           c[j] = c[j] + (j % 2 ? p.y : p.x)
         }
       }
@@ -97,7 +97,7 @@ function isBeziere (obj) {
 export const pathParser = (array) => {
 
   // prepare for parsing
-  var paramCnt = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
+  const paramCnt = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
 
   array = array
     .replace(regex.numbersWithDots, pathRegReplace) // convert 45.123.123 to 45.123 .123
@@ -107,13 +107,13 @@ export const pathParser = (array) => {
     .split(regex.delimiter) // split into array
 
   // array now is an array containing all parts of a path e.g. ['M', '0', '0', 'L', '30', '30' ...]
-  var arr = []
-  var p = new Point()
-  var p0 = new Point()
-  var r = new Point()
-  var index = 0
-  var len = array.length
-  var s
+  const arr = []
+  const p = new Point()
+  const p0 = new Point()
+  const r = new Point()
+  let index = 0
+  const len = array.length
+  let s
 
   do {
     // Test if we have a path letter
@@ -168,58 +168,77 @@ class Move {
 
 export class Arc {
   constructor (p1, p2, rx, ry, φ, arc, sweep) {
+    // https://www.w3.org/TR/SVG/implnote.html#ArcCorrectionOutOfRangeRadii
+    if (!rx || !ry) return new Line(p1, p2)
+
+    rx = Math.abs(rx)
+    ry = Math.abs(ry)
+
     this.p1 = p1.clone()
     this.p2 = p2.clone()
     this.arc = arc ? 1 : 0
     this.sweep = sweep ? 1 : 0
 
-    var cosφ = Math.cos(φ / 180 * Math.PI)
+    // Calculate cos and sin of angle phi
+    const cosφ = Math.cos(φ / 180 * Math.PI)
+    const sinφ = Math.sin(φ / 180 * Math.PI)
 
-    var sinφ = Math.sin(φ / 180 * Math.PI)
-
-    var p1_ = new Point(
+    // https://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
+    // (eq. 5.1)
+    const p1_ = new Point(
       (p1.x - p2.x) / 2,
       (p1.y - p2.y) / 2
     ).transform(matrixFactory(
       cosφ, -sinφ, sinφ, cosφ, 0, 0
     ))
 
-    var ratio = (p1_.x * p1_.x) / (rx * rx) + (p1_.y * p1_.y) / (ry * ry)
+    // (eq. 6.2)
+    // Make sure the radius fit with the arc and correct if neccessary
+    const ratio = (p1_.x ** 2 / rx ** 2) + (p1_.y ** 2 / ry ** 2)
 
+    // (eq. 6.3)
     if (ratio > 1) {
       rx = Math.sqrt(ratio) * rx
       ry = Math.sqrt(ratio) * ry
     }
 
-    var divisor1 = rx * rx * p1_.y * p1_.y
-    var divisor2 = ry * ry * p1_.x * p1_.x
+    // (eq. 5.2)
+    const rxQuad = rx ** 2
+    const ryQuad = ry ** 2
 
-    var c_ = new Point(
+    const divisor1 = rxQuad * p1_.y ** 2
+    const divisor2 = ryQuad * p1_.x ** 2
+    const dividend = (rxQuad * ryQuad - divisor1 - divisor2)
+
+    let c_ = new Point(
       rx * p1_.y / ry,
       -ry * p1_.x / rx
     ).mul(Math.sqrt(
-      Math.round((rx * rx * ry * ry - divisor1 - divisor2) * 100000) / 100000
-      // -------------------------------//
-             / (divisor1 + divisor2)
+      dividend / (divisor1 + divisor2)
     ))
 
     if (this.arc === this.sweep) c_ = c_.mul(-1)
 
-    var c = c_.transform(matrixFactory(
+    // (eq. 5.3)
+    const c = c_.transform(matrixFactory(
       cosφ, sinφ, -sinφ, cosφ, 0, 0
     )).add(new Point(
       (p1.x + p2.x) / 2,
       (p1.y + p2.y) / 2
     ))
 
-    var anglePoint = new Point(
+    const anglePoint = new Point(
       (p1_.x - c_.x) / rx,
       (p1_.y - c_.y) / ry
     )
 
-    var θ = new Point(1, 0).angleTo(anglePoint)
+    /* For eq. 5.4 see angleTo function */
 
-    var Δθ = anglePoint.angleTo(new Point(
+    // (eq. 5.5)
+    const θ = new Point(1, 0).angleTo(anglePoint)
+
+    // (eq. 5.6)
+    let Δθ = anglePoint.angleTo(new Point(
       (-p1_.x - c_.x) / rx,
       (-p1_.y - c_.y) / ry
     ))
@@ -242,22 +261,22 @@ export class Arc {
   }
 
   static fromCenterForm (c, rx, ry, φ, θ, Δθ) {
-    var cosφ = Math.cos(φ / 180 * Math.PI)
-    var sinφ = Math.sin(φ / 180 * Math.PI)
-    var m = matrixFactory(cosφ, sinφ, -sinφ, cosφ, 0, 0)
+    const cosφ = Math.cos(φ / 180 * Math.PI)
+    const sinφ = Math.sin(φ / 180 * Math.PI)
+    const m = matrixFactory(cosφ, sinφ, -sinφ, cosφ, 0, 0)
 
-    var p1 = new Point(
+    const p1 = new Point(
       rx * Math.cos(θ / 180 * Math.PI),
       ry * Math.sin(θ / 180 * Math.PI)
     ).transform(m).add(c)
 
-    var p2 = new Point(
+    const p2 = new Point(
       rx * Math.cos((θ + Δθ) / 180 * Math.PI),
       ry * Math.sin((θ + Δθ) / 180 * Math.PI)
     ).transform(m).add(c)
 
-    var arc = Math.abs(Δθ) > 180 ? 1 : 0
-    var sweep = Δθ > 0 ? 1 : 0
+    const arc = Math.abs(Δθ) > 180 ? 1 : 0
+    const sweep = Δθ > 0 ? 1 : 0
 
     return new Arc(p1, p2, rx, ry, φ, arc, sweep)
   }
@@ -272,12 +291,14 @@ export class Arc {
   }
 
   getCloud () {
+    if (this.p1.equals(this.p2)) return new PointCloud([ this.p1 ])
+
     // arc could be rotated. the min and max values then dont lie on multiples of 90 degress but are shifted by the rotation angle
     // so we first calculate our 0/90 degree angle
-    var θ01 = Math.atan(-this.sinφ / this.cosφ * this.ry / this.rx) * 180 / Math.PI
-    var θ02 = Math.atan(this.cosφ / this.sinφ * this.ry / this.rx) * 180 / Math.PI
-    var θ1 = this.theta
-    var θ2 = this.theta2
+    let θ01 = Math.atan(-this.sinφ / this.cosφ * this.ry / this.rx) * 180 / Math.PI
+    let θ02 = Math.atan(this.cosφ / this.sinφ * this.ry / this.rx) * 180 / Math.PI
+    let θ1 = this.theta
+    let θ2 = this.theta2
 
     if (θ1 < 0 || θ2 < 0) {
       θ1 += 360
@@ -309,38 +330,44 @@ export class Arc {
   }
 
   length () {
-    var length = this.p2.sub(this.p1).abs()
+    if (this.p1.equals(this.p2)) return 0
 
-    var ret = this.splitAt(0.5)
-    var len1 = ret[0].p2.sub(ret[0].p1).abs()
-    var len2 = ret[1].p2.sub(ret[1].p1).abs()
+    const length = this.p2.sub(this.p1).abs()
+
+    const ret = this.splitAt(0.5)
+    const len1 = ret[0].p2.sub(ret[0].p1).abs()
+    const len2 = ret[1].p2.sub(ret[1].p1).abs()
 
     if (len1 + len2 - length < 0.00001) {
       return len1 + len2
     }
 
-    return ret[0].length() + ret[1].length()
+    return ret[0].length(++i) + ret[1].length(++i)
   }
 
   pointAt (t) {
+    if (this.p1.equals(this.p2)) return this.p1.clone()
+
     const tInAngle = (this.theta + t * this.delta) / 180 * Math.PI
     const sinθ = Math.sin(tInAngle)
     const cosθ = Math.cos(tInAngle)
 
     return new Point(
       this.cosφ * this.rx * cosθ - this.sinφ * this.ry * sinθ + this.c.x,
-      this.sinφ * this.rx * cosθ + this.cosφ * this.ry * sinθ + this.c.y
+      this.sinφ * this.ry * cosθ + this.cosφ * this.rx * sinθ + this.c.y
     )
   }
 
   splitAt (t) {
-    var absDelta = Math.abs(this.delta)
-    var delta1 = absDelta * t
-    var delta2 = absDelta * (1 - t)
+    const absDelta = Math.abs(this.delta)
+    const delta1 = absDelta * t
+    const delta2 = absDelta * (1 - t)
+
+    const pointAtT = this.pointAt(t)
 
     return [
-      new Arc(this.p1, this.pointAt(t), this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
-      new Arc(this.pointAt(t), this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
+      new Arc(this.p1, pointAtT, this.rx, this.ry, this.phi, delta1 > 180, this.sweep),
+      new Arc(pointAtT, this.p2, this.rx, this.ry, this.phi, delta2 > 180, this.sweep)
     ]
   }
 
@@ -350,6 +377,10 @@ export class Arc {
 
   toPathFragment () {
     return [ 'A', this.rx, this.ry, this.phi, this.arc, this.sweep, this.p2.x, this.p2.y ]
+  }
+
+  toString () {
+    return `p1: ${this.p1.x.toFixed(4)} ${this.p1.y.toFixed(4)}, p2: ${this.p2.x.toFixed(4)} ${this.p2.y.toFixed(4)}, c: ${this.c.x.toFixed(4)} ${this.c.y.toFixed(4)} theta: ${this.theta.toFixed(4)}, theta2: ${this.theta2.toFixed(4)}, delta: ${this.delta.toFixed(4)}, large: ${this.arc}, sweep: ${this.sweep}`
   }
 
 }
@@ -370,8 +401,8 @@ class Cubic {
   }
 
   static fromQuad (p1, c, p2) {
-    var c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
-    var c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
+    const c1 = p1.mul(1 / 3).add(c.mul(2 / 3))
+    const c2 = c.mul(2 / 3).add(p2.mul(1 / 3))
     return new Cubic(p1, c1, c2, p2)
   }
 
@@ -388,9 +419,9 @@ class Cubic {
   }
 
   findRootsXY (p1, p2, p3, p4) {
-    var a = 3 * (-p1 + 3 * p2 - 3 * p3 + p4)
-    var b = 6 * (p1 - 2 * p2 + p3)
-    var c = 3 * (p2 - p1)
+    const a = 3 * (-p1 + 3 * p2 - 3 * p3 + p4)
+    const b = 6 * (p1 - 2 * p2 + p3)
+    const c = 3 * (p2 - p1)
 
     if (a === 0) return [ -c / b ].filter(function (el) { return el > 0 && el < 1 })
 
@@ -408,10 +439,10 @@ class Cubic {
   }
 
   flatness () {
-    var ux = Math.pow(3 * this.c1.x - 2 * this.p1.x - this.p2.x, 2)
-    var uy = Math.pow(3 * this.c1.y - 2 * this.p1.y - this.p2.y, 2)
-    var vx = Math.pow(3 * this.c2.x - 2 * this.p2.x - this.p1.x, 2)
-    var vy = Math.pow(3 * this.c2.y - 2 * this.p2.y - this.p1.y, 2)
+    let ux = Math.pow(3 * this.c1.x - 2 * this.p1.x - this.p2.x, 2)
+    let uy = Math.pow(3 * this.c1.y - 2 * this.p1.y - this.p2.y, 2)
+    const vx = Math.pow(3 * this.c2.x - 2 * this.p2.x - this.p1.x, 2)
+    const vy = Math.pow(3 * this.c2.y - 2 * this.p2.y - this.p1.y, 2)
 
     if (ux < vx) { ux = vx }
     if (uy < vy) { uy = vy }
@@ -420,7 +451,7 @@ class Cubic {
   }
 
   getCloud () {
-    var points = this.findRoots()
+    const points = this.findRoots()
       .filter(root => root !== 0 && root !== 1)
       .map(root => this.pointAt(root))
       .concat(this.p1, this.p2)
@@ -433,10 +464,10 @@ class Cubic {
   }
 
   lengthAt (t = 1) {
-    var curves = this.splitAt(t)[0].makeFlat(t)
+    const curves = this.splitAt(t)[0].makeFlat(t)
 
-    var length = 0
-    for (var i = 0, len = curves.length; i < len; ++i) {
+    let length = 0
+    for (let i = 0, len = curves.length; i < len; ++i) {
       length += curves[i].p2.sub(curves[i].p1).abs()
     }
 
@@ -462,17 +493,17 @@ class Cubic {
   }
 
   splitAt (z) {
-    var x = this.splitAtScalar(z, 'x')
-    var y = this.splitAtScalar(z, 'y')
+    const x = this.splitAtScalar(z, 'x')
+    const y = this.splitAtScalar(z, 'y')
 
-    var a = new Cubic(
+    const a = new Cubic(
       new Point(x[0][0], y[0][0]),
       new Point(x[0][1], y[0][1]),
       new Point(x[0][2], y[0][2]),
       new Point(x[0][3], y[0][3])
     )
 
-    var b = new Cubic(
+    const b = new Cubic(
       new Point(x[1][0], y[1][0]),
       new Point(x[1][1], y[1][1]),
       new Point(x[1][2], y[1][2]),
@@ -483,12 +514,12 @@ class Cubic {
   }
 
   splitAtScalar (z, p) {
-    var p1 = this.p1[p]
-    var p2 = this.c1[p]
-    var p3 = this.c2[p]
-    var p4 = this.p2[p]
+    const p1 = this.p1[p]
+    const p2 = this.c1[p]
+    const p3 = this.c2[p]
+    const p4 = this.p2[p]
 
-    var t = z * z * z * p4 - 3 * z * z * (z - 1) * p3 + 3 * z * (z - 1) * (z - 1) * p2 - (z - 1) * (z - 1) * (z - 1) * p1
+    const t = z * z * z * p4 - 3 * z * z * (z - 1) * p3 + 3 * z * (z - 1) * (z - 1) * p2 - (z - 1) * (z - 1) * (z - 1) * p1
 
     return [
       [
@@ -540,7 +571,7 @@ class Line {
   }
 
   pointAt (t) {
-    var vec = this.p2.sub(this.p1).mul(t)
+    const vec = this.p2.sub(this.p1).mul(t)
     return this.p1.add(vec)
   }
 
@@ -558,13 +589,13 @@ export const pathBBox = function (d) {
 }
 
 export const pointAtLength = function (d, len) {
-  var segs = pathParser(d)
+  const segs = pathParser(d)
 
-  var segLengths = segs.map(el => el.length())
+  const segLengths = segs.map(el => el.length())
 
-  var length = segLengths.reduce((l, c) => l + c, 0)
+  const length = segLengths.reduce((l, c) => l + c, 0)
 
-  var i = 0
+  let i = 0
 
   let t = len / length
 
@@ -584,10 +615,10 @@ export const pointAtLength = function (d, len) {
   // remove move commands at the very end of the path
   while (segs[segs.length - 1] instanceof Move) segs.pop()
 
-  var segEnd = 0
+  let segEnd = 0
 
   for (il = segLengths.length; i < il; ++i) {
-    var k = segLengths[i] / length
+    const k = segLengths[i] / length
     segEnd += k
 
     if (segEnd > t) {
@@ -595,7 +626,7 @@ export const pointAtLength = function (d, len) {
     }
   }
 
-  var ratio = length / segLengths[i]
+  const ratio = length / segLengths[i]
   t = ratio * (t - segEnd) + 1
 
   return segs[i].pointAt(t).native()
@@ -613,7 +644,7 @@ export const debug = function (node) {
     paths: parse.map(el => el.toPath()),
     fragments: parse.map(el => el.toPathFragment().join(' ')),
     bboxs: parse.map(el => {
-      var box = el.bbox()
+      const box = el.bbox()
       return [ box.x, box.y, box.width, box.height ]
     }),
     bbox: parse.reduce((l, c) => l.merge(c.bbox()), new NoBox()),
