@@ -641,7 +641,7 @@ class Document extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
   }
 
   createDocumentFragment (name) {
-    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]({ ownerDocument: this })
+    return new _DocumentFragment_js__WEBPACK_IMPORTED_MODULE_4__["DocumentFragment"]('#document-fragment', { ownerDocument: this })
   }
 
   createElement (localName) {
@@ -706,8 +706,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class DocumentFragment extends _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"] {
-  constructor () {
-    super('#document-fragment')
+  constructor (name, props) {
+    super(name, props)
     this.nodeType = _Node_js__WEBPACK_IMPORTED_MODULE_0__["Node"].DOCUMENT_FRAGMENT_NODE
   }
 }
@@ -4309,7 +4309,7 @@ class Arc {
       return len1 + len2
     }
 
-    return ret[0].length(++i) + ret[1].length(++i)
+    return ret[0].length() + ret[1].length()
   }
 
   pointAt (t) {
@@ -4584,7 +4584,7 @@ const pointAtLength = function (d, len) {
 
   let segEnd = 0
 
-  for (il = segLengths.length; i < il; ++i) {
+  for (const il = segLengths.length; i < il; ++i) {
     const k = segLengths[i] / length
     segEnd += k
 

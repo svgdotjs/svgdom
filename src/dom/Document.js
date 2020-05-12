@@ -142,7 +142,7 @@ export class Document extends Node {
   }
 
   createDocumentFragment (name) {
-    return new DocumentFragment({ ownerDocument: this })
+    return new DocumentFragment('#document-fragment', { ownerDocument: this })
   }
 
   createElement (localName) {
