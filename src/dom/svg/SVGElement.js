@@ -2,8 +2,8 @@ import { Element } from '../Element.js'
 export class SVGElement extends Element {
   get ownerSVGElement () {
     let owner = null
-    let parent
-    while ((parent = this.parentNode)) {
+    let parent = this
+    while ((parent = parent.parentNode)) {
       if (parent.nodeName === 'svg') {
         owner = parent
       }
