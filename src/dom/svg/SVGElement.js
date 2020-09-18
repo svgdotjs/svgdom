@@ -16,7 +16,7 @@ export class SVGElement extends Element {
     let parent
     while ((parent = this.parentNode)) {
       // TODO: and others
-      if ([ 'svg', 'symbol' ].conains(parent.nodeName)) {
+      if ([ 'svg', 'symbol' ].contains(parent.nodeName)) {
         owner = parent
       }
     }
