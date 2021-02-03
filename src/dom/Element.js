@@ -157,8 +157,8 @@ export class Element extends Node {
   }
 
   // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns, name) {
-    const attr = this.getAttributeNode(ns, name)
+  removeAttributeNS (ns, localName) {
+    const attr = this.getAttributeNodeNS(ns, localName)
     if (attr) {
       this.removeAttributeNode(attr)
     }
