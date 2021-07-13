@@ -1,25 +1,23 @@
-import { Element } from '../Element.js'
+import {Element} from '../Element.js';
 export class SVGElement extends Element {
-  get ownerSVGElement () {
-    let owner = null
-    let parent = this
-    while ((parent = parent.parentNode)) {
-      if (parent.nodeName === 'svg') {
-        owner = parent
+  get ownerSVGElement() {
+    let parent;
+    while ((parent = this.parentNode)) {
+      if ('svg' == parent.nodeName) {
+        return parent;
       }
     }
-    return owner
+    return null;
   }
 
-  get viewportElement () {
-    let owner = null
-    let parent
+  get viewportElement() {
+    let parent;
     while ((parent = this.parentNode)) {
       // TODO: and others
-      if ([ 'svg', 'symbol' ].contains(parent.nodeName)) {
-        owner = parent
+      if (['svg', 'symbol'].includes(parent.nodeName)) {
+        return parent;
       }
     }
-    return owner
+    return null;
   }
 }
