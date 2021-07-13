@@ -1,8 +1,8 @@
-import {Element} from '../Element.js';
+import { Element } from '../Element.js';
 export class SVGElement extends Element {
-  get ownerSVGElement() {
-    let parent;
-    while ((parent = this.parentNode)) {
+  get ownerSVGElement () {
+    let parent = this;
+    while ((parent = parent.parentNode)) {
       if ('svg' == parent.nodeName) {
         return parent;
       }
@@ -10,11 +10,11 @@ export class SVGElement extends Element {
     return null;
   }
 
-  get viewportElement() {
-    let parent;
-    while ((parent = this.parentNode)) {
+  get viewportElement () {
+    let parent = this;
+    while ((parent = parent.parentNode)) {
       // TODO: and others
-      if (['svg', 'symbol'].includes(parent.nodeName)) {
+      if ([ 'svg', 'symbol' ].includes(parent.nodeName)) {
         return parent;
       }
     }
