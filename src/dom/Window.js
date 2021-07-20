@@ -46,13 +46,14 @@ export class Window extends EventTarget {
       // but good enough for svg.js
       getPropertyValue (attr) {
         let value
+        let cur = node
 
         do {
-          value = node.style[attr] || node.getAttribute(attr)
+          value = cur.style[attr] || cur.getAttribute(attr)
         } while (
           value == null
-          && (node = node.parentNode)
-          && node.nodeType === 1
+          && (cur = cur.parentNode)
+          && cur.nodeType === 1
         )
 
         return value || defaults[camelCase(attr)] || null
