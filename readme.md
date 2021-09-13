@@ -84,7 +84,7 @@ In order to calculate bounding boxes for text the font needs to be loaded first.
 The following options must be set in order to load your own fonts:
 
 ```js
-const { config } = require(svgdom)
+const { config } = require('svgdom')
 config.
     // your font directory
     .setFontDir('./fonts')
@@ -95,7 +95,7 @@ config.
     .preloadFonts()
 
 // Alternatively you can import the functions itself and use them
-const {setFontDir, setFontFamilyMappings, preloadFonts} = require(svgdom)
+const {setFontDir, setFontFamilyMappings, preloadFonts} = require('svgdom')
 setFontDir('./fonts')
 setFontFamilyMappings({'Arial': 'arial.ttf'})
 preloadFonts()
