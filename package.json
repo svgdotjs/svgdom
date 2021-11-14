@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Straightforward DOM implementation for SVG, HTML and XML",
   "main": "./main-require.cjs",
   "exports": {
