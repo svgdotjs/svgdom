@@ -1,28 +1,52 @@
-const { createSVGWindow, setFontDir, setFontFamilyMappings } = require('./main-require.cjs')
-const svgjs = require('../svg.js/dist/svg.node.js')
+const fs = require('fs')
+const { createSVGWindow, config } = require('./main-require.cjs')
+const { SVG, registerWindow } = require('../svg.js/dist/svg.node.js')
 
-const { SVG, registerWindow } = svgjs
+config
+  .setFontDir('./fonts')
+  .setFontFamilyMappings({ Montserrat: 'Montserrat-Regular.ttf' })
+  .preloadFonts()
 
-const window = createSVGWindow()
-const document = window.document
-
-setFontDir('./fonts')
-setFontFamilyMappings({
-  Calibri2: 'calibri.ttf',
-  Arial2: 'arial.ttf',
-  Comic2: 'comic.ttf',
-  Coop2: 'COOPBL.TTF',
-  Finale2: 'FinaleCopyistText.ttf',
-  Free2: 'FREESCPT.TTF',
-  Georgia2: 'georgia.ttf'
+fs.readFile('./squares.svg', 'utf8', (err, data) => {
+  if (err) {
+    console.error(err)
+    return
+  }
+  const window = createSVGWindow()
+  const document = window.document
+  registerWindow(window, document)
+  var svgDoc = SVG(document.documentElement)
+  svgDoc.svg(data)
+  var mygroup = svgDoc.findOne('#layer1')
+  console.log(mygroup.svg())
+  console.log(mygroup.cx(), mygroup.cy())
 })
 
-registerWindow(window, document)
+// const { createSVGWindow, setFontDir, setFontFamilyMappings } = require('./main-require.cjs')
+// const svgjs = require('../svg.js/dist/svg.node.js')
 
-const canvas = SVG(document.documentElement)
-  .size(2000, 1000)
-  .viewbox(-300, -300, 2000, 1000)
+// const { SVG, registerWindow } = svgjs
 
-canvas.rect(100, 100).move(200, 100).size(200)
+// const window = createSVGWindow()
+// const document = window.document
 
-console.log(canvas.svg())
+// setFontDir('./fonts')
+// setFontFamilyMappings({
+//   Calibri2: 'calibri.ttf',
+//   Arial2: 'arial.ttf',
+//   Comic2: 'comic.ttf',
+//   Coop2: 'COOPBL.TTF',
+//   Finale2: 'FinaleCopyistText.ttf',
+//   Free2: 'FREESCPT.TTF',
+//   Georgia2: 'georgia.ttf'
+// })
+
+// registerWindow(window, document)
+
+// const canvas = SVG(document.documentElement)
+//   .size(2000, 1000)
+//   .viewbox(-300, -300, 2000, 1000)
+
+// canvas.rect(100, 100).move(200, 100).size(200)
+
+// console.log(canvas.svg())

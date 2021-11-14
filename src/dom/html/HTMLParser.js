@@ -58,8 +58,8 @@ export const HTMLParser = function (str, el) {
     currentTag = newElement
   }
 
-  parser.onclosetag = node => {
-    if (node.name === 'svgdom:wrapper') return
+  parser.onclosetag = tagName => {
+    if (tagName === 'svgdom:wrapper') return
 
     currentTag = currentTag.parentNode
   }

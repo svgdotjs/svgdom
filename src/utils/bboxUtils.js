@@ -7,7 +7,7 @@ import { NodeIterator } from './NodeIterator.js'
 import { NodeFilter } from '../dom/NodeFilter.js'
 
 const applyTransformation = (cloud, node, applyTransformations) => {
-  if (applyTransformations) {
+  if (node.matrixify && applyTransformations) {
     return cloud.transform(node.matrixify())
   }
   return cloud
@@ -45,6 +45,7 @@ const getPathCloud = (node, rbox) => {
     // Iterate trough all children and get the point cloud of each
     // Then transform it with viewbox matrix if needed
     return node.childNodes.reduce((cloud, child) => {
+      if (!child.matrixify) return cloud
       return cloud.merge(getPointCloud(child, true).transform(child.generateViewBoxMatrix()))
     }, new PointCloud())
   case 'circle':
