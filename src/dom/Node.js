@@ -53,7 +53,7 @@ export class Node extends EventTarget {
     // }
 
     if (props.childNodes) {
-      for (var i = 0, il = props.childNodes.length; i < il; ++i) {
+      for (let i = 0, il = props.childNodes.length; i < il; ++i) {
         this.appendChild(props.childNodes[i])
       }
     }
@@ -64,11 +64,11 @@ export class Node extends EventTarget {
   }
 
   cloneNode (deep = false) {
-    var clone = cloneNode(this)
+    const clone = cloneNode(this)
 
     if (deep) {
       this.childNodes.forEach(function (el) {
-        var node = el.cloneNode(deep)
+        const node = el.cloneNode(deep)
         clone.appendChild(node)
       })
     }
@@ -339,6 +339,9 @@ export class Node extends EventTarget {
       }
     }
 
+    childNodes.forEach(node => {
+      node.parentNode = this
+    })
     this.childNodes = childNodes
     // this.childNodes = this.childNodes.forEach((textNodes, node) => {
     //   // FIXME: If first node is an empty textnode, what do we do? -> spec
@@ -365,14 +368,14 @@ export class Node extends EventTarget {
 
     node.parentNode = null
     // Object.setPrototypeOf(node, null)
-    var index = this.childNodes.indexOf(node)
+    const index = this.childNodes.indexOf(node)
     if (index === -1) return node
     this.childNodes.splice(index, 1)
     return node
   }
 
   replaceChild (newChild, oldChild) {
-    var before = oldChild.nextSibling
+    const before = oldChild.nextSibling
     this.removeChild(oldChild)
     this.insertBefore(newChild, before)
     return oldChild
@@ -399,7 +402,12 @@ export class Node extends EventTarget {
   }
 
   set textContent (text) {
-    this.childNodes = [ this.ownerDocument.createTextNode(text) ]
+    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.CDATA_SECTION_NODE || this.nodeType === Node.COMMENT_NODE) {
+      this.data = text
+      return
+    }
+    this.childNodes = []
+    this.appendChild(this.ownerDocument.createTextNode(text))
   }
 
   get lastChild () {

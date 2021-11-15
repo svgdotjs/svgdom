@@ -164,6 +164,11 @@ class Move {
   toPathFragment () {
     return [ 'M', this.p1.x, this.p1.y ]
   }
+
+  transform (matrix) {
+    this.p1.transformO(matrix)
+    return this
+  }
 }
 
 export class Arc {
@@ -210,12 +215,17 @@ export class Arc {
     const divisor2 = ryQuad * p1_.x ** 2
     const dividend = (rxQuad * ryQuad - divisor1 - divisor2)
 
-    let c_ = new Point(
-      rx * p1_.y / ry,
-      -ry * p1_.x / rx
-    ).mul(Math.sqrt(
-      dividend / (divisor1 + divisor2)
-    ))
+    let c_
+    if (Math.abs(dividend) < 1e-15) {
+      c_ = new Point(0, 0)
+    } else {
+      c_ = new Point(
+        rx * p1_.y / ry,
+        -ry * p1_.x / rx
+      ).mul(Math.sqrt(
+        dividend / (divisor1 + divisor2)
+      ))
+    }
 
     if (this.arc === this.sweep) c_ = c_.mul(-1)
 
@@ -383,6 +393,9 @@ export class Arc {
     return `p1: ${this.p1.x.toFixed(4)} ${this.p1.y.toFixed(4)}, p2: ${this.p2.x.toFixed(4)} ${this.p2.y.toFixed(4)}, c: ${this.c.x.toFixed(4)} ${this.c.y.toFixed(4)} theta: ${this.theta.toFixed(4)}, theta2: ${this.theta2.toFixed(4)}, delta: ${this.delta.toFixed(4)}, large: ${this.arc}, sweep: ${this.sweep}`
   }
 
+  transform (matrix) {
+    return new Arc(this.p1.transform(matrix), this.p2.transform(matrix), this.rx, this.ry, this.phi, this.arc, this.sweep)
+  }
 }
 
 class Cubic {
@@ -545,6 +558,13 @@ class Cubic {
     return [ 'C', this.c1.x, this.c1.y, this.c2.x, this.c2.y, this.p2.x, this.p2.y ]
   }
 
+  transform (matrix) {
+    this.p1.transformO(matrix)
+    this.c1.transformO(matrix)
+    this.c2.transformO(matrix)
+    this.p2.transformO(matrix)
+    return this
+  }
 }
 
 class Line {
@@ -582,10 +602,41 @@ class Line {
   toPathFragment () {
     return [ 'L', this.p2.x, this.p2.y ]
   }
+
+  transform (matrix) {
+    this.p1.transformO(matrix)
+    this.p2.transformO(matrix)
+    return this
+  }
 }
 
 export const pathBBox = function (d) {
   return pathParser(d).reduce((l, c) => l.merge(c.bbox()), new NoBox())
+}
+
+export class PathSegmentArray extends Array {
+  bbox () {
+    return this.reduce((l, c) => l.merge(c.bbox()), new NoBox())
+  }
+
+  cloud () {
+    return this.reduce(
+      (cloud, segment) => segment.getCloud().merge(cloud),
+      new PointCloud()
+    )
+  }
+
+  merge (other) {
+    return this.concat(other)
+  }
+
+  transform (matrix) {
+    return this.map(segment => segment.transform(matrix))
+  }
+}
+
+export const getPathSegments = function (d) {
+  return new PathSegmentArray(...pathParser(d))
 }
 
 export const pointAtLength = function (d, len) {
@@ -648,13 +699,13 @@ export const debug = function (node) {
       return [ box.x, box.y, box.width, box.height ]
     }),
     bbox: parse.reduce((l, c) => l.merge(c.bbox()), new NoBox()),
-    bboxs_new: parse.map(el => {
+    bboxsTransformed: parse.map(el => {
       return el.getCloud().transform(node.matrixify()).bbox()
     })
   }
 
   return Object.assign({}, ret, {
-    bbox_new: ret.bboxs_new.reduce((l, c) => l.merge(c), new NoBox())
+    bboxTransformed: ret.bboxsTransformed.reduce((l, c) => l.merge(c), new NoBox())
   })
 }
 

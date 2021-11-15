@@ -19,7 +19,7 @@ import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 
 function getChildByTagName (parent, name) {
-  for (var child = parent.firstChild; child != null; child = child.nextSibling) {
+  for (let child = parent.firstChild; child != null; child = child.nextSibling) {
     if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === name) {
       return child
     }
@@ -70,7 +70,7 @@ const getElementForNamespace = (ns, name) => {
 }
 
 // Feature/version pairs that DOMImplementation.hasFeature() returns true for.  It returns false for anything else.
-var supportedFeatures = {
+const supportedFeatures = {
   xml: { '': true, '1.0': true, '2.0': true },
   core: { '': true, '2.0': true },
   html: { '': true, '1.0': true, '2.0': true },
@@ -79,7 +79,7 @@ var supportedFeatures = {
 
 export const DOMImplementation = {
   hasFeature (feature, version) {
-    var f = supportedFeatures[(feature || '').toLowerCase()]
+    const f = supportedFeatures[(feature || '').toLowerCase()]
     return (f && f[version || '']) || false
   },
 
@@ -88,7 +88,7 @@ export const DOMImplementation = {
   },
 
   createDocument (namespace, qualifiedName, doctype) {
-    var doc = new Document(namespace)
+    const doc = new Document(namespace)
     if (doctype) {
       if (doctype.ownerDocument) {
         throw new Error('the object is in the wrong Document, a call to importNode is required')

@@ -1,21 +1,21 @@
 /* global describe, it */
 
-import { createSVGDocument } from '..'
+import { createSVGWindow } from '../main-module.js'
 import assert from 'assert'
-const getPointCloud = require('../src/utils/bboxUtils')
+import { getSegments } from '../src/utils/bboxUtils.js'
 
 describe('unescape-bbox', () => {
-  it(" bbox('<').x should be less then bbox('WW') ", () => {
-    var svgDoc = createSVGDocument()
-    var svgRoot = svgDoc.documentElement
-    var textLt = svgDoc.createElement('text')
+  it("bbox('<').x should be less then bbox('WW') ", () => {
+    const svgDoc = createSVGWindow().document
+    const svgRoot = svgDoc.documentElement
+    const textLt = svgDoc.createElement('text')
     textLt.textContent = '<'
-    var textWW = svgDoc.createElement('text')
+    const textWW = svgDoc.createElement('text')
     textWW.textContent = 'W'
     svgRoot.appendChild(textLt)
     svgRoot.appendChild(textWW)
-    var bboxLt = getPointCloud(textLt).bbox()
-    var bboxWW = getPointCloud(textWW).bbox()
+    const bboxLt = getSegments(textLt).bbox()
+    const bboxWW = getSegments(textWW).bbox()
     assert(bboxLt.width < bboxWW.width)
   })
 })

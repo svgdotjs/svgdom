@@ -2,24 +2,23 @@ import * as pathUtils from './pathUtils.js'
 import * as regex from './regex.js'
 import * as textUtils from './textUtils.js'
 import { NoBox } from '../other/Box.js'
-import { PointCloud } from './PointCloud.js'
 import { NodeIterator } from './NodeIterator.js'
 import { NodeFilter } from '../dom/NodeFilter.js'
 
-const applyTransformation = (cloud, node, applyTransformations) => {
+const applyTransformation = (segments, node, applyTransformations) => {
   if (node.matrixify && applyTransformations) {
-    return cloud.transform(node.matrixify())
+    return segments.transform(node.matrixify())
   }
-  return cloud
+  return segments
 }
 
-export const getPointCloud = (node, applyTransformations, rbox = false) => {
-  const cloud = getPathCloud(node, rbox)
-  return applyTransformation(cloud, node, applyTransformations)
+export const getSegments = (node, applyTransformations, rbox = false) => {
+  const segments = getPathSegments(node, rbox)
+  return applyTransformation(segments, node, applyTransformations)
 }
 
-const getPathCloud = (node, rbox) => {
-  if (node.nodeType !== 1) return new PointCloud()
+const getPathSegments = (node, rbox) => {
+  if (node.nodeType !== 1) return new pathUtils.PathSegmentArray()
 
   switch (node.nodeName) {
   case 'rect':
@@ -28,12 +27,12 @@ const getPathCloud = (node, rbox) => {
   case 'mask':
   case 'foreignObject':
     // Create Path from rect and create PointCloud from Path
-    return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
   case 'svg':
   case 'symbol':
-    // return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+    // return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
     if (rbox) {
-      return pathUtils.getCloud(pathUtils.pathFrom.rect(node))
+      return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
     }
   // ATTENTION: FALL THROUGH
   // Because normal bbox is calculated by the content of the element and not its width and height
@@ -44,23 +43,23 @@ const getPathCloud = (node, rbox) => {
   case 'marker':
     // Iterate trough all children and get the point cloud of each
     // Then transform it with viewbox matrix if needed
-    return node.childNodes.reduce((cloud, child) => {
-      if (!child.matrixify) return cloud
-      return cloud.merge(getPointCloud(child, true).transform(child.generateViewBoxMatrix()))
-    }, new PointCloud())
+    return node.childNodes.reduce((segments, child) => {
+      if (!child.matrixify) return segments
+      return segments.merge(getSegments(child, true).transform(child.generateViewBoxMatrix()))
+    }, new pathUtils.PathSegmentArray())
   case 'circle':
-    return pathUtils.getCloud(pathUtils.pathFrom.circle(node))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.circle(node))
   case 'ellipse':
-    return pathUtils.getCloud(pathUtils.pathFrom.ellipse(node))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.ellipse(node))
   case 'line':
-    return pathUtils.getCloud(pathUtils.pathFrom.line(node))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.line(node))
   case 'polyline':
   case 'polygon':
-    return pathUtils.getCloud(pathUtils.pathFrom.polyline(node))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.polyline(node))
   case 'path':
   case 'glyph':
   case 'missing-glyph':
-    return pathUtils.getCloud(node.getAttribute('d'))
+    return pathUtils.getPathSegments(node.getAttribute('d'))
   case 'use': {
     // Get reference from element
     const ref = node.getAttribute('href') || node.getAttribute('xlink:href')
@@ -69,7 +68,7 @@ const getPathCloud = (node, rbox) => {
     // Get the BBox of the referenced element and apply the viewbox of <use>
     // TODO: Do we need to apply the transformations of the element?
     // Check bbox of transformed element which is reused with <use>
-    return getPointCloud(refNode).transform(node.generateViewBoxMatrix())
+    return getSegments(refNode).transform(node.generateViewBoxMatrix())
   }
   case 'tspan':
   case 'text':
@@ -77,13 +76,13 @@ const getPathCloud = (node, rbox) => {
     const box = getTextBBox(node)
 
     if (box instanceof NoBox) {
-      return new PointCloud()
+      return new pathUtils.PathSegmentArray()
     }
 
-    return pathUtils.getCloud(pathUtils.pathFrom.box(box))
+    return pathUtils.getPathSegments(pathUtils.pathFrom.box(box))
   }
   default:
-    return new PointCloud()
+    return new pathUtils.PathSegmentArray()
   }
 }
 
@@ -143,14 +142,14 @@ const isNotEmptyBox = box => box.x !== 0 || box.y !== 0 || box.width !== 0 || bo
 // TODO: Break this into two functions?
 const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
   if (node.nodeType === node.ELEMENT_NODE) {
-    var x = parseFloat(node.getAttribute('x'))
-    var y = parseFloat(node.getAttribute('y'))
+    const x = parseFloat(node.getAttribute('x'))
+    const y = parseFloat(node.getAttribute('y'))
 
     pos.x = isNaN(x) ? pos.x : x
     pos.y = isNaN(y) ? pos.y : y
 
-    var dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
-    var dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
+    const dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
+    const dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
 
     // TODO: eventually replace only as much values as we have text chars (node.textContent.length) because we could end up adding to much
     // replace initial values with node values if present

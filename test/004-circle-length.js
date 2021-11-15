@@ -1,11 +1,12 @@
 /* global describe, it */
 
-import { createSVGWindow, createSVGDocument } from '..'
+import { createSVGWindow } from '../main-module.js'
 import assert from 'assert'
+import { SVG, registerWindow } from '../../svg.js/dist/svg.node.js'
 
-const document = createSVGDocument()
-const { SVG, registerWindow } = require('@svgdotjs/svg.js')
-registerWindow(createSVGWindow(), document)
+const window = createSVGWindow()
+const document = window.document
+registerWindow(window, document)
 
 describe('circle-length', () => {
   it('circumference of circle of radius 49.5 should be close to 99*Math.PI', () => {

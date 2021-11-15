@@ -3,14 +3,16 @@ import { SVGPoint } from '../dom/svg/SVGPoint.js'
 export class Point {
   // Initialize
   constructor (x, y) {
-    var source
-    var base = { x: 0, y: 0 }
+    const base = { x: 0, y: 0 }
 
     // ensure source as object
-    source = Array.isArray(x) ? { x: x[0], y: x[1] }
-      : typeof x === 'object' ? { x: x.x, y: x.y }
-      : x != null ? { x: x, y: (y != null ? y : x) }
-      : base // If y has no value, then x is used has its value
+    const source = Array.isArray(x)
+      ? { x: x[0], y: x[1] }
+      : typeof x === 'object'
+        ? { x: x.x, y: x.y }
+        : x != null
+          ? { x: x, y: (y != null ? y : x) }
+          : base // If y has no value, then x is used has its value
 
     // merge source
     this.x = source.x
@@ -26,12 +28,12 @@ export class Point {
   }
 
   add (x, y) {
-    var p = new Point(x, y)
+    const p = new Point(x, y)
     return new Point(this.x + p.x, this.y + p.y)
   }
 
   angleTo (p) {
-    var sign = Math.sign(this.x * p.y - this.y * p.x)
+    let sign = Math.sign(this.x * p.y - this.y * p.x)
     sign = sign || 1
     return sign * Math.acos(Math.round((this.dot(p) / (this.abs() * p.abs())) * 1000000) / 1000000)
   }
@@ -64,7 +66,7 @@ export class Point {
   // Convert to native SVGPoint
   native () {
     // create new point
-    var point = new SVGPoint()
+    const point = new SVGPoint()
 
     // update with current values
     point.x = this.x
@@ -78,7 +80,7 @@ export class Point {
   }
 
   normalize () {
-    var abs = this.abs()
+    const abs = this.abs()
     if (!abs) throw new Error('Can\'t normalize vector of zero length')
     return this.div(abs)
   }
@@ -88,7 +90,7 @@ export class Point {
   }
 
   sub (x, y) {
-    var p = new Point(x, y)
+    const p = new Point(x, y)
     return new Point(this.x - p.x, this.y - p.y)
   }
 
@@ -103,6 +105,12 @@ export class Point {
   // transform point with matrix
   transform (matrix) {
     return new Point(this.native().matrixTransform(matrix))
+  }
+
+  transformO (matrix) {
+    const { x, y } = this.native().matrixTransform(matrix)
+    this.x = x
+    this.y = y
   }
 
 }
