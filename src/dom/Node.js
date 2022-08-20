@@ -87,7 +87,7 @@ export class Node extends EventTarget {
   }
 
   getRootNode () {
-    if (!this.parentNode || this.parentNode.nodeType === Node.DOCUMENT_NODE) return this
+    if (!this.parentNode || this.nodeType === Node.DOCUMENT_NODE) return this
     return this.parentNode.getRootNode()
   }
 
