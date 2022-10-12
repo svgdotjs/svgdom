@@ -64,7 +64,7 @@ const getPathSegments = (node, rbox) => {
     // Get reference from element
     const ref = node.getAttribute('href') || node.getAttribute('xlink:href')
     // Get the actual referenced Node
-    const refNode = node.getRootNode().getElementById(ref.slice(1))
+    const refNode = node.getRootNode().querySelector(ref)
     // Get the BBox of the referenced element and apply the viewbox of <use>
     // TODO: Do we need to apply the transformations of the element?
     // Check bbox of transformed element which is reused with <use>
