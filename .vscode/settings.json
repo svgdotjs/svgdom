@@ -1,0 +1,20 @@
+{
+  "editor.tabSize": 2,
+  "editor.renderWhitespace": "all",
+  "editor.formatOnSave": false,
+  "eslint.enable": true,
+  "eslint.quiet": true,
+  "eslint.validate": [
+    "javascript"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.alwaysShowStatus": true,
+  "editor.renderControlCharacters": true,
+  "editor.insertSpaces": true,
+  "[javascript]": {
+    "files.encoding": "utf8",
+    "files.eol": "\n"
+  },
+}
