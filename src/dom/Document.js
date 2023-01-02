@@ -17,6 +17,10 @@ import { ParentNode } from './mixins/ParentNode.js'
 import { svg, html } from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
+import { SVGRectElement } from './svg/SVGRectElement.js'
+import { SVGCircleElement } from './svg/SVGCircleElement.js'
+import { SVGLineElement } from './svg/SVGLineElement.js'
+import { SVGEllipseElement } from './svg/SVGEllipseElement.js'
 
 function getChildByTagName (parent, name) {
   for (let child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -33,6 +37,14 @@ const getSVGElementForName = (name) => {
     return SVGSVGElement
   case 'path':
     return SVGPathElement
+  case 'circle':
+    return SVGCircleElement
+  case 'ellipse':
+    return SVGEllipseElement
+  case 'line':
+    return SVGLineElement
+  case 'rect':
+    return SVGRectElement
   case 'text':
   case 'tspan':
   case 'tref':
