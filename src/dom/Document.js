@@ -21,6 +21,8 @@ import { SVGRectElement } from './svg/SVGRectElement.js'
 import { SVGCircleElement } from './svg/SVGCircleElement.js'
 import { SVGLineElement } from './svg/SVGLineElement.js'
 import { SVGEllipseElement } from './svg/SVGEllipseElement.js'
+import { SVGForeignObjectElement } from './svg/SVGForeignObjectElement.js'
+import { SVGImageElement } from './svg/SVGImageElement.js'
 
 function getChildByTagName (parent, name) {
   for (let child = parent.firstChild; child != null; child = child.nextSibling) {
@@ -45,6 +47,10 @@ const getSVGElementForName = (name) => {
     return SVGLineElement
   case 'rect':
     return SVGRectElement
+  case 'foreignObject':
+    return SVGForeignObjectElement
+  case 'image':
+    return SVGImageElement
   case 'text':
   case 'tspan':
   case 'tref':
