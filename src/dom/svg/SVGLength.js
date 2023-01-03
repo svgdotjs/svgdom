@@ -49,6 +49,8 @@ const unitFactors = new Map([
   [unitTypes.SVG_LENGTHTYPE_PC, 16],
 ])
 
+const valuePattern = /^\s*([+-]?[0-9]*[.]?[0-9]+(?:e[+-]?[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc|%)?\s*$/i;
+
 export class SVGLength {
   element
   attributeName
@@ -112,10 +114,7 @@ export class SVGLength {
  * the element, value 0 and unit SVG_LENGTHTYPE_NUMBER are returned.
  */
 function parseValue(valueString, fallback = true) {
-  const [, rawValue, , rawUnit] =
-    (valueString || '').match(
-      /^\s*([+-]?[0-9]*[.]?[0-9]+(e[+-]?[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc|%)?\s*$/i
-    ) || []
+  const [, rawValue, rawUnit] = (valueString || '').match(valuePattern) || []
   const unit = unitByString[(rawUnit || '').toLowerCase()]
   if (rawValue !== undefined && unit !== undefined) {
     return [parseFloat(rawValue), unit]
