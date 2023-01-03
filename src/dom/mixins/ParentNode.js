@@ -30,6 +30,18 @@ const ParentNode = {
     return this.query(query, this, true)[0] || null
   },
 
+  closest (query) {
+    const cssQuery = new CssQuery(query)
+    let node = this
+    while (node) {
+      if (cssQuery.matches(node, this)) {
+        return node
+      }
+      node = node.parentNode
+    }
+    return null
+  },
+
   prepend (nodes) {
     const node = nodesToNode(nodes, this.ownerDocument)
 

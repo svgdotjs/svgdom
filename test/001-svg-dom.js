@@ -354,6 +354,25 @@ describe('svg document', () => {
     assert.strictEqual(connectors.length, 2)
   })
 
+  wrappedIt('closest() should find ancestors', () => {
+
+    const rect1 = svgRoot.querySelector("#rect-1")
+
+    assert.strictEqual(rect1.closest("svg").localName, 'svg')
+
+    assert.strictEqual(rect1.closest('g[id]').id, 'g-1', 'attribute selector')
+
+    assert.strictEqual(rect1.closest('g:not([id])').id, '', 'negated attribute selector')
+
+    assert.strictEqual(rect1.closest('foobar'), null, 'non-matching selector')
+
+    assert.strictEqual(rect1.closest('g:last-child').id, 'g-1', 'pseudo-class')
+
+    assert.strictEqual(rect1.closest('[id]:scope').id, 'rect-1', ':scope')
+
+    assert.strictEqual(rect1.closest('[id]:not(:scope)').id, 'g-1', 'negated :scope')
+  })
+
   wrappedIt('text-anchor should affect bbox', () => {
 
     const text = svgRoot.querySelector('#text-1')
