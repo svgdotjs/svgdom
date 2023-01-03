@@ -148,5 +148,4 @@ function unitString(svgLength) {
   return unitStringByConstant.get(svgLength.unitType) || ''
 }
 
-SVGLength.prototype.SVG_LENGTHTYPE_NUMBER = 1
 extendStatic(SVGLength, unitTypes)
