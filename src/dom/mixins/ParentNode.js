@@ -42,22 +42,22 @@ const ParentNode = {
     return null
   },
 
-  prepend (nodes) {
+  prepend (...nodes) {
     const node = nodesToNode(nodes, this.ownerDocument)
 
     this.insertBefore(node, this.firstChild)
   },
 
-  append (nodes) {
+  append (...nodes) {
     const node = nodesToNode(nodes, this.ownerDocument)
     this.appendChild(node)
   },
 
-  replaceChildren (nodes) {
+  replaceChildren (...nodes) {
     while (this.firstChild) {
       this.removeChild(this.firstChild)
     }
-    this.append(nodes)
+    this.append(...nodes)
   }
 }
 
