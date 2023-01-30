@@ -5,7 +5,7 @@ export const nodesToNode = (nodes, document) => {
     }
     return node
   })
-  if (nodes.length === 1) { return nodes }
+  if (nodes.length === 1) { return nodes[0] }
   const node = document.createDocumentFragment()
   nodes.forEach(node.appendChild, node)
   return node

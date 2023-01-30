@@ -2,6 +2,7 @@ import assert from 'assert'
 import { SVGLength } from '../src/dom/svg/SVGLength.js'
 import { createSVGDocument } from '../main-module.js'
 import { svg as SVG_NS } from '../src/utils/namespaces.js'
+import { describe, it } from 'mocha'
 
 describe('SVGLength', function () {
   /** @type {SVGRectElement} */

@@ -2,7 +2,7 @@
 
 import { createSVGWindow } from '../main-module.js'
 import assert from 'assert'
-import { SVG, registerWindow } from '../../svg.js/dist/svg.node.js'
+import { SVG, registerWindow } from '@svgdotjs/svg.js'
 
 const window = createSVGWindow()
 const document = window.document

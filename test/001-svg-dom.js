@@ -356,9 +356,9 @@ describe('svg document', () => {
 
   wrappedIt('closest() should find ancestors', () => {
 
-    const rect1 = svgRoot.querySelector("#rect-1")
+    const rect1 = svgRoot.querySelector('#rect-1')
 
-    assert.strictEqual(rect1.closest("svg").localName, 'svg')
+    assert.strictEqual(rect1.closest('svg').localName, 'svg')
 
     assert.strictEqual(rect1.closest('g[id]').id, 'g-1', 'attribute selector')
 

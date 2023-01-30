@@ -3,7 +3,7 @@
 import assert from 'assert'
 import { SVGLength } from '../src/dom/svg/SVGLength.js'
 import { createSVGDocument } from '../main-module.js'
-import { SVGRectElement } from '../src/dom/svg/SVGRectElement.js'
+import { describe, it } from 'mocha'
 
 describe('SVGRectElement', function () {
   /** @type {SVGRectElement} */
@@ -15,10 +15,10 @@ describe('SVGRectElement', function () {
     const svgDoc = createSVGDocument()
     svgElement = svgDoc.documentElement
     svgElement.innerHTML = '<rect width="10" height="1in"/>'
-    rect = svgElement.children[0];
+    rect = svgElement.children[0]
   })
 
-  it('has animatedLength properties', function() {
+  it('has animatedLength properties', function () {
     assert.strictEqual(rect.width.baseVal.value, 10, 'width value')
     assert.strictEqual(rect.width.baseVal.unitType, SVGLength.SVG_LENGTHTYPE_NUMBER, 'width unit')
     assert.strictEqual(rect.height.baseVal.value, 96, 'height value')
