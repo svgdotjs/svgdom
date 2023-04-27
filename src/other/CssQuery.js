@@ -9,12 +9,12 @@ export class CssQuery {
       return
     }
 
-    var queries = splitNotInBrackets(query, ',')
+    let queries = splitNotInBrackets(query, ',')
 
     queries = queries.map(query => {
 
-      var roundBrackets = 0
-      var squareBrackets = 0
+      let roundBrackets = 0
+      let squareBrackets = 0
 
       // this is the same as above but easier
       query = query.replace(/[()[\]>~+]/g, function (ch) {
@@ -32,12 +32,12 @@ export class CssQuery {
       // split at space and remove empty results
       query = splitNotInBrackets(query, ' ').filter(el => !!el.length)
 
-      var pairs = []
+      const pairs = []
 
-      var relation = '%'
+      let relation = '%'
 
       // generate querynode relation tuples
-      for (var i = 0, il = query.length; i < il; ++i) {
+      for (let i = 0, il = query.length; i < il; ++i) {
 
         if ('>~+%'.indexOf(query[i]) > -1) {
           relation = query[i]
@@ -66,7 +66,7 @@ export class CssQuery {
   }
 
   matches (node, scope) {
-    for (var i = this.queries.length; i--;) {
+    for (let i = this.queries.length; i--;) {
       if (this.matchHelper(this.queries[i], node, scope)) {
         return true
       }
@@ -76,7 +76,7 @@ export class CssQuery {
 
   matchHelper (query, node, scope) {
     query = query.slice()
-    var last = query.pop()
+    const last = query.pop()
 
     if (!new CssQueryNode(last[1]).matches(node, scope)) { return false }
 
@@ -180,7 +180,7 @@ const pseudoMatcher = {
   scope: (a, n, s) => n === s
 }
 
-class CssQueryNode {
+export class CssQueryNode {
   constructor (node) {
     this.tag = ''
     this.id = ''
@@ -189,7 +189,7 @@ class CssQueryNode {
     this.pseudo = []
 
     // match the tag name
-    var matches = node.match(/^[\w-]+|^\*/)
+    let matches = node.match(/^[\w-]+|^\*/)
     if (matches) {
       this.tag = matches[0]
       node = node.slice(this.tag.length)
@@ -198,19 +198,6 @@ class CssQueryNode {
     // match pseudo classes
     while ((matches = /:([\w-]+)(?:\((.+)\))?/g.exec(node))) {
       this.pseudo.push(pseudoMatcher[matches[1]].bind(this, removeQuotes(matches[2] || '')))
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
-    }
-
-    // match the id
-    matches = node.match(/#([\w-]+)/)
-    if (matches) {
-      this.id = matches[1]
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
-    }
-
-    // match classes
-    while ((matches = /\.([\w-]+)/g.exec(node))) {
-      this.classList.push(matches[1])
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
 
@@ -228,10 +215,23 @@ class CssQueryNode {
       })
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
+
+    // match the id
+    matches = node.match(/#([\w-]+)/)
+    if (matches) {
+      this.id = matches[1]
+      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
+    }
+
+    // match classes
+    while ((matches = /\.([\w-]+)/g.exec(node))) {
+      this.classList.push(matches[1])
+      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
+    }
   }
 
   matches (node, scope) {
-    var i
+    let i
 
     if (node.nodeType !== 1) return false
 
@@ -246,13 +246,13 @@ class CssQueryNode {
       return false
     }
 
-    var classList = (node.getAttribute('class') || '').split(regex.delimiter).filter(el => !!el.length)
+    const classList = (node.getAttribute('class') || '').split(regex.delimiter).filter(el => !!el.length)
     if (this.classList.filter(className => classList.indexOf(className) < 0).length) {
       return false
     }
 
     for (i = this.attrs.length; i--;) {
-      var attrValue = this.attrs[i].getValue(node)
+      const attrValue = this.attrs[i].getValue(node)
       if (attrValue === null || !this.attrs[i].matcher(attrValue)) {
         return false
       }
