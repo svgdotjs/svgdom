@@ -123,6 +123,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
     - `not`
     - `matches`
     - `scope`
+- special chars in attribute values: `#` and `.` are allowed but things like `:` or `[]` will break the selector
 
 ## Using svgdom in your own projects
 
