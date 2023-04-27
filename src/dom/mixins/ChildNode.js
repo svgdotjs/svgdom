@@ -3,22 +3,22 @@ import { nodesToNode } from '../../utils/nodesToNode.js'
 // https://dom.spec.whatwg.org/#interface-childnode
 // Todo: check if this is contained in nodes or siblings are contained (viablePreviousSibling, viableNextSibling)
 export const ChildNode = {
-  before (nodes) {
+  before (...nodes) {
     if (!this.parentNode) return
     const node = nodesToNode(nodes, this.ownerDocument)
-    this.parent.insertBefore(node, this)
+    this.parentNode.insertBefore(node, this)
   },
-  after (nodes) {
+  after (...nodes) {
     if (!this.parentNode) return
     const node = nodesToNode(nodes, this.ownerDocument)
-    this.parent.insertBefore(node, this.nextSibling)
+    this.parentNode.insertBefore(node, this.nextSibling)
   },
-  replaceWith (nodes) {
+  replaceWith (...nodes) {
     if (!this.parentNode) return
     const next = this.nextSibling
-    this.delete()
-    const node = nodesToNode(nodes)
-    this.parent.insertBefore(node, next)
+    const node = nodesToNode(nodes, this.ownerDocument)
+    this.parentNode.insertBefore(node, next)
+    this.remove()
   },
   remove () {
     if (!this.parentNode) return
