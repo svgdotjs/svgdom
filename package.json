@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/svgdotjs/svgdom#readme",
   "dependencies": {
-    "fontkit": "^1.8.1",
+    "fontkit": "^2.0.2",
     "image-size": "^1.0.2",
     "sax": "^1.2.4"
   },
