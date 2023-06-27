@@ -1,5 +1,5 @@
 import path from 'path'
-import fontkit from 'fontkit'
+import * as fontkit from 'fontkit'
 import * as defaults from './defaults.js'
 import { Box, NoBox } from '../other/Box.js'
 import { getConfig, getFonts } from '../config.js'
