@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import * as fontkit from 'fontkit'
 import * as defaults from './defaults.js'
 import { Box, NoBox } from '../other/Box.js'
@@ -11,14 +11,14 @@ export const textBBox = function (text, x, y, details) {
   const config = getConfig()
   const preloaded = getFonts()
 
-  var families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
-  var fontMap = Object.assign({}, defaults.fontFamilyMappings, config.fontFamilyMappings)
-  var fontSize = details.fontSize || defaults.fontSize
-  var fontDir = config.fontDir || defaults.fontDir
-  var fontFamily
-  var font
+  const families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
+  const fontMap = Object.assign({}, defaults.fontFamilyMappings, config.fontFamilyMappings)
+  const fontSize = details.fontSize || defaults.fontSize
+  const fontDir = config.fontDir || defaults.fontDir
+  let fontFamily
+  let font
 
-  for (var i = 0, il = families.length; i < il; ++i) {
+  for (let i = 0, il = families.length; i < il; ++i) {
     if (fontMap[families[i]]) {
       fontFamily = families[i]
       break
@@ -43,14 +43,14 @@ export const textBBox = function (text, x, y, details) {
     preloaded[fontFamily] = font
   }
 
-  var fontHeight = font.ascent - font.descent
-  var lineHeight = fontHeight > font.unitsPerEm ? fontHeight : fontHeight + font.lineGap
+  const fontHeight = font.ascent - font.descent
+  const lineHeight = fontHeight > font.unitsPerEm ? fontHeight : fontHeight + font.lineGap
 
-  var height = lineHeight / font.unitsPerEm * fontSize
-  var width = font.layout(text).glyphs.reduce((last, curr) => last + curr.advanceWidth, 0) / font.unitsPerEm * fontSize
+  const height = lineHeight / font.unitsPerEm * fontSize
+  const width = font.layout(text).glyphs.reduce((last, curr) => last + curr.advanceWidth, 0) / font.unitsPerEm * fontSize
 
   // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/text-anchor
-  var xAdjust = 0
+  let xAdjust = 0
   if (details.textAnchor === 'end') {
     xAdjust = -width
   } else if (details.textAnchor === 'middle') {
@@ -59,7 +59,7 @@ export const textBBox = function (text, x, y, details) {
 
   // https://www.w3.org/TR/2002/WD-css3-linebox-20020515/
   // 4.2. Baseline identifiers
-  var yAdjust = font.ascent // alphabetic
+  let yAdjust = font.ascent // alphabetic
   if (details.dominantBaseline === 'before-edge' || details.dominantBaseline === 'text-before-edge') {
     yAdjust = 0
   } else if (details.dominantBaseline === 'hanging') {

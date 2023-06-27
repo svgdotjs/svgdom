@@ -64,15 +64,15 @@ export class Window extends EventTarget {
 
 let lastTime = 0
 const requestAnimationFrame = callback => {
-  const now = new global.Date().getTime()
+  const now = new globalThis.Date().getTime()
   const timeToCall = Math.max(0, 16 - (now - lastTime))
-  return global.setTimeout(() => {
+  return globalThis.setTimeout(() => {
     lastTime = now + timeToCall
     callback(lastTime)
   }, timeToCall)
 }
 
-const nowOffset = global.Date.now()
+const nowOffset = globalThis.Date.now()
 const performance = {
   now: () => Date.now() - nowOffset
 }
@@ -100,13 +100,13 @@ const winProps = {
   SVGPathElement,
   SVGGraphicsElement,
   SVGTextContentElement,
-  setTimeout: global.setTimeout,
-  clearTimeout: global.clearTimeout,
+  setTimeout: globalThis.setTimeout,
+  clearTimeout: globalThis.clearTimeout,
   pageXOffset: 0,
   pageYOffset: 0,
-  Date: global.Date,
+  Date: globalThis.Date,
   requestAnimationFrame,
-  cancelAnimationFrame: global.clearTimeout,
+  cancelAnimationFrame: globalThis.clearTimeout,
   performance
 }
 
