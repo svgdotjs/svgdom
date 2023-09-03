@@ -72,6 +72,12 @@ const getStyleProxy = (node) => {
         }
       }
 
+      if (key === 'getPropetyValue') {
+        return function (propertyName) {
+          return node.style[propertyName] ?? ''
+        }
+      }
+
       key = decamelize(key)
       if (!styleMap.has(key)) return ''
 
@@ -272,7 +278,7 @@ export class Element extends Node {
   }
 
   set outerHTML (str) {
-    var well = new DocumentFragment()
+    const well = new DocumentFragment()
     HTMLParser(str, well)
     this.parentNode.insertBefore(well, this)
     this.parentNode.removeChild(this)
