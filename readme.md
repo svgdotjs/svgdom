@@ -4,43 +4,21 @@
 
 While this dom implementation was designed to run svg.js on node, it now is much more feature complete and can be used by anyone needing an xml, svg or html dom.
 
-## Get started with svg.js v2.x (x>5)
-
-```
-npm install svg.js svgdom
-```
-
-```js
-// returns a window with a document and an svg root node
-const { createSVGWindow } = require('svgdom')
-const window = createSVGWindow()
-const SVG = require('svg.js')(window)
-const document = window.document
-
-// create svg.js instance
-const canvas = SVG(document.documentElement)
-
-// use svg.js as normal
-canvas.rect(100, 100).fill('yellow').move(50,50)
-
-// get your svg as string
-console.log(canvas.svg())
-// or
-console.log(canvas.node.outerHTML)
-```
-
 ## Get started with svg.js v3.x
+
+*for older versions of svg.js checkout older versions of svgdom*
 
 ```
 npm install @svgdotjs/svg.js svgdom
 ```
 
 ```js
+import { createSVGWindow } from 'svgdom'
+import { SVG, registerWindow } from '@svgdotjs/svg.js'
+
 // returns a window with a document and an svg root node
-const { createSVGWindow } = require('svgdom')
 const window = createSVGWindow()
 const document = window.document
-const { SVG, registerWindow } = require('@svgdotjs/svg.js')
 
 // register window and document
 registerWindow(window, document)
@@ -61,21 +39,26 @@ console.log(canvas.node.outerHTML)
 
 ```js
 // create HTML window with a document and an html root node
-const { createHTMLWindow } = require('svgdom')
+import { createHTMLWindow } from 'svgdom'
 const window = createHTMLWindow()
 
 // create XML window with a document and a given xml root node
-const { createWindow } = require('svgdom')
+import { createWindow } from 'svgdom'
 const window = createWindow(namespaceURI, rootNode)
 // e.g. createWindow('http://www.w3.org/1998/Math/MathML', 'math')
 ```
 
-## Use svgdom as esm module
+## Use svgdom as cjs module
 
-svgdom is used best as esm module. So in case you already did the step to esm modules on node, you can just go ahead and import svgdom:
+svgdom is used best as esm module. However, if you still require cjs, you have to import the module via the async import function: 
 
 ```js
-import { createSVGWindow } from 'svgdom'
+
+```js
+const main = async () => {
+    const { createSVGWindow } = await import('svgdom')
+}
+main()
 ```
 
 ## Fonts
@@ -84,7 +67,7 @@ In order to calculate bounding boxes for text the font needs to be loaded first.
 The following options must be set in order to load your own fonts:
 
 ```js
-const { config } = require('svgdom')
+import { config } from 'svgdom'
 config.
     // your font directory
     .setFontDir('./fonts')

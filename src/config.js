@@ -1,7 +1,7 @@
 import path from 'path'
-import * as fontkit from 'fontkit'
+import { openSync } from 'fontkit'
 
-const _config = {}
+const _config = { fontFamilyMappings: {} }
 const fonts = {}
 
 export const setFontDir = function (dir) {
@@ -16,13 +16,13 @@ export const setFontFamilyMappings = function (map) {
 
 // TODO: make async
 export const preloadFonts = () => {
-  var map = _config.fontFamilyMappings
+  const map = _config.fontFamilyMappings
 
   for (const [ font, file ] of Object.entries(map)) {
     const filename = path.join(_config.fontDir, file)
 
     try {
-      fonts[font] = fontkit.openSync(filename)
+      fonts[font] = openSync(filename)
     } catch (e) {
       console.warn(`Could not load font file for ${font}`, e)
     }

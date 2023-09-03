@@ -72,7 +72,7 @@ const getStyleProxy = (node) => {
         }
       }
 
-      if (key === 'getPropetyValue') {
+      if (key === 'getPropertyValue') {
         return function (propertyName) {
           return node.style[propertyName] ?? ''
         }

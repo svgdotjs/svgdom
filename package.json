@@ -1,11 +1,11 @@
 {
   "name": "svgdom",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Straightforward DOM implementation for SVG, HTML and XML",
-  "main": "./main-require.cjs",
+  "main": "./main-module.js",
   "exports": {
     "import": "./main-module.js",
-    "require": "./main-require.cjs"
+    "require": "./main-module.js"
   },
   "type": "module",
   "scripts": {
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@svgdotjs/svg.js": "^3.2.0",
+    "@types/fontkit": "^2.0.3",
     "acorn": "^8.8.2",
     "circular-dependency-plugin": "^5.2.2",
     "eslint": "^8.33.0",
