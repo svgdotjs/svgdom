@@ -53,8 +53,6 @@ const window = createWindow(namespaceURI, rootNode)
 svgdom is used best as esm module. However, if you still require cjs, you have to import the module via the async import function: 
 
 ```js
-
-```js
 const main = async () => {
     const { createSVGWindow } = await import('svgdom')
 }
