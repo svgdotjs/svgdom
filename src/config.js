@@ -1,5 +1,5 @@
 import path from 'path'
-import { openSync } from 'fontkit'
+import * as fontkit from 'fontkit'
 
 const _config = { fontFamilyMappings: {} }
 const fonts = {}
@@ -22,7 +22,7 @@ export const preloadFonts = () => {
     const filename = path.join(_config.fontDir, file)
 
     try {
-      fonts[font] = openSync(filename)
+      fonts[font] = fontkit.openSync(filename)
     } catch (e) {
       console.warn(`Could not load font file for ${font}`, e)
     }
