@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Straightforward DOM implementation for SVG, HTML and XML",
   "main": "./main-module.js",
   "exports": {
@@ -11,8 +11,7 @@
   "scripts": {
     "test": "mocha",
     "fix": "npx eslint ./ --fix",
-    "lint": "npx eslint ./",
-    "build": "npx webpack --config webpack.config.cjs"
+    "lint": "npx eslint ./"
   },
   "repository": {
     "type": "git",

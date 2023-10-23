@@ -96,6 +96,8 @@ function isBeziere (obj) {
 
 export const pathParser = (array) => {
 
+  if (!array) return []
+
   // prepare for parsing
   const paramCnt = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 }
 
