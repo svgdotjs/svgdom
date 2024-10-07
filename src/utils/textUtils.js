@@ -13,7 +13,7 @@ export const textBBox = function (text, x, y, details) {
 
   const families = (details.fontFamily || defaults.fontFamily).split(/\s*,\s*/)
   const fontMap = Object.assign({}, defaults.fontFamilyMappings, config.fontFamilyMappings)
-  const fontSize = details.fontSize || defaults.fontSize
+  const fontSize = Number(`${details.fontSize}`.replace(/\D/g, '') || defaults.fontSize);
   const fontDir = config.fontDir || defaults.fontDir
   let fontFamily
   let font
