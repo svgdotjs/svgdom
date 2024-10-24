@@ -59,6 +59,23 @@ const main = async () => {
 main()
 ```
 
+If you need more than one instance for independent SVG objects, you can also use newly created `<svg>` elements.
+
+```js
+// returns a window with a document and an svg root node
+const window   = require('svgdom')
+const SVG      = require('svg.js')(window)
+const document = window.document
+
+// create svg.js instances
+const drawA = SVG(document.createElement('svg'))
+const drawB = SVG(document.createElement('svg'))
+const drawC = SVG(document.createElement('svg'))
+
+// drawA, drawB and drawC are independent svg.js instances you can use as normal
+// ...
+```
+
 ## Fonts
 
 In order to calculate bounding boxes for text the font needs to be loaded first. `svgdom` loads `Open Sans-Regular` by default when no font file for the specified font was found.
