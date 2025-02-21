@@ -252,7 +252,7 @@ export class Element extends Node {
   }
 
   set id (id) {
-    return this.setAttribute('id', id)
+    this.setAttribute('id', id)
   }
 
   get innerHTML () {

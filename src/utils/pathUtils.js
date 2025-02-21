@@ -57,7 +57,7 @@ const pathHandlers = {
     // FIXME: The behavior of Z depends on the command before
     return pathHandlers.L([ p0.x, p0.y ], p)
   },
-  A (c, p, r) {
+  A (c, p, _r) {
     const ret = new Arc(p, new Point(c[5], c[6]), c[0], c[1], c[2], c[3], c[4])
     p.x = c[5]
     p.y = c[6]

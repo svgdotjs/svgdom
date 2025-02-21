@@ -24,7 +24,7 @@ export const HTMLParser = function (str, el) {
     throw e
   }
 
-  parser.ondoctype = (str) => {
+  parser.ondoctype = () => {
     if (currentTag !== document) {
       throw new Error('Doctype can only be appended to document')
     }
@@ -48,7 +48,7 @@ export const HTMLParser = function (str, el) {
 
     const uri = node.uri || currentTag.lookupNamespaceURI(node.prefix || null)
 
-    var newElement = document.createElementNS(uri, node.name)
+    const newElement = document.createElementNS(uri, node.name)
 
     for (const [ name, node ] of Object.entries(attrs)) {
       newElement.setAttributeNS(node.uri, name, node.value)
