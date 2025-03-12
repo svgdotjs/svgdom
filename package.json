@@ -5,7 +5,7 @@
   "main": "./main-module.js",
   "exports": {
     "import": "./main-module.js",
-    "require": "./main-module.js"
+    "require": "./dist/main-require.cjs"
   },
   "type": "module",
   "scripts": {
