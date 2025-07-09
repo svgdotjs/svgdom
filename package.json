@@ -1,6 +1,6 @@
 {
   "name": "svgdom",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Straightforward DOM implementation for SVG, HTML and XML",
   "main": "./main-module.js",
   "exports": {
