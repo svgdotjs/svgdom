@@ -72,6 +72,15 @@ const getStyleProxy = (node) => {
         }
       }
 
+      if (key === 'removeProperty') {
+        return function (propertyName) {
+          const styles = node.getAttribute('style') || ''
+          const styleMap = cssToMap(styles)
+          styleMap.delete(decamelize(propertyName))
+          node.setAttribute('style', mapToCss(styleMap))
+        }
+      }
+
       if (key === 'getPropertyValue') {
         return function (propertyName) {
           return node.style[propertyName] ?? ''
