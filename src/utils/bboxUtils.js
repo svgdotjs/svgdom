@@ -5,6 +5,14 @@ import { NoBox } from '../other/Box.js'
 import { NodeIterator } from './NodeIterator.js'
 import { NodeFilter } from '../dom/NodeFilter.js'
 
+// Parse CSS length value, converting em units to pixels
+const parseLength = (value, fontSize) => {
+  const num = parseFloat(value)
+  if (isNaN(num)) return NaN
+  if (/em$/i.test(value)) return num * fontSize
+  return num
+}
+
 const applyTransformation = (segments, node, applyTransformations) => {
   if (node.matrixify && applyTransformations) {
     return segments.transform(node.matrixify())
@@ -142,14 +150,16 @@ const isNotEmptyBox = box => box.x !== 0 || box.y !== 0 || box.width !== 0 || bo
 // TODO: Break this into two functions?
 const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
   if (node.nodeType === node.ELEMENT_NODE) {
-    const x = parseFloat(node.getAttribute('x'))
-    const y = parseFloat(node.getAttribute('y'))
+    const fontSize = parseFloat(getFontDetails(node).fontSize) || 16
+
+    const x = parseLength(node.getAttribute('x'), fontSize)
+    const y = parseLength(node.getAttribute('y'), fontSize)
 
     pos.x = isNaN(x) ? pos.x : x
     pos.y = isNaN(y) ? pos.y : y
 
-    const dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
-    const dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
+    const dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(v => parseLength(v, fontSize))
+    const dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(v => parseLength(v, fontSize))
 
     // TODO: eventually replace only as much values as we have text chars (node.textContent.length) because we could end up adding to much
     // replace initial values with node values if present
@@ -166,12 +176,12 @@ const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
     // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
     if (dy.length || dx.length) {
       for (;j < jl; j++) {
-        // Calculate a box for a single letter
-        boxes.push(textUtils.textBBox(data.substr(j, 1), pos.x, pos.y, details))
-
-        // Add the next position to current one
+        // Apply dx/dy shift before calculating bbox (per SVG spec, dx/dy apply to current glyph)
         pos.x += dx.shift() || 0
         pos.y += dy.shift() || 0
+
+        // Calculate a box for a single letter
+        boxes.push(textUtils.textBBox(data.substr(j, 1), pos.x, pos.y, details))
 
         if (!dy.length && !dx.length) break
       }

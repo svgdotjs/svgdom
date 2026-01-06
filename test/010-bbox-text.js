@@ -17,4 +17,37 @@ describe('bbox-text', () => {
       assert(!isNaN(bboxText[property]));
     })
   })
+
+  it("converts em units in dy attribute", () => {
+    const svgDoc = createSVGWindow().document
+    const text = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text')
+    text.style.fontSize = '16px'
+    const tspan = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
+    tspan.setAttribute('dy', '1em')
+    tspan.textContent = 'x'
+    text.appendChild(tspan)
+    svgDoc.documentElement.appendChild(text)
+
+    // dy=1em at 16px should shift by 16px, not 1px
+    assert(text.getBBox().y > -5)
+  })
+
+  it("applies dy before calculating bbox", () => {
+    const svgDoc = createSVGWindow().document
+    const text = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text')
+    text.style.fontSize = '16px'
+    text.setAttribute('y', '20')
+    text.textContent = 'x'
+    svgDoc.documentElement.appendChild(text)
+
+    const text2 = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text')
+    text2.style.fontSize = '16px'
+    const tspan = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
+    tspan.setAttribute('dy', '20')
+    tspan.textContent = 'x'
+    text2.appendChild(tspan)
+    svgDoc.documentElement.appendChild(text2)
+
+    assert(Math.abs(text.getBBox().y - text2.getBBox().y) < 1)
+  })
 })
