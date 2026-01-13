@@ -5,14 +5,6 @@ import { NoBox } from '../other/Box.js'
 import { NodeIterator } from './NodeIterator.js'
 import { NodeFilter } from '../dom/NodeFilter.js'
 
-// Parse CSS length value, converting em units to pixels
-const parseLength = (value, fontSize) => {
-  const num = parseFloat(value)
-  if (isNaN(num)) return NaN
-  if (/em$/i.test(value)) return num * fontSize
-  return num
-}
-
 const applyTransformation = (segments, node, applyTransformations) => {
   if (node.matrixify && applyTransformations) {
     return segments.transform(node.matrixify())
@@ -150,16 +142,15 @@ const isNotEmptyBox = box => box.x !== 0 || box.y !== 0 || box.width !== 0 || bo
 // TODO: Break this into two functions?
 const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
   if (node.nodeType === node.ELEMENT_NODE) {
-    const fontSize = parseFloat(getFontDetails(node).fontSize) || 16
 
-    const x = parseLength(node.getAttribute('x'), fontSize)
-    const y = parseLength(node.getAttribute('y'), fontSize)
+    const x = parseFloat(node.getAttribute('x'))
+    const y = parseFloat(node.getAttribute('y'))
 
     pos.x = isNaN(x) ? pos.x : x
     pos.y = isNaN(y) ? pos.y : y
 
-    const dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(v => parseLength(v, fontSize))
-    const dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(v => parseLength(v, fontSize))
+    const dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
+    const dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
 
     // TODO: eventually replace only as much values as we have text chars (node.textContent.length) because we could end up adding to much
     // replace initial values with node values if present
