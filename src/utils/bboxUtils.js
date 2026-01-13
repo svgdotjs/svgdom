@@ -176,7 +176,7 @@ const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
     // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
     if (dy.length || dx.length) {
       for (;j < jl; j++) {
-        // Apply dx/dy shift before calculating bbox (per SVG spec, dx/dy apply to current glyph)
+        // Apply dx/dy shift before calculating bbox (https://svgwg.org/svg2-draft/text.html#TextElementDXAttribute)
         pos.x += dx.shift() || 0
         pos.y += dy.shift() || 0
 
