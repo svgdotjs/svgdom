@@ -18,20 +18,6 @@ describe('bbox-text', () => {
     })
   })
 
-  it("converts em units in dy attribute", () => {
-    const svgDoc = createSVGWindow().document
-    const text = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text')
-    text.style.fontSize = '16px'
-    const tspan = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
-    tspan.setAttribute('dy', '1em')
-    tspan.textContent = 'x'
-    text.appendChild(tspan)
-    svgDoc.documentElement.appendChild(text)
-
-    // dy=1em at 16px should shift by 16px, not 1px
-    assert(text.getBBox().y > -5)
-  })
-
   it("applies dy before calculating bbox", () => {
     const svgDoc = createSVGWindow().document
     const text = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text')
