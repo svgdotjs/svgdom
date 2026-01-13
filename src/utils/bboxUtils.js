@@ -142,7 +142,6 @@ const isNotEmptyBox = box => box.x !== 0 || box.y !== 0 || box.width !== 0 || bo
 // TODO: Break this into two functions?
 const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
   if (node.nodeType === node.ELEMENT_NODE) {
-
     const x = parseFloat(node.getAttribute('x'))
     const y = parseFloat(node.getAttribute('y'))
 
