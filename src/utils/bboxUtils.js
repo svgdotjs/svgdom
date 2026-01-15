@@ -166,12 +166,12 @@ const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
     // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
     if (dy.length || dx.length) {
       for (;j < jl; j++) {
-        // Calculate a box for a single letter
-        boxes.push(textUtils.textBBox(data.substr(j, 1), pos.x, pos.y, details))
-
-        // Add the next position to current one
+        // Apply dx/dy shift before calculating bbox (https://svgwg.org/svg2-draft/text.html#TextElementDXAttribute)
         pos.x += dx.shift() || 0
         pos.y += dy.shift() || 0
+
+        // Calculate a box for a single letter
+        boxes.push(textUtils.textBBox(data.substr(j, 1), pos.x, pos.y, details))
 
         if (!dy.length && !dx.length) break
       }
