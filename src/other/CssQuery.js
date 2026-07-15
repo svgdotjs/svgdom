@@ -2,6 +2,8 @@ import { removeQuotes } from '../utils/strUtils.js'
 import * as regex from '../utils/regex.js'
 import { html } from '../utils/namespaces.js'
 
+class InvalidSelectorError extends Error {}
+
 export class CssQuery {
   constructor (query) {
     if (CssQuery.cache.has(query)) {
@@ -43,7 +45,8 @@ export class CssQuery {
     if (last[0] === ',') return true
 
     if (last[0] === '+') {
-      return !!node.previousSibling && this.matchHelper(query, node.previousSibling, scope)
+      node = node.previousElementSibling
+      return !!node && this.matchHelper(query, node, scope)
     }
 
     if (last[0] === '>') {
@@ -116,6 +119,26 @@ const sameType = (a, b) =>
 
 const siblingsOfType = node =>
   elementSiblings(node).filter(sibling => sameType(sibling, node))
+
+const parseNthArgument = value => {
+  const match = value.match(/^([\s\S]*?)[ \n\r\t\f]+of[ \n\r\t\f]+([\s\S]+)$/i)
+  return match
+    ? { value: match[1], selector: match[2] }
+    : { value, selector: null }
+}
+
+const nthChild = (argument, node, scope, fromEnd = false) => {
+  const parsed = parseNthArgument(argument)
+  let siblings = elementSiblings(node)
+
+  if (parsed.selector) {
+    const query = new CssQuery(parsed.selector)
+    siblings = siblings.filter(sibling => query.matches(sibling, scope))
+  }
+
+  if (fromEnd) siblings.reverse()
+  return nth(node, siblings, parsed.value)
+}
 
 const lower = a => a.toLowerCase()
 
@@ -291,6 +314,90 @@ const findIdSelector = selector => {
   return null
 }
 
+const extractPseudos = selector => {
+  const pseudos = []
+  let remainder = ''
+  let squareBrackets = 0
+  let quote = ''
+
+  for (let index = 0; index < selector.length; index++) {
+    const character = selector[index]
+
+    if (character === '\\') {
+      const end = escapeSequenceEnd(selector, index)
+      remainder += selector.slice(index, end)
+      index = end - 1
+      continue
+    }
+
+    if (quote) {
+      remainder += character
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+      remainder += character
+      continue
+    }
+
+    if (character === '[') squareBrackets++
+    else if (character === ']') squareBrackets--
+
+    if (character !== ':' || squareBrackets) {
+      remainder += character
+      continue
+    }
+
+    const name = selector.slice(index + 1).match(/^[\w-]+/)
+    if (!name) {
+      remainder += character
+      continue
+    }
+
+    let end = index + name[0].length + 1
+    let argument = ''
+
+    if (selector[end] === '(') {
+      const argumentStart = ++end
+      let depth = 1
+      let argumentQuote = ''
+
+      for (; end < selector.length; end++) {
+        const argumentCharacter = selector[end]
+
+        if (argumentCharacter === '\\') {
+          end = escapeSequenceEnd(selector, end) - 1
+          continue
+        }
+
+        if (argumentQuote) {
+          if (argumentCharacter === argumentQuote) argumentQuote = ''
+          continue
+        }
+
+        if (argumentCharacter === '"' || argumentCharacter === "'") {
+          argumentQuote = argumentCharacter
+        } else if (argumentCharacter === '(') {
+          depth++
+        } else if (argumentCharacter === ')' && --depth === 0) {
+          break
+        }
+      }
+
+      if (depth) throw new InvalidSelectorError(`Unclosed pseudo-class :${name[0]}()`)
+      argument = selector.slice(argumentStart, end)
+      end++
+    }
+
+    pseudos.push({ name: name[0].toLowerCase(), argument })
+    index = end - 1
+  }
+
+  return { pseudos, remainder }
+}
+
 // [i] (prebound) is true if insensitive matching is required
 // [a] (prebound) is the value the attr is compared to
 // [b] (passed)   is the value of the attribute
@@ -311,14 +418,62 @@ const getAttributeValue = (prefix, name, node) => {
   return node.getAttribute(prefix + ':' + name)
 }
 
+const isEmpty = node => !node.childNodes.some(child => {
+  if (child.nodeType === 1) return true
+  if (child.nodeType !== 3 && child.nodeType !== 4) return false
+  return /[^ \n\r\t\f]/.test(child.data || '')
+})
+
+const matchesRelativeSelector = (selector, node) => {
+  const queries = tokenizeSelector(selector)
+  if (queries.some(pairs => !pairs.length)) {
+    console.warn('Invalid relative selector list in :has()')
+    return false
+  }
+
+  const query = Object.create(CssQuery.prototype)
+  query.queries = queries.map(pairs => [
+    [ '%', ':scope' ],
+    ...pairs
+  ])
+
+  const nodes = [ node.getRootNode() ]
+  while (nodes.length) {
+    const candidate = nodes.pop()
+    if (candidate.nodeType === 1 && query.matches(candidate, node)) return true
+    nodes.push(...candidate.childNodes)
+  }
+
+  return false
+}
+
+const matchesForgivingSelectorList = (selector, node, scope) => {
+  let matches = false
+
+  for (const pairs of tokenizeSelector(selector)) {
+    if (!pairs.length) continue
+
+    const query = Object.create(CssQuery.prototype)
+    query.queries = [ pairs ]
+
+    try {
+      if (query.matches(node, scope)) matches = true
+    } catch (error) {
+      if (!(error instanceof InvalidSelectorError)) throw error
+    }
+  }
+
+  return matches
+}
+
 // [a] (prebound) [a]rgument of the pseudo selector
 // [n] (passed)   [n]ode
 // [s] (passed)   [s]cope - the element this query is scoped to
 const pseudoMatcher = {
   'first-child': (a, n) => elementSiblings(n)[0] === n,
   'last-child': (a, n) => elementSiblings(n).pop() === n,
-  'nth-child': (a, n) => nth(n, elementSiblings(n), a),
-  'nth-last-child': (a, n) => nth(n, elementSiblings(n).reverse(), a),
+  'nth-child': (a, n, s) => nthChild(a, n, s),
+  'nth-last-child': (a, n, s) => nthChild(a, n, s, true),
   'first-of-type': (a, n) => siblingsOfType(n)[0] === n,
   'last-of-type': (a, n) => siblingsOfType(n).pop() === n,
   'nth-of-type': (a, n) => nth(n, siblingsOfType(n), a),
@@ -331,8 +486,12 @@ const pseudoMatcher = {
     const siblings = siblingsOfType(n)
     return siblings.length === 1 && siblings[0] === n
   },
+  empty: (a, n) => isEmpty(n),
   root: (a, n) => n.ownerDocument.documentElement === n,
   not: (a, n, s) => !(new CssQuery(a)).matches(n, s),
+  is: (a, n, s) => matchesForgivingSelectorList(a, n, s),
+  where: (a, n, s) => matchesForgivingSelectorList(a, n, s),
+  has: (a, n) => matchesRelativeSelector(a, n),
   matches: (a, n, s) => (new CssQuery(a)).matches(n, s),
   scope: (a, n, s) => n === s
 }
@@ -359,10 +518,17 @@ export class CssQueryNode {
     }
 
     // match pseudo classes
-    while ((matches = /:([\w-]+)(?:\((.+)\))?/g.exec(node))) {
-      this.pseudo.push(pseudoMatcher[matches[1]].bind(this, removeQuotes(matches[2] || '')))
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
+    const parsedPseudos = extractPseudos(node)
+    for (const pseudo of parsedPseudos.pseudos) {
+      const matcher = pseudoMatcher[pseudo.name]
+      if (!matcher) {
+        console.warn(`Unsupported pseudo-class :${pseudo.name}`)
+        this.pseudo.push(() => false)
+        continue
+      }
+      this.pseudo.push(matcher.bind(this, pseudo.argument))
     }
+    node = parsedPseudos.remainder
 
     // match attributes
     while ((matches = /\[([\w-*]+\|)?([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(node))) {
@@ -384,6 +550,8 @@ export class CssQueryNode {
       this.classList.push(matches[1])
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
+
+    if (node) throw new InvalidSelectorError(`Invalid selector: ${node}`)
   }
 
   matches (node, scope) {

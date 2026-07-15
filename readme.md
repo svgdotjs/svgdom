@@ -90,6 +90,7 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
     setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
     ```
 - `querySelector` only supports the following pseudo classes:
+    - `empty`
     - `first-child`
     - `last-child`
     - `nth-child`
@@ -100,11 +101,15 @@ Almost all functions of svg.js work properly with svgdom. However there are a fe
     - `nth-last-of-type`
     - `only-child`
     - `only-of-type`
+    - `has`
+    - `is`
     - `root`
     - `not`
     - `matches`
     - `scope`
-- special chars in attribute values: `#` and `.` are allowed but things like `:` or `[]` will break the selector
+    - `where`
+  The `nth-child` and `nth-last-child` pseudo classes also support the `of <selector>` syntax.
+- attribute values containing `]` are not currently parsed correctly in selectors, even when quoted
 
 ## Using svgdom in your own projects
 

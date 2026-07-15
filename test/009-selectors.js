@@ -157,6 +157,134 @@ describe('CssQuery - Single Selector', function () {
     assert.ok(new CssQuery(':only-of-type').matches(child))
     assert.ok(new CssQuery(':nth-of-type(1)').matches(child))
   })
+
+  it('matches :is(), :where(), and nested functional pseudo-classes', function () {
+    const parent = document.createElement('div')
+    const first = document.createElement('span')
+    const second = document.createElement('span')
+
+    first.setAttribute('class', 'first')
+    second.setAttribute('class', 'second')
+    parent.appendChild(first)
+    parent.appendChild(second)
+
+    assert.ok(new CssQuery(':is(div, span.first)').matches(first))
+    assert.ok(new CssQuery(':where(.first, .second)').matches(second))
+    assert.ok(new CssQuery('span:is(.first, .second):not(.second):first-child').matches(first))
+    assert.ok(new CssQuery(':not(:is(.first, .second))').matches(parent))
+    assert.ok(!new CssQuery(':not(:is(.first, .second))').matches(first))
+  })
+
+  it('ignores invalid branches in :is() and :where()', function () {
+    const element = document.createElement('div')
+    element.setAttribute('class', 'match')
+    const warnings = []
+    const warn = console.warn
+
+    console.warn = warning => warnings.push(warning)
+    try {
+      assert.ok(!new CssQuery(':unsupported').matches(element))
+      assert.ok(new CssQuery(':is(.match, :unsupported)').matches(element))
+      assert.ok(new CssQuery(':is(:unsupported, .match)').matches(element))
+      assert.ok(new CssQuery(':where(.match, ???)').matches(element))
+      assert.ok(!new CssQuery(':is(.missing, ???)').matches(element))
+    } finally {
+      console.warn = warn
+    }
+
+    assert.ok(warnings.includes('Unsupported pseudo-class :unsupported'))
+  })
+
+  it('matches :empty without counting comments or document whitespace', function () {
+    const empty = document.createElement('div')
+    const whitespace = document.createElement('div')
+    const comment = document.createElement('div')
+    const text = document.createElement('div')
+    const child = document.createElement('div')
+
+    whitespace.appendChild(document.createTextNode(' \n\t'))
+    comment.appendChild(document.createComment('ignored'))
+    text.appendChild(document.createTextNode('content'))
+    child.appendChild(document.createElement('span'))
+
+    assert.ok(new CssQuery(':empty').matches(empty))
+    assert.ok(new CssQuery(':empty').matches(whitespace))
+    assert.ok(new CssQuery(':empty').matches(comment))
+    assert.ok(!new CssQuery(':empty').matches(text))
+    assert.ok(!new CssQuery(':empty').matches(child))
+  })
+
+  it('matches relative selectors with :has()', function () {
+    const section = document.createElement('section')
+    const image = document.createElement('img')
+    const wrapper = document.createElement('div')
+    const rect = document.createElement('rect')
+
+    wrapper.appendChild(rect)
+    section.appendChild(image)
+    section.appendChild(wrapper)
+
+    assert.ok(new CssQuery(':has(> img)').matches(section))
+    assert.ok(new CssQuery(':has(rect)').matches(section))
+    assert.ok(new CssQuery(':has(> p, > img)').matches(section))
+    assert.ok(new CssQuery(':has(> :is(img, rect))').matches(section))
+    assert.ok(new CssQuery(':not(:has(> rect)):has(:is(img, rect))').matches(section))
+    assert.ok(!new CssQuery(':has(> rect)').matches(section))
+  })
+
+  it('fails empty :has() selectors without throwing', function () {
+    const section = document.createElement('section')
+    const child = document.createElement('div')
+    const nested = document.createElement('span')
+    child.appendChild(nested)
+    section.appendChild(child)
+    const warnings = []
+    const warn = console.warn
+
+    console.warn = warning => warnings.push(warning)
+    try {
+      assert.ok(!new CssQuery(':has()').matches(section))
+      assert.ok(!new CssQuery(':has( )').matches(section))
+      assert.ok(!new CssQuery(':has(.missing,)').matches(section))
+    } finally {
+      console.warn = warn
+    }
+
+    assert.ok(new CssQuery(':has(div:has(span))').matches(section))
+    assert.equal(warnings.length, 3)
+  })
+
+  it('matches sibling-relative selectors with :has()', function () {
+    const parent = document.createElement('dl')
+    const first = document.createElement('dt')
+    const second = document.createElement('dt')
+
+    parent.appendChild(first)
+    parent.appendChild(document.createTextNode('between'))
+    parent.appendChild(second)
+
+    assert.equal(first.nextElementSibling, second)
+    assert.equal(second.previousElementSibling, first)
+    assert.ok(new CssQuery('dt:has(+ dt)').matches(first))
+    assert.ok(new CssQuery('dt:has(~ dt)').matches(first))
+    assert.ok(!new CssQuery('dt:has(+ dt)').matches(second))
+  })
+
+  it('filters siblings with the of selector in :nth-child()', function () {
+    const parent = document.createElement('ul')
+    const children = Array.from({ length: 4 }, () => document.createElement('li'))
+
+    children[0].setAttribute('class', 'important')
+    children[1].setAttribute('hidden', '')
+    children[2].setAttribute('class', 'important')
+    children[3].setAttribute('hidden', '')
+    children.forEach(child => parent.appendChild(child))
+
+    assert.ok(new CssQuery(':nth-child(2 of .important)').matches(children[2]))
+    assert.ok(!new CssQuery(':nth-child(2 of .important)').matches(children[0]))
+    assert.ok(new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[2]))
+    assert.ok(!new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[3]))
+  })
 })
 
 describe('CssQuery - Multiple Selectors', function () {

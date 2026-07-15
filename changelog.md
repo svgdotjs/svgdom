@@ -4,6 +4,10 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Added selector support for `:empty`, `:has()`, `:is()`, `:where()`, nested functional pseudo-classes, and the `of <selector>` syntax for `:nth-child()` and `:nth-last-child()`.
+
 ### Fixed
 
 - Structural child pseudo-classes now count only element siblings and correctly support `An+B` formulas, including negative coefficients and whitespace.
