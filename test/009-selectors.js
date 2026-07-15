@@ -92,6 +92,71 @@ describe('CssQuery - Single Selector', function () {
     assert.ok(query.matches(trueCase))
     assert.ok(!query.matches(falseCase))
   })
+
+  it('counts only elements for child pseudo-classes', function () {
+    const parent = document.createElement('div')
+    const first = document.createElement('span')
+    const second = document.createElement('span')
+    const third = document.createElement('span')
+
+    parent.appendChild(document.createTextNode('before'))
+    parent.appendChild(first)
+    parent.appendChild(document.createComment('between'))
+    parent.appendChild(second)
+    parent.appendChild(document.createTextNode('between'))
+    parent.appendChild(third)
+    parent.appendChild(document.createComment('after'))
+
+    assert.ok(new CssQuery(':first-child').matches(first))
+    assert.ok(new CssQuery(':last-child').matches(third))
+    assert.ok(new CssQuery(':nth-child(2)').matches(second))
+    assert.ok(new CssQuery(':nth-last-child(2)').matches(second))
+    assert.ok(!new CssQuery(':only-child').matches(first))
+  })
+
+  it('matches An+B child formulas', function () {
+    const parent = document.createElement('div')
+    const children = Array.from({ length: 5 }, () => document.createElement('span'))
+    children.forEach(child => parent.appendChild(child))
+
+    assert.ok(children.every(child => new CssQuery(':nth-child(n)').matches(child)))
+    assert.ok(new CssQuery(':nth-child(2n + 1)').matches(children[0]))
+    assert.ok(new CssQuery(':nth-child(2n + 1)').matches(children[2]))
+    assert.ok(!new CssQuery(':nth-child(2n + 1)').matches(children[1]))
+    assert.ok(new CssQuery(':nth-child(-n+3)').matches(children[2]))
+    assert.ok(!new CssQuery(':nth-child(-n+3)').matches(children[3]))
+    assert.ok(new CssQuery(':nth-child(0n+2)').matches(children[1]))
+    assert.ok(!new CssQuery(':nth-child(2n/1)').matches(children[1]))
+  })
+
+  it('ignores non-elements for only-child and of-type pseudo-classes', function () {
+    const parent = document.createElement('div')
+    const child = document.createElement('span')
+
+    parent.appendChild(document.createTextNode('before'))
+    parent.appendChild(child)
+    parent.appendChild(document.createComment('after'))
+
+    assert.ok(new CssQuery(':only-child').matches(child))
+    assert.ok(new CssQuery(':only-of-type').matches(child))
+    assert.ok(new CssQuery(':first-of-type').matches(child))
+    assert.ok(new CssQuery(':last-of-type').matches(child))
+    assert.ok(new CssQuery(':nth-of-type(1)').matches(child))
+    assert.ok(new CssQuery(':nth-last-of-type(1)').matches(child))
+  })
+
+  it('matches child pseudo-classes on an element without a parent', function () {
+    const child = document.createElement('span')
+
+    assert.ok(new CssQuery(':first-child').matches(child))
+    assert.ok(new CssQuery(':last-child').matches(child))
+    assert.ok(new CssQuery(':only-child').matches(child))
+    assert.ok(new CssQuery(':nth-child(1)').matches(child))
+    assert.ok(new CssQuery(':first-of-type').matches(child))
+    assert.ok(new CssQuery(':last-of-type').matches(child))
+    assert.ok(new CssQuery(':only-of-type').matches(child))
+    assert.ok(new CssQuery(':nth-of-type(1)').matches(child))
+  })
 })
 
 describe('CssQuery - Multiple Selectors', function () {

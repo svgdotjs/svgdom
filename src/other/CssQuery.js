@@ -70,28 +70,52 @@ export class CssQuery {
 CssQuery.cache = new Map()
 CssQuery.cacheKeys = []
 
-// check if [node] is the [nth] child of [arr] where nth can also be a formula
-const nth = (node, arr, nth) => {
+const parseNth = value => {
+  value = value.toLowerCase().replace(/[ \n\r\t\f]/g, '')
 
-  if (nth === 'even') nth = '2n'
-  else if (nth === 'odd') nth = '2n+1'
+  if (value === 'even') return { a: 2, b: 0 }
+  if (value === 'odd') return { a: 2, b: 1 }
 
-  // check for eval chars
-  if (/[^\d\-n+*/]+/.test(nth)) return false
-
-  nth = nth.replace('n', '*n')
-
-  // eval nth to get the index
-  for (var i, n = 0, nl = arr.length; n < nl; ++n) {
-    /* eslint no-eval: off */
-    i = eval(nth)
-
-    if (i > nl) break
-    if (arr[i - 1] === node) return true
+  if (/^[+-]?\d+$/.test(value)) {
+    return { a: 0, b: parseInt(value, 10) }
   }
 
-  return false
+  const formula = value.match(/^([+-]?\d*)n(?:([+-]\d+))?$/)
+  if (!formula) return null
+
+  let a = formula[1]
+  if (a === '' || a === '+') a = 1
+  else if (a === '-') a = -1
+  else a = parseInt(a, 10)
+
+  return { a, b: parseInt(formula[2] || '0', 10) }
 }
+
+// Check if node is the An+B-th item in arr for a non-negative integer n.
+const nth = (node, arr, value) => {
+  const formula = parseNth(value)
+  const index = arr.indexOf(node) + 1
+  if (!formula || !index) return false
+
+  if (formula.a === 0) return index === formula.b
+
+  const n = (index - formula.b) / formula.a
+  return Number.isInteger(n) && n >= 0
+}
+
+const elementChildren = node => node
+  ? node.childNodes.filter(child => child.nodeType === 1)
+  : []
+
+const elementSiblings = node => node.parentNode
+  ? elementChildren(node.parentNode)
+  : [ node ]
+
+const sameType = (a, b) =>
+  a.localName === b.localName && a.namespaceURI === b.namespaceURI
+
+const siblingsOfType = node =>
+  elementSiblings(node).filter(sibling => sameType(sibling, node))
 
 const lower = a => a.toLowerCase()
 
@@ -291,16 +315,22 @@ const getAttributeValue = (prefix, name, node) => {
 // [n] (passed)   [n]ode
 // [s] (passed)   [s]cope - the element this query is scoped to
 const pseudoMatcher = {
-  'first-child': (a, n) => n.parentNode && n.parentNode.firstChild === n,
-  'last-child': (a, n) => n.parentNode && n.parentNode.lastChild === n,
-  'nth-child': (a, n) => n.parentNode && nth(n, n.parentNode.childNodes, a),
-  'nth-last-child': (a, n) => n.parentNode && nth(n, n.parentNode.childNodes.slice().reverse(), a),
-  'first-of-type': (a, n) => n.parentNode && n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName)[0] === n,
-  'last-of-type': (a, n) => n.parentNode && n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).pop() === n,
-  'nth-of-type': (a, n) => n.parentNode && nth(n, n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName), a),
-  'nth-last-of-type': (a, n) => n.parentNode && nth(n, n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).reverse(), a),
-  'only-child': (a, n) => n.parentNode && n.parentNode.childNodes.length === 1,
-  'only-of-type': (a, n) => n.parentNode && n.parentNode.childNodes.filter(el => el.nodeName === n.nodeName).length === 1,
+  'first-child': (a, n) => elementSiblings(n)[0] === n,
+  'last-child': (a, n) => elementSiblings(n).pop() === n,
+  'nth-child': (a, n) => nth(n, elementSiblings(n), a),
+  'nth-last-child': (a, n) => nth(n, elementSiblings(n).reverse(), a),
+  'first-of-type': (a, n) => siblingsOfType(n)[0] === n,
+  'last-of-type': (a, n) => siblingsOfType(n).pop() === n,
+  'nth-of-type': (a, n) => nth(n, siblingsOfType(n), a),
+  'nth-last-of-type': (a, n) => nth(n, siblingsOfType(n).reverse(), a),
+  'only-child': (a, n) => {
+    const siblings = elementSiblings(n)
+    return siblings.length === 1 && siblings[0] === n
+  },
+  'only-of-type': (a, n) => {
+    const siblings = siblingsOfType(n)
+    return siblings.length === 1 && siblings[0] === n
+  },
   root: (a, n) => n.ownerDocument.documentElement === n,
   not: (a, n, s) => !(new CssQuery(a)).matches(n, s),
   matches: (a, n, s) => (new CssQuery(a)).matches(n, s),
