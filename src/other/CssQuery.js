@@ -1,4 +1,4 @@
-import { removeQuotes, splitNotInBrackets } from '../utils/strUtils.js'
+import { removeQuotes } from '../utils/strUtils.js'
 import * as regex from '../utils/regex.js'
 import { html } from '../utils/namespaces.js'
 
@@ -9,49 +9,7 @@ export class CssQuery {
       return
     }
 
-    let queries = splitNotInBrackets(query, ',')
-
-    queries = queries.map(query => {
-
-      let roundBrackets = 0
-      let squareBrackets = 0
-
-      // this is the same as above but easier
-      query = query.replace(/[()[\]>~+]/g, function (ch) {
-        if (ch === '(') ++roundBrackets
-        else if (ch === ')') --roundBrackets
-        else if (ch === '[') ++squareBrackets
-        else if (ch === ']') --squareBrackets
-
-        if ('()[]'.indexOf(ch) > -1) return ch
-        if (squareBrackets || roundBrackets) return ch
-
-        return ' ' + ch + ' '
-      })
-
-      // split at space and remove empty results
-      query = splitNotInBrackets(query, ' ').filter(el => !!el.length)
-
-      const pairs = []
-
-      let relation = '%'
-
-      // generate querynode relation tuples
-      for (let i = 0, il = query.length; i < il; ++i) {
-
-        if ('>~+%'.indexOf(query[i]) > -1) {
-          relation = query[i]
-          continue
-        }
-
-        pairs.push([ relation, query[i] ])
-        relation = '%'
-
-      }
-
-      return pairs
-
-    })
+    const queries = tokenizeSelector(query)
 
     this.queries = queries
 
@@ -140,6 +98,175 @@ const lower = a => a.toLowerCase()
 // checks if a and b are equal. Is insensitive when i is true
 const eq = (a, b, i) => i ? lower(a) === lower(b) : a === b
 
+const escapeSequenceEnd = (string, index) => {
+  let end = index + 1
+  const hex = string.slice(end).match(/^[\da-f]{1,6}/i)
+
+  if (!hex) return Math.min(end + 1, string.length)
+
+  end += hex[0].length
+  if (string[end] === '\r' && string[end + 1] === '\n') return end + 2
+  if (/[ \n\r\t\f]/.test(string[end] || '')) end++
+  return end
+}
+
+const tokenizeSelector = selector => {
+  const queries = []
+  let pairs = []
+  let token = ''
+  let relation = '%'
+  let roundBrackets = 0
+  let squareBrackets = 0
+  let quote = ''
+
+  const pushToken = () => {
+    if (!token) return
+    pairs.push([ relation, token ])
+    token = ''
+    relation = '%'
+  }
+
+  for (let index = 0; index < selector.length; index++) {
+    const character = selector[index]
+
+    if (character === '\\') {
+      const end = escapeSequenceEnd(selector, index)
+      token += selector.slice(index, end)
+      index = end - 1
+      continue
+    }
+
+    if (quote) {
+      token += character
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+      token += character
+      continue
+    }
+
+    if (character === '(') roundBrackets++
+    else if (character === ')') roundBrackets--
+    else if (character === '[') squareBrackets++
+    else if (character === ']') squareBrackets--
+
+    if (roundBrackets || squareBrackets || '()[]'.includes(character)) {
+      token += character
+      continue
+    }
+
+    if (character === ',') {
+      pushToken()
+      queries.push(pairs)
+      pairs = []
+      relation = '%'
+      continue
+    }
+
+    if (/[ \n\r\t\f]/.test(character)) {
+      pushToken()
+      continue
+    }
+
+    if ('>~+'.includes(character)) {
+      pushToken()
+      relation = character
+      continue
+    }
+
+    token += character
+  }
+
+  pushToken()
+  queries.push(pairs)
+  return queries
+}
+
+const parseEscapedIdentifier = identifier => {
+  let result = ''
+  let index = 0
+
+  for (; index < identifier.length; index++) {
+    const character = identifier[index]
+
+    if (character !== '\\') {
+      if (!/[\w\-\u0080-\uFFFF]/.test(character)) break
+      result += character
+      continue
+    }
+
+    index++
+    if (index === identifier.length || /[\n\r\f]/.test(identifier[index])) {
+      return null
+    }
+
+    const hex = identifier.slice(index).match(/^[\da-f]{1,6}/i)
+    if (!hex) {
+      result += identifier[index]
+      continue
+    }
+
+    const codePoint = parseInt(hex[0], 16)
+    const invalidCodePoint = codePoint === 0
+      || (codePoint >= 0xD800 && codePoint <= 0xDFFF)
+      || codePoint > 0x10FFFF
+
+    result += invalidCodePoint
+      ? '\uFFFD'
+      : String.fromCodePoint(codePoint)
+
+    index += hex[0].length - 1
+    if (identifier[index + 1] === '\r' && identifier[index + 2] === '\n') {
+      index += 2
+    } else if (/[ \n\r\t\f]/.test(identifier[index + 1] || '')) {
+      index++
+    }
+  }
+
+  if (!index) return null
+  return { value: result, length: index }
+}
+
+const findIdSelector = selector => {
+  let roundBrackets = 0
+  let squareBrackets = 0
+  let quote = ''
+
+  for (let index = 0; index < selector.length; index++) {
+    const character = selector[index]
+
+    if (character === '\\') {
+      index = escapeSequenceEnd(selector, index) - 1
+      continue
+    }
+
+    if (quote) {
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+      continue
+    }
+
+    if (character === '(') roundBrackets++
+    else if (character === ')') roundBrackets--
+    else if (character === '[') squareBrackets++
+    else if (character === ']') squareBrackets--
+    else if (character === '#' && !roundBrackets && !squareBrackets) {
+      const id = parseEscapedIdentifier(selector.slice(index + 1))
+      if (!id) return null
+      return { value: id.value, index, length: id.length + 1 }
+    }
+  }
+
+  return null
+}
+
 // [i] (prebound) is true if insensitive matching is required
 // [a] (prebound) is the value the attr is compared to
 // [b] (passed)   is the value of the attribute
@@ -188,6 +315,12 @@ export class CssQueryNode {
     this.attrs = []
     this.pseudo = []
 
+    const id = findIdSelector(node)
+    if (id) {
+      this.id = id.value
+      node = node.slice(0, id.index) + node.slice(id.index + id.length)
+    }
+
     // match the tag name
     let matches = node.match(/^[\w-]+|^\*/)
     if (matches) {
@@ -213,13 +346,6 @@ export class CssQueryNode {
           removeQuotes((matches[5] || '').trim()) // attribute value
         )
       })
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
-    }
-
-    // match the id
-    matches = node.match(/#([\w-]+)/)
-    if (matches) {
-      this.id = matches[1]
       node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
     }
 

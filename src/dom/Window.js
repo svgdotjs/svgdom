@@ -5,6 +5,7 @@ import { Document } from './Document.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { Text } from './Text.js'
 import { CustomEvent } from './CustomEvent.js'
+import { CSS } from './CSS.js'
 import { Event } from './Event.js'
 import { Element } from './Element.js'
 import { Attr } from './Attr.js'
@@ -87,6 +88,7 @@ const winProps = {
   Attr,
   Element,
   CustomEvent,
+  CSS,
   Event,
   HTMLElement,
   HTMLLinkElement,
