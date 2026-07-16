@@ -4,6 +4,8 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+## 0.1.25 - 2026-07-16
+
 ### Added
 
 - Added selector support for `:empty`, `:has()`, `:is()`, `:where()`, nested functional pseudo-classes, and the `of <selector>` syntax for `:nth-child()` and `:nth-last-child()`.
