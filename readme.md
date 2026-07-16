@@ -48,15 +48,12 @@ const window = createWindow(namespaceURI, rootNode)
 // e.g. createWindow('http://www.w3.org/1998/Math/MathML', 'math')
 ```
 
-## Use svgdom as cjs module
+## Use svgdom as a CommonJS module
 
-svgdom is used best as esm module. However, if you still require cjs, you have to import the module via the async import function:
+On Node.js 22.13 or newer, svgdom can be loaded directly with `require()`:
 
 ```js
-const main = async () => {
-  const { createSVGWindow } = await import('svgdom')
-}
-main()
+const { createSVGWindow } = require('svgdom')
 ```
 
 ## Intentional DOM deviations

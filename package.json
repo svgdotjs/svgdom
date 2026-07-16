@@ -2,6 +2,9 @@
   "name": "svgdom",
   "version": "0.1.25",
   "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "description": "Straightforward DOM implementation for SVG, HTML and XML",
   "main": "./main-module.js",
   "exports": {
