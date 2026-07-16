@@ -9,7 +9,7 @@ While this dom implementation was designed to run svg.js on node, it now is much
 *for older versions of svg.js checkout older versions of svgdom*
 
 ```
-npm install @svgdotjs/svg.js svgdom
+pnpm add @svgdotjs/svg.js svgdom
 ```
 
 ```js
