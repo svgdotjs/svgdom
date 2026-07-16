@@ -1,20 +1,15 @@
 {
-  "editor.tabSize": 2,
-  "editor.renderWhitespace": "all",
-  "editor.formatOnSave": false,
-  "eslint.enable": true,
-  "eslint.quiet": true,
-  "eslint.validate": [
-    "javascript"
-  ],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
-  "eslint.alwaysShowStatus": true,
-  "editor.renderControlCharacters": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
   "editor.insertSpaces": true,
+  "editor.renderControlCharacters": true,
+  "editor.renderWhitespace": "all",
+  "editor.tabSize": 2,
+  "eslint.enable": true,
+  "eslint.validate": ["javascript"],
   "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "files.encoding": "utf8",
     "files.eol": "\n"
-  },
+  }
 }

@@ -12,7 +12,7 @@ const createWindow = (...args) => {
   return window
 }
 
-const createHTMLWindow = (title) => {
+const createHTMLWindow = title => {
   const window = new Window()
   const document = DOMImplementation.createHTMLDocument(title)
   window.document = document

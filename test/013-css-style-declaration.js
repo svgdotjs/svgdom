@@ -5,7 +5,10 @@ import { createSVGWindow, CSSStyleDeclaration } from '../main-module.js'
 const createElement = () => {
   const window = createSVGWindow()
   return {
-    element: window.document.createElementNS('http://www.w3.org/2000/svg', 'rect'),
+    element: window.document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'rect'
+    ),
     window
   }
 }
@@ -16,17 +19,23 @@ describe('CSSStyleDeclaration', function () {
 
     assert(element.style instanceof CSSStyleDeclaration)
     assert.strictEqual(window.CSSStyleDeclaration, CSSStyleDeclaration)
-    assert.strictEqual(Object.prototype.toString.call(element.style), '[object CSSStyleDeclaration]')
+    assert.strictEqual(
+      Object.prototype.toString.call(element.style),
+      '[object CSSStyleDeclaration]'
+    )
     assert.strictEqual(element.style.parentRule, null)
   })
 
   it('preserves URLs, data URLs, and quoted separators', function () {
     const { element } = createElement()
-    element.setAttribute('style', [
-      'background-image: url("https://example.com/a.svg#paint")',
-      '--data-image: url("data:image/svg+xml;charset=utf-8,<svg></svg>")',
-      '--label: "left:right; top"'
-    ].join('; '))
+    element.setAttribute(
+      'style',
+      [
+        'background-image: url("https://example.com/a.svg#paint")',
+        '--data-image: url("data:image/svg+xml;charset=utf-8,<svg></svg>")',
+        '--label: "left:right; top"'
+      ].join('; ')
+    )
 
     assert.strictEqual(
       element.style.getPropertyValue('background-image'),
@@ -36,7 +45,10 @@ describe('CSSStyleDeclaration', function () {
       element.style.getPropertyValue('--data-image'),
       'url("data:image/svg+xml;charset=utf-8,<svg></svg>")'
     )
-    assert.strictEqual(element.style.getPropertyValue('--label'), '"left:right; top"')
+    assert.strictEqual(
+      element.style.getPropertyValue('--label'),
+      '"left:right; top"'
+    )
   })
 
   it('respects escapes, comments, and nested functions while parsing', function () {
@@ -50,8 +62,14 @@ describe('CSSStyleDeclaration', function () {
     ].join('; ')
 
     assert.strictEqual(element.style.getPropertyValue('--complex'), complex)
-    assert.strictEqual(element.style.getPropertyValue('fill'), 'rgb(1; 2; nested(3:4))')
-    assert.strictEqual(element.style.getPropertyValue('stroke'), 'black /* another ; comment: */')
+    assert.strictEqual(
+      element.style.getPropertyValue('fill'),
+      'rgb(1; 2; nested(3:4))'
+    )
+    assert.strictEqual(
+      element.style.getPropertyValue('stroke'),
+      'black /* another ; comment: */'
+    )
   })
 
   it('preserves case-sensitive custom properties and normalizes standard names', function () {
@@ -75,12 +93,18 @@ describe('CSSStyleDeclaration', function () {
 
     assert.strictEqual(element.style.getPropertyValue('fill'), 'red')
     assert.strictEqual(element.style.getPropertyPriority('fill'), 'important')
-    assert.strictEqual(element.style.cssText, 'fill: red !important; stroke: blue;')
+    assert.strictEqual(
+      element.style.cssText,
+      'fill: red !important; stroke: blue;'
+    )
 
     element.style.setProperty('stroke', 'green', 'IMPORTANT')
     assert.strictEqual(element.style.getPropertyValue('stroke'), 'green')
     assert.strictEqual(element.style.getPropertyPriority('stroke'), 'important')
-    assert.strictEqual(element.style.cssText, 'fill: red !important; stroke: green !important;')
+    assert.strictEqual(
+      element.style.cssText,
+      'fill: red !important; stroke: green !important;'
+    )
 
     element.style.setProperty('stroke', 'black', 'invalid')
     assert.strictEqual(element.style.getPropertyValue('stroke'), 'green')
@@ -98,25 +122,32 @@ describe('CSSStyleDeclaration', function () {
     assert.strictEqual(style.item(3), '')
 
     style.setProperty('stroke', 'blue', 'important')
-    assert.deepStrictEqual([ style[0], style[1], style[2] ], [ 'fill', 'stroke', 'opacity' ])
+    assert.deepStrictEqual(
+      [style[0], style[1], style[2]],
+      ['fill', 'stroke', 'opacity']
+    )
 
     assert.strictEqual(style.removeProperty('fill'), 'red')
-    assert.deepStrictEqual([ style[0], style[1] ], [ 'stroke', 'opacity' ])
+    assert.deepStrictEqual([style[0], style[1]], ['stroke', 'opacity'])
     assert.strictEqual(style.length, 2)
 
     style.setProperty('fill', 'green')
-    assert.deepStrictEqual([ style[0], style[1], style[2] ], [ 'stroke', 'opacity', 'fill' ])
+    assert.deepStrictEqual(
+      [style[0], style[1], style[2]],
+      ['stroke', 'opacity', 'fill']
+    )
   })
 
   it('collapses duplicate declarations using CSS priority and source order', function () {
     const { element } = createElement()
-    element.style.cssText = 'fill: red !important; stroke: black; fill: blue; opacity: 1'
+    element.style.cssText =
+      'fill: red !important; stroke: black; fill: blue; opacity: 1'
 
     assert.strictEqual(element.style.getPropertyValue('fill'), 'red')
     assert.strictEqual(element.style.getPropertyPriority('fill'), 'important')
     assert.deepStrictEqual(
-      [ element.style[0], element.style[1], element.style[2] ],
-      [ 'stroke', 'fill', 'opacity' ]
+      [element.style[0], element.style[1], element.style[2]],
+      ['stroke', 'fill', 'opacity']
     )
   })
 

@@ -1,20 +1,22 @@
 const $ = Symbol('private properties')
 
 export class EventTarget {
-  constructor () {
+  constructor() {
     this[$] = {}
     this[$].listeners = {}
   }
 
-  addEventListener (type, callback) {
+  addEventListener(type, callback) {
     if (!(type in this[$].listeners)) {
       this[$].listeners[type] = []
     }
     this[$].listeners[type].push(callback)
   }
 
-  dispatchEvent (event) {
-    if (!(event.type in this[$].listeners)) { return true }
+  dispatchEvent(event) {
+    if (!(event.type in this[$].listeners)) {
+      return true
+    }
 
     var stack = this[$].listeners[event.type]
     event.target = this
@@ -26,7 +28,7 @@ export class EventTarget {
     return !event.defaultPrevented
   }
 
-  removeEventListener (type, callback) {
+  removeEventListener(type, callback) {
     if (!(type in this[$].listeners)) {
       return
     }
@@ -39,5 +41,4 @@ export class EventTarget {
       }
     }
   }
-
 }

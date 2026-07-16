@@ -1,7 +1,7 @@
 const isAsciiDigit = codeUnit => codeUnit >= 0x30 && codeUnit <= 0x39
 const isAsciiLetter = codeUnit =>
-  (codeUnit >= 0x41 && codeUnit <= 0x5a)
-  || (codeUnit >= 0x61 && codeUnit <= 0x7a)
+  (codeUnit >= 0x41 && codeUnit <= 0x5a) ||
+  (codeUnit >= 0x61 && codeUnit <= 0x7a)
 
 const escape = function (value) {
   if (arguments.length === 0) {
@@ -21,10 +21,10 @@ const escape = function (value) {
     }
 
     if (
-      (codeUnit >= 0x0001 && codeUnit <= 0x001f)
-      || codeUnit === 0x007f
-      || (index === 0 && isAsciiDigit(codeUnit))
-      || (index === 1 && isAsciiDigit(codeUnit) && firstCodeUnit === 0x002d)
+      (codeUnit >= 0x0001 && codeUnit <= 0x001f) ||
+      codeUnit === 0x007f ||
+      (index === 0 && isAsciiDigit(codeUnit)) ||
+      (index === 1 && isAsciiDigit(codeUnit) && firstCodeUnit === 0x002d)
     ) {
       result += `\\${codeUnit.toString(16)} `
       continue
@@ -36,11 +36,11 @@ const escape = function (value) {
     }
 
     if (
-      codeUnit >= 0x0080
-      || codeUnit === 0x002d
-      || codeUnit === 0x005f
-      || isAsciiDigit(codeUnit)
-      || isAsciiLetter(codeUnit)
+      codeUnit >= 0x0080 ||
+      codeUnit === 0x002d ||
+      codeUnit === 0x005f ||
+      isAsciiDigit(codeUnit) ||
+      isAsciiLetter(codeUnit)
     ) {
       result += string.charAt(index)
       continue

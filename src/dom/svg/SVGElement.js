@@ -1,6 +1,6 @@
 import { Element } from '../Element.js'
 export class SVGElement extends Element {
-  get ownerSVGElement () {
+  get ownerSVGElement() {
     let parent = this
     while ((parent = parent.parentNode)) {
       if ('svg' == parent.nodeName) {
@@ -10,11 +10,11 @@ export class SVGElement extends Element {
     return null
   }
 
-  get viewportElement () {
+  get viewportElement() {
     let parent = this
     while ((parent = parent.parentNode)) {
       // TODO: and others
-      if ([ 'svg', 'symbol' ].includes(parent.nodeName)) {
+      if (['svg', 'symbol'].includes(parent.nodeName)) {
         return parent
       }
     }

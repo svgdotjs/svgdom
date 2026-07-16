@@ -9,12 +9,19 @@ import { tag } from '../utils/tagUtils.js'
 import { htmlEntities, cdata, comment } from '../utils/strUtils.js'
 import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
 import { ChildNode } from './mixins/ChildNode.js'
-import { html, normalizeNamespace, validateAndExtract, validateName } from '../utils/namespaces.js'
+import {
+  html,
+  normalizeNamespace,
+  validateAndExtract,
+  validateName
+} from '../utils/namespaces.js'
 import { createCSSStyleDeclaration } from './CSSStyleDeclaration.js'
 
 const getAttributeByNsAndLocalName = (el, ns, localName) => {
   ns = normalizeNamespace(ns)
-  return [ ...el.attrs ].find((node) => node.localName === localName && node.namespaceURI === ns)
+  return [...el.attrs].find(
+    node => node.localName === localName && node.namespaceURI === ns
+  )
 }
 
 const getAttributeByQualifiedName = (el, qualifiedName) => {
@@ -22,7 +29,7 @@ const getAttributeByQualifiedName = (el, qualifiedName) => {
     qualifiedName = qualifiedName.toLowerCase()
   }
 
-  return [ ...el.attrs ].find((node) => node.name === qualifiedName)
+  return [...el.attrs].find(node => node.name === qualifiedName)
 }
 
 const attachAttribute = (element, node, oldAttribute) => {
@@ -48,50 +55,50 @@ const attachAttribute = (element, node, oldAttribute) => {
 
 // https://dom.spec.whatwg.org/#dom-element-setattributens
 export class Element extends Node {
-  constructor (name, props, ns) {
+  constructor(name, props, ns) {
     super(name, props, ns)
 
     this.style = createCSSStyleDeclaration(this)
     this.tagName = this.nodeName
   }
 
-  getAttribute (qualifiedName) {
+  getAttribute(qualifiedName) {
     const attr = this.getAttributeNode(qualifiedName)
     return attr ? attr.value : null
   }
 
-  getAttributeNode (qualifiedName) {
+  getAttributeNode(qualifiedName) {
     return getAttributeByQualifiedName(this, qualifiedName)
   }
 
-  getAttributeNodeNS (ns, localName) {
+  getAttributeNodeNS(ns, localName) {
     return getAttributeByNsAndLocalName(this, ns, localName)
   }
 
-  getAttributeNS (ns, localName) {
+  getAttributeNS(ns, localName) {
     const attr = this.getAttributeNodeNS(ns, localName)
     return attr ? attr.value : null
   }
 
-  getBoundingClientRect () {
+  getBoundingClientRect() {
     throw new Error('Only implemented for SVG Elements')
   }
 
-  hasAttribute (qualifiedName) {
+  hasAttribute(qualifiedName) {
     const attr = this.getAttributeNode(qualifiedName)
     return !!attr
   }
 
-  hasAttributeNS (ns, localName) {
+  hasAttributeNS(ns, localName) {
     const attr = this.getAttributeNodeNS(ns, localName)
     return !!attr
   }
 
-  matches (query) {
+  matches(query) {
     return this.matchWithScope(query, this)
   }
 
-  removeAttribute (qualifiedName) {
+  removeAttribute(qualifiedName) {
     const attr = this.getAttributeNode(qualifiedName)
     if (attr) {
       this.removeAttributeNode(attr)
@@ -99,14 +106,17 @@ export class Element extends Node {
     return attr
   }
 
-  removeAttributeNode (node) {
-    if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+  removeAttributeNode(node) {
+    if (!this.attrs.delete(node))
+      throw new Error(
+        'Attribute cannot be removed because it was not found on the element'
+      )
     node.ownerElement = null
     return node
   }
 
   // call is: d.removeAttributeNS('http://www.mozilla.org/ns/specialspace', 'align', 'center');
-  removeAttributeNS (ns, localName) {
+  removeAttributeNS(ns, localName) {
     const attr = this.getAttributeNodeNS(ns, localName)
     if (attr) {
       this.removeAttributeNode(attr)
@@ -115,12 +125,15 @@ export class Element extends Node {
   }
 
   // Namespace-unaware attributes are identified by their qualified name.
-  setAttribute (qualifiedName, value) {
+  setAttribute(qualifiedName, value) {
     qualifiedName = validateName(qualifiedName)
 
     // We have to do that here because we cannot check if `this` is in the correct namespace
     // when doing it in createAttribute
-    if (this.namespaceURI === html && this.ownerDocument.namespaceURI === html) {
+    if (
+      this.namespaceURI === html &&
+      this.ownerDocument.namespaceURI === html
+    ) {
       qualifiedName = qualifiedName.toLowerCase()
     }
 
@@ -134,19 +147,23 @@ export class Element extends Node {
     attr.value = value
   }
 
-  setAttributeNode (node) {
+  setAttributeNode(node) {
     // The non-namespace variant replaces by qualified name.
     return attachAttribute(this, node, this.getAttributeNode(node.name))
   }
 
-  setAttributeNodeNS (node) {
+  setAttributeNodeNS(node) {
     // Prefixes are aliases and therefore do not participate in identity here.
-    return attachAttribute(this, node, this.getAttributeNodeNS(node.namespaceURI, node.localName))
+    return attachAttribute(
+      this,
+      node,
+      this.getAttributeNodeNS(node.namespaceURI, node.localName)
+    )
   }
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
-  setAttributeNS (namespace, name, value) {
-    const [ ns, prefix, localName ] = validateAndExtract(namespace, name)
+  setAttributeNS(namespace, name, value) {
+    const [ns, prefix, localName] = validateAndExtract(namespace, name)
 
     let attr = this.getAttributeNodeNS(ns, localName)
     if (!attr) {
@@ -162,37 +179,38 @@ export class Element extends Node {
     attr.value = value
   }
 
-  get attributes () {
-    return [ ...this.attrs ]
+  get attributes() {
+    return [...this.attrs]
   }
 
-  get className () {
+  get className() {
     return this.getAttribute('class')
   }
 
-  set className (c) {
+  set className(c) {
     this.setAttribute('class', c)
   }
 
-  get id () {
+  get id() {
     return this.getAttribute('id') || ''
   }
 
-  set id (id) {
+  set id(id) {
     this.setAttribute('id', id)
   }
 
-  get innerHTML () {
-
-    return this.childNodes.map(node => {
-      if (node.nodeType === Node.TEXT_NODE) return htmlEntities(node.data)
-      if (node.nodeType === Node.CDATA_SECTION_NODE) return cdata(node.data)
-      if (node.nodeType === Node.COMMENT_NODE) return comment(node.data)
-      return node.outerHTML
-    }).join('')
+  get innerHTML() {
+    return this.childNodes
+      .map(node => {
+        if (node.nodeType === Node.TEXT_NODE) return htmlEntities(node.data)
+        if (node.nodeType === Node.CDATA_SECTION_NODE) return cdata(node.data)
+        if (node.nodeType === Node.COMMENT_NODE) return comment(node.data)
+        return node.outerHTML
+      })
+      .join('')
   }
 
-  set innerHTML (str) {
+  set innerHTML(str) {
     while (this.firstChild) {
       this.removeChild(this.firstChild)
     }
@@ -200,17 +218,16 @@ export class Element extends Node {
     HTMLParser(str, this)
   }
 
-  get outerHTML () {
+  get outerHTML() {
     return tag(this)
   }
 
-  set outerHTML (str) {
+  set outerHTML(str) {
     const well = new DocumentFragment()
     HTMLParser(str, well)
     this.parentNode.insertBefore(well, this)
     this.parentNode.removeChild(this)
   }
-
 }
 
 mixin(ParentNode, Element)

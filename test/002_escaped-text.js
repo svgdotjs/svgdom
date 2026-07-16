@@ -1,5 +1,3 @@
-/* global describe, it */
-
 import { createSVGDocument } from '../main-module.js'
 import assert from 'assert'
 

@@ -1,7 +1,11 @@
 import sax from 'sax'
 import { namespaceDeclarationPrefix } from '../../utils/namespaces.js'
 
-const escapeAttribute = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+const escapeAttribute = value =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
 
 // SAX parses fragments inside a synthetic wrapper and cannot see the real DOM
 // ancestors. Reconstruct their in-scope bindings so inherited prefixes and the
@@ -10,7 +14,11 @@ const namespaceBindings = el => {
   const bindings = new Map()
   const elements = []
 
-  for (let node = el; node && node.nodeType === node.ELEMENT_NODE; node = node.parentNode) {
+  for (
+    let node = el;
+    node && node.nodeType === node.ELEMENT_NODE;
+    node = node.parentNode
+  ) {
     elements.unshift(node)
   }
 
@@ -47,17 +55,28 @@ export const HTMLParser = function (str, el) {
     // Do not steal a prefix that is meaningful in the real scope or appears in
     // the fragment. Otherwise an unbound user prefix would accidentally resolve
     // to the wrapper's private namespace.
-    while (bindings.has(wrapperPrefix) || str.includes(wrapperPrefix + ':')) wrapperPrefix += 'wrapper'
+    while (bindings.has(wrapperPrefix) || str.includes(wrapperPrefix + ':'))
+      wrapperPrefix += 'wrapper'
 
-    const declarations = [ ...bindings ]
-      .filter(([ prefix, uri ]) => uri !== null && prefix !== 'xml')
-      .map(([ prefix, uri ]) => `xmlns${prefix === null ? '' : ':' + prefix}="${escapeAttribute(uri)}"`)
+    const declarations = [...bindings]
+      .filter(([prefix, uri]) => uri !== null && prefix !== 'xml')
+      .map(
+        ([prefix, uri]) =>
+          `xmlns${prefix === null ? '' : ':' + prefix}="${escapeAttribute(uri)}"`
+      )
     declarations.push(`xmlns:${wrapperPrefix}="svgdom:rocks"`)
 
     wrapperName = `${wrapperPrefix}:wrapper`
     // Declaring namespaces on the wrapper lets SAX resolve them before our
     // opentag callback creates the corresponding DOM nodes.
-    str = '<' + [ wrapperName ].concat(declarations).join(' ') + '>' + str + '</' + wrapperName + '>'
+    str =
+      '<' +
+      [wrapperName].concat(declarations).join(' ') +
+      '>' +
+      str +
+      '</' +
+      wrapperName +
+      '>'
   } else {
     document = el
   }
@@ -68,7 +87,7 @@ export const HTMLParser = function (str, el) {
     strictEntities: true
   })
 
-  parser.onerror = (e) => {
+  parser.onerror = e => {
     throw e
   }
 
@@ -79,8 +98,8 @@ export const HTMLParser = function (str, el) {
     currentTag.appendChild(document.implementation.createDocumentType())
   }
 
-  parser.ontext = (str) => currentTag.appendChild(document.createTextNode(str))
-  parser.oncomment = (str) => currentTag.appendChild(document.createComment(str))
+  parser.ontext = str => currentTag.appendChild(document.createTextNode(str))
+  parser.oncomment = str => currentTag.appendChild(document.createComment(str))
 
   parser.onopentag = node => {
     // Only the first SAX element is synthetic. A user element with the same
@@ -96,7 +115,7 @@ export const HTMLParser = function (str, el) {
     // of accidentally falling back to the host element's default namespace.
     const newElement = document.createElementNS(node.uri, node.name)
 
-    for (const [ name, node ] of Object.entries(attrs)) {
+    for (const [name, node] of Object.entries(attrs)) {
       newElement.setAttributeNS(node.uri, name, node.value)
     }
 
@@ -115,7 +134,7 @@ export const HTMLParser = function (str, el) {
     cdata = document.createCDATASection('')
   }
 
-  parser.oncdata = (str) => {
+  parser.oncdata = str => {
     cdata.appendData(str)
   }
 

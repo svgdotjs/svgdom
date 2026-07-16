@@ -77,7 +77,10 @@ describe('CSS', function () {
 
       const escapedId = window.CSS.escape(id)
       assert.equal(window.document.querySelector(`#${escapedId} rect`), child)
-      assert.equal(window.document.querySelector(`g#${escapedId} > rect`), child)
+      assert.equal(
+        window.document.querySelector(`g#${escapedId} > rect`),
+        child
+      )
     }
   })
 

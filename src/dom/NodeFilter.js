@@ -1,7 +1,7 @@
 import { extendStatic } from '../utils/objectCreationUtils.js'
 
 export class NodeFilter {
-  acceptNode () {
+  acceptNode() {
     return NodeFilter.FILTER_ACCEPT
   }
 }

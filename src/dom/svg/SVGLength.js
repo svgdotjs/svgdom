@@ -13,7 +13,7 @@ const unitTypes = {
   SVG_LENGTHTYPE_MM: 7,
   SVG_LENGTHTYPE_IN: 8,
   SVG_LENGTHTYPE_PT: 9,
-  SVG_LENGTHTYPE_PC: 10,
+  SVG_LENGTHTYPE_PC: 10
 }
 
 const unitByString = {
@@ -26,13 +26,13 @@ const unitByString = {
   ['mm']: unitTypes.SVG_LENGTHTYPE_MM,
   ['in']: unitTypes.SVG_LENGTHTYPE_IN,
   ['pt']: unitTypes.SVG_LENGTHTYPE_PT,
-  ['pc']: unitTypes.SVG_LENGTHTYPE_PC,
+  ['pc']: unitTypes.SVG_LENGTHTYPE_PC
 }
 
 const unitStringByConstant = new Map(
   Object.entries(unitByString).map(([unitString, unitConstant]) => [
     unitConstant,
-    unitString,
+    unitString
   ])
 )
 
@@ -46,10 +46,11 @@ const unitFactors = new Map([
   [unitTypes.SVG_LENGTHTYPE_MM, 96 / 25.4],
   [unitTypes.SVG_LENGTHTYPE_IN, 96],
   [unitTypes.SVG_LENGTHTYPE_PT, 4 / 3],
-  [unitTypes.SVG_LENGTHTYPE_PC, 16],
+  [unitTypes.SVG_LENGTHTYPE_PC, 16]
 ])
 
-const valuePattern = /^\s*([+-]?[0-9]*[.]?[0-9]+(?:e[+-]?[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc|%)?\s*$/i;
+const valuePattern =
+  /^\s*([+-]?[0-9]*[.]?[0-9]+(?:e[+-]?[0-9]+)?)(em|ex|px|in|cm|mm|pt|pc|%)?\s*$/i
 
 export class SVGLength {
   element

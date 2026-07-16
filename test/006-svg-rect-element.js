@@ -20,8 +20,16 @@ describe('SVGRectElement', function () {
 
   it('has animatedLength properties', function () {
     assert.strictEqual(rect.width.baseVal.value, 10, 'width value')
-    assert.strictEqual(rect.width.baseVal.unitType, SVGLength.SVG_LENGTHTYPE_NUMBER, 'width unit')
+    assert.strictEqual(
+      rect.width.baseVal.unitType,
+      SVGLength.SVG_LENGTHTYPE_NUMBER,
+      'width unit'
+    )
     assert.strictEqual(rect.height.baseVal.value, 96, 'height value')
-    assert.strictEqual(rect.height.baseVal.unitType, SVGLength.SVG_LENGTHTYPE_IN, 'height unit')
+    assert.strictEqual(
+      rect.height.baseVal.unitType,
+      SVGLength.SVG_LENGTHTYPE_IN,
+      'height unit'
+    )
   })
 })

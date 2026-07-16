@@ -18,7 +18,7 @@ export const setFontFamilyMappings = function (map) {
 export const preloadFonts = () => {
   const map = _config.fontFamilyMappings
 
-  for (const [ font, file ] of Object.entries(map)) {
+  for (const [font, file] of Object.entries(map)) {
     const filename = path.join(_config.fontDir, file)
 
     try {

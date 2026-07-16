@@ -1,5 +1,3 @@
-/* global describe, it, before, after, beforeEach, puppeteer */
-
 // import puppeteer from 'puppeteer'
 import assert from 'assert'
 // import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
@@ -21,7 +19,7 @@ let browser, page
 
 const testEnv = process.env.TEST_BROWSER ? 'browser' : 'node'
 
-function wrappedIt (message, testFn) {
+function wrappedIt(message, testFn) {
   if (testEnv === 'browser') {
     return it(message, () => page.evaluate(testFn)) // page.evaluate will return promise
   }
@@ -40,11 +38,8 @@ wrappedIt.only = function (message, testFn) {
 }
 
 describe('svg document', () => {
-
   before(async () => {
-
     if (testEnv === 'browser') {
-
       const crConfig = {
         headless: false, // replace with false to check rendering
         args: [
@@ -56,27 +51,24 @@ describe('svg document', () => {
       }
 
       if (process.env.CHROMIUM_PATH) {
-        crConfig.executablePath = process.env.CHROMIUM_PATH + '/Contents/MacOS/Chromium'
+        crConfig.executablePath =
+          process.env.CHROMIUM_PATH + '/Contents/MacOS/Chromium'
       }
 
       browser = await puppeteer.launch(crConfig)
       page = await browser.newPage()
 
-      await page.goto(
-        'about:blank',
-        { waitUntil: 'load' }
-      )
+      await page.goto('about:blank', { waitUntil: 'load' })
 
       await page.evaluate(() => {
         window.assert = function (check, message) {
-          if (!check) throw (message || 'Assertion failed')
+          if (!check) throw message || 'Assertion failed'
         }
 
         window.assert.strictEqual = function (value1, value2, message) {
-          if (value1 !== value2) throw (message || 'Assertion failed')
+          if (value1 !== value2) throw message || 'Assertion failed'
         }
       })
-
     }
   })
 
@@ -87,9 +79,7 @@ describe('svg document', () => {
   })
 
   beforeEach(async () => {
-
-    function prepare () {
-
+    function prepare() {
       const svgNS = 'http://www.w3.org/2000/svg'
 
       svgRoot.appendChild(svgDoc.createTextNode('\n  '))
@@ -148,13 +138,12 @@ describe('svg document', () => {
       text.appendChild(svgDoc.createTextNode('TEXT'))
 
       g.appendChild(text)
-
     }
 
     if (testEnv === 'browser') {
       await page.evaluate(() => {
         const svgNS = 'http://www.w3.org/2000/svg'
-        const svg = window.svgRoot = document.createElementNS(svgNS, 'svg')
+        const svg = (window.svgRoot = document.createElementNS(svgNS, 'svg'))
         svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
         svg.setAttribute('height', '200')
         svg.setAttribute('width', '400')
@@ -172,7 +161,6 @@ describe('svg document', () => {
 
       prepare()
     }
-
   })
 
   wrappedIt('should have children method for nodes', () => {
@@ -186,12 +174,13 @@ describe('svg document', () => {
   wrappedIt.skip('should have ownerSVGElement property for nodes', () => {
     // this will not work with documents, embedded into html
     // but should work with svg docs as media <object>
-    if (svgDoc.documentElement.nodeName === 'svg') { assert(svgRoot.ownerSVGElement) }
+    if (svgDoc.documentElement.nodeName === 'svg') {
+      assert(svgRoot.ownerSVGElement)
+    }
     // assert(svgRoot.ownerSVGElement === svgRoot);
   })
 
   wrappedIt('transform: rotate', () => {
-
     const circle = svgRoot.querySelector('#circle-1')
     const g = circle.parentNode
 
@@ -222,7 +211,10 @@ describe('svg document', () => {
   wrappedIt('transforms', () => {
     const rect = svgRoot.querySelector('#rect-1')
 
-    const x = 0; const y = 0; const width = 10; const height = 10
+    const x = 0
+    const y = 0
+    const width = 10
+    const height = 10
 
     let bbox = rect.getBBox()
 
@@ -236,9 +228,15 @@ describe('svg document', () => {
     bbox = rect.parentNode.getBBox()
 
     assert(bbox.width > width)
-    assert.strictEqual(bbox.width.toFixed(3), (Math.sqrt(2 * width * width) / 2 + width).toFixed(3))
+    assert.strictEqual(
+      bbox.width.toFixed(3),
+      (Math.sqrt(2 * width * width) / 2 + width).toFixed(3)
+    )
     assert(bbox.height > height)
-    assert.strictEqual(bbox.height.toFixed(3), (Math.sqrt(2 * height * height)).toFixed(3))
+    assert.strictEqual(
+      bbox.height.toFixed(3),
+      Math.sqrt(2 * height * height).toFixed(3)
+    )
 
     rect.setAttribute('transform', '')
 
@@ -271,23 +269,9 @@ describe('svg document', () => {
     assert.strictEqual(bbox.y, y)
     assert.strictEqual(bbox.width, width * 2)
     assert.strictEqual(bbox.height, height * 2)
-
-    const g = svgRoot.querySelector('#g-1')
-
-    bbox = g.getBBox()
-
-    /*
-    console.log (bbox);
-
-    assert.strictEqual (bbox.x, 0);
-    assert.strictEqual (bbox.y, 0);
-    assert.strictEqual (bbox.width, 25);
-    assert.strictEqual (bbox.height, 20);
-    */
   })
 
   wrappedIt('transform: translateX', () => {
-
     const rect = svgRoot.querySelector('#rect-1')
 
     const bbox1 = rect.getBBox()
@@ -296,17 +280,23 @@ describe('svg document', () => {
 
     const bbox2 = rect.getBBox()
 
-    assert.strictEqual(bbox1.x, bbox2.x, 'Translated element should have the same BBox')
+    assert.strictEqual(
+      bbox1.x,
+      bbox2.x,
+      'Translated element should have the same BBox'
+    )
 
     const bbox3 = rect.parentNode.getBBox()
 
-    assert.strictEqual(bbox1.x, bbox3.x, 'x in not affected because #rect-2 not transformed')
+    assert.strictEqual(
+      bbox1.x,
+      bbox3.x,
+      'x in not affected because #rect-2 not transformed'
+    )
     assert.strictEqual(bbox1.width, bbox3.width - 15)
-
   })
 
   wrappedIt('transform: scaleXY', () => {
-
     const rect = svgRoot.querySelector('#rect-1')
 
     const bbox1 = rect.getBBox()
@@ -321,11 +311,9 @@ describe('svg document', () => {
     const bbox3 = rect.parentNode.getBBox()
 
     assert.strictEqual(bbox3.width, 20)
-
   })
 
   wrappedIt('exposed style attribute on attributes enumeration', () => {
-
     const connector = svgRoot.querySelector('#rect-1')
 
     assert.strictEqual(connector.getAttribute('style'), null)
@@ -338,11 +326,12 @@ describe('svg document', () => {
 
     assert(connector.getAttribute('style').match(/color:\s*green\b/))
 
-    assert([].some.call(connector.attributes, attr => attr.nodeName === 'style'))
+    assert(
+      [].some.call(connector.attributes, attr => attr.nodeName === 'style')
+    )
   })
 
   wrappedIt('should match [attr^=startsWith] css selector', () => {
-
     const connector = svgRoot.querySelector('[id^=rect-1]')
 
     assert(connector)
@@ -355,14 +344,17 @@ describe('svg document', () => {
   })
 
   wrappedIt('closest() should find ancestors', () => {
-
     const rect1 = svgRoot.querySelector('#rect-1')
 
     assert.strictEqual(rect1.closest('svg').localName, 'svg')
 
     assert.strictEqual(rect1.closest('g[id]').id, 'g-1', 'attribute selector')
 
-    assert.strictEqual(rect1.closest('g:not([id])').id, '', 'negated attribute selector')
+    assert.strictEqual(
+      rect1.closest('g:not([id])').id,
+      '',
+      'negated attribute selector'
+    )
 
     assert.strictEqual(rect1.closest('foobar'), null, 'non-matching selector')
 
@@ -370,11 +362,14 @@ describe('svg document', () => {
 
     assert.strictEqual(rect1.closest('[id]:scope').id, 'rect-1', ':scope')
 
-    assert.strictEqual(rect1.closest('[id]:not(:scope)').id, 'g-1', 'negated :scope')
+    assert.strictEqual(
+      rect1.closest('[id]:not(:scope)').id,
+      'g-1',
+      'negated :scope'
+    )
   })
 
   wrappedIt('text-anchor should affect bbox', () => {
-
     const text = svgRoot.querySelector('#text-1')
 
     assert(text)
@@ -390,7 +385,5 @@ describe('svg document', () => {
     assert.strictEqual('' + bbox1.x, (bbox2.x + bbox2.width).toFixed(0))
     assert.strictEqual(bbox1.y, bbox2.y)
     assert.strictEqual(bbox1.width, bbox2.width)
-
   })
-
 })

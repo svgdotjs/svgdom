@@ -1,7 +1,7 @@
 import { Box, NoBox } from '../other/Box.js'
 
 export class PointCloud extends Array {
-  constructor (...args) {
+  constructor(...args) {
     if (args.length === 1 && typeof args[0] === 'number') {
       super(args.shift())
     } else {
@@ -15,7 +15,7 @@ export class PointCloud extends Array {
     }, this)
   }
 
-  bbox () {
+  bbox() {
     if (!this.length) {
       return new NoBox()
     }
@@ -32,19 +32,14 @@ export class PointCloud extends Array {
       yMax = Math.max(yMax, p.y)
     })
 
-    return new Box(
-      xMin, yMin,
-      xMax - xMin,
-      yMax - yMin
-    )
+    return new Box(xMin, yMin, xMax - xMin, yMax - yMin)
   }
 
-  merge (cloud) {
+  merge(cloud) {
     return new PointCloud(this, cloud)
   }
 
-  transform (m) {
-    return new PointCloud(this.map((p) => p.transform(m)))
+  transform(m) {
+    return new PointCloud(this.map(p => p.transform(m)))
   }
-
 }

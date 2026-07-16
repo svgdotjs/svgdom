@@ -3,7 +3,7 @@ import { mixin } from '../utils/objectCreationUtils.js'
 import { ChildNode } from './mixins/ChildNode.js'
 
 export class DocumentType extends Node {
-  constructor (name, props) {
+  constructor(name, props) {
     super(name, props)
 
     this.nodeType = Node.DOCUMENT_TYPE_NODE

@@ -6,7 +6,7 @@ While this dom implementation was designed to run svg.js on node, it now is much
 
 ## Get started with svg.js v3.x
 
-*for older versions of svg.js checkout older versions of svgdom*
+_for older versions of svg.js checkout older versions of svgdom_
 
 ```
 pnpm add @svgdotjs/svg.js svgdom
@@ -27,7 +27,7 @@ registerWindow(window, document)
 const canvas = SVG(document.documentElement)
 
 // use svg.js as normal
-canvas.rect(100, 100).fill('yellow').move(50,50)
+canvas.rect(100, 100).fill('yellow').move(50, 50)
 
 // get your svg as string
 console.log(canvas.svg())
@@ -50,11 +50,11 @@ const window = createWindow(namespaceURI, rootNode)
 
 ## Use svgdom as cjs module
 
-svgdom is used best as esm module. However, if you still require cjs, you have to import the module via the async import function: 
+svgdom is used best as esm module. However, if you still require cjs, you have to import the module via the async import function:
 
 ```js
 const main = async () => {
-    const { createSVGWindow } = await import('svgdom')
+  const { createSVGWindow } = await import('svgdom')
 }
 main()
 ```
@@ -91,32 +91,33 @@ preloadFonts()
 ```
 
 ## Limitations
+
 Almost all functions of svg.js work properly with svgdom. However there are a few known limitations:
 
 - font properties like bold, italic... are only supported when you explicitely load that font e.g.
-    ```js
-    setFontFamilyMappings({'Arial-italic': 'arial_italic.ttf'})
-    ```
+  ```js
+  setFontFamilyMappings({ 'Arial-italic': 'arial_italic.ttf' })
+  ```
 - `querySelector` only supports the following pseudo classes:
-    - `empty`
-    - `first-child`
-    - `last-child`
-    - `nth-child`
-    - `nth-last-child`
-    - `first-of-type`
-    - `last-of-type`
-    - `nth-of-type`
-    - `nth-last-of-type`
-    - `only-child`
-    - `only-of-type`
-    - `has`
-    - `is`
-    - `root`
-    - `not`
-    - `matches`
-    - `scope`
-    - `where`
-  The `nth-child` and `nth-last-child` pseudo classes also support the `of <selector>` syntax.
+  - `empty`
+  - `first-child`
+  - `last-child`
+  - `nth-child`
+  - `nth-last-child`
+  - `first-of-type`
+  - `last-of-type`
+  - `nth-of-type`
+  - `nth-last-of-type`
+  - `only-child`
+  - `only-of-type`
+  - `has`
+  - `is`
+  - `root`
+  - `not`
+  - `matches`
+  - `scope`
+  - `where`
+    The `nth-child` and `nth-last-child` pseudo classes also support the `of <selector>` syntax.
 - attribute values containing `]` are not currently parsed correctly in selectors, even when quoted
 
 ## Using svgdom in your own projects

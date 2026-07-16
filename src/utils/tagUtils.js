@@ -1,7 +1,17 @@
-import { html, isValidNamespaceDeclaration, namespaceDeclarationPrefix, xml, xmlns } from './namespaces.js'
+import {
+  html,
+  isValidNamespaceDeclaration,
+  namespaceDeclarationPrefix,
+  xml,
+  xmlns
+} from './namespaces.js'
 
 const htmlEntities = function (str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 const emptyElements = {
@@ -11,12 +21,14 @@ const emptyElements = {
   link: true
 }
 
-const qualifiedName = node => (node.prefix ? node.prefix + ':' : '') + node.localName
+const qualifiedName = node =>
+  (node.prefix ? node.prefix + ':' : '') + node.localName
 
 // Reusing an existing prefix avoids generating unnecessary ns1/ns2 aliases.
 const findPrefix = (bindings, namespaceURI) => {
-  for (const [ prefix, uri ] of bindings) {
-    if (prefix !== null && prefix !== 'xmlns' && uri === namespaceURI) return prefix
+  for (const [prefix, uri] of bindings) {
+    if (prefix !== null && prefix !== 'xmlns' && uri === namespaceURI)
+      return prefix
   }
   return null
 }
@@ -36,7 +48,11 @@ const ensureXMLSerializableName = node => {
   // a valid in-memory DOM state, but well-formed XML serialization must reject
   // it rather than treating the colon as namespace metadata after the fact.
   if (node.localName.includes(':')) throw new Error('Invalid State Error')
-  if (node.nodeType === node.ATTRIBUTE_NODE && node.namespaceURI === null && node.localName === 'xmlns') {
+  if (
+    node.nodeType === node.ATTRIBUTE_NODE &&
+    node.namespaceURI === null &&
+    node.localName === 'xmlns'
+  ) {
     throw new Error('Invalid State Error')
   }
 }
@@ -46,7 +62,9 @@ const serializeAttributes = (node, inheritedBindings) => {
   // an SVG/XML document still needs XML namespace declarations.
   if (usesHTMLSerialization(node)) {
     return {
-      attrs: [ ...node.attrs ].map(attr => qualifiedName(attr) + '="' + htmlEntities(attr.value) + '"'),
+      attrs: [...node.attrs].map(
+        attr => qualifiedName(attr) + '="' + htmlEntities(attr.value) + '"'
+      ),
       bindings: inheritedBindings
     }
   }
@@ -66,7 +84,8 @@ const serializeAttributes = (node, inheritedBindings) => {
     if (prefix === undefined) continue
 
     const uri = String(attr.value)
-    if (!isValidNamespaceDeclaration(prefix, uri)) throw new Error('Namespace Error')
+    if (!isValidNamespaceDeclaration(prefix, uri))
+      throw new Error('Namespace Error')
     declarations.set(prefix, uri)
     bindings.set(prefix, uri)
   }
@@ -78,10 +97,17 @@ const serializeAttributes = (node, inheritedBindings) => {
   if (node.namespaceURI === xml) {
     // The XML namespace is implicitly and exclusively bound to `xml`.
     bindings.set('xml', xml)
-  } else if (node.namespaceURI !== null && bindings.get(node.prefix) !== node.namespaceURI) {
+  } else if (
+    node.namespaceURI !== null &&
+    bindings.get(node.prefix) !== node.namespaceURI
+  ) {
     declarations.set(node.prefix, node.namespaceURI)
     bindings.set(node.prefix, node.namespaceURI)
-  } else if (node.namespaceURI === null && node.prefix === null && bindings.get(null) != null) {
+  } else if (
+    node.namespaceURI === null &&
+    node.prefix === null &&
+    bindings.get(null) != null
+  ) {
     declarations.set(null, null)
     bindings.set(null, null)
   }
@@ -99,8 +125,10 @@ const serializeAttributes = (node, inheritedBindings) => {
       // without a prefix therefore needs a reusable or generated prefix.
       if (prefix === null) {
         prefix = findPrefix(bindings, attr.namespaceURI) || nextPrefix(bindings)
-      } else if (bindings.get(prefix) !== attr.namespaceURI
-          && (prefix === elementPrefix || usedAttributePrefixes.has(prefix))) {
+      } else if (
+        bindings.get(prefix) !== attr.namespaceURI &&
+        (prefix === elementPrefix || usedAttributePrefixes.has(prefix))
+      ) {
         // Rebinding the element's prefix (or one already used by another
         // attribute) would change an earlier name, so allocate another prefix.
         prefix = findPrefix(bindings, attr.namespaceURI) || nextPrefix(bindings)
@@ -117,7 +145,7 @@ const serializeAttributes = (node, inheritedBindings) => {
     attrs.push(name + '="' + htmlEntities(attr.value) + '"')
   }
 
-  const declarationAttrs = [ ...declarations ].map(([ prefix, uri ]) => {
+  const declarationAttrs = [...declarations].map(([prefix, uri]) => {
     const name = prefix === null ? 'xmlns' : `xmlns:${prefix}`
     return name + '="' + htmlEntities(uri || '') + '"'
   })
@@ -128,35 +156,49 @@ const serializeAttributes = (node, inheritedBindings) => {
   }
 }
 
-const serializeChildren = (node, bindings) => node.childNodes.map(child => {
-  if (child.nodeType === child.TEXT_NODE) return htmlEntities(child.data)
-  if (child.nodeType === child.CDATA_SECTION_NODE) {
-    if (child.data.includes(']]>')) throw new Error('Invalid State Error')
-    return `<![CDATA[${child.data}]]>`
-  }
-  if (child.nodeType === child.COMMENT_NODE) return `<!--${child.data}-->`
-  if (child.nodeType === child.ELEMENT_NODE) return serializeElement(child, bindings)
-  return ''
-}).join('')
+const serializeChildren = (node, bindings) =>
+  node.childNodes
+    .map(child => {
+      if (child.nodeType === child.TEXT_NODE) return htmlEntities(child.data)
+      if (child.nodeType === child.CDATA_SECTION_NODE) {
+        if (child.data.includes(']]>')) throw new Error('Invalid State Error')
+        return `<![CDATA[${child.data}]]>`
+      }
+      if (child.nodeType === child.COMMENT_NODE) return `<!--${child.data}-->`
+      if (child.nodeType === child.ELEMENT_NODE)
+        return serializeElement(child, bindings)
+      return ''
+    })
+    .join('')
 
 const serializeElement = (node, inheritedBindings) => {
   const { attrs, bindings } = serializeAttributes(node, inheritedBindings)
-  const name = node.namespaceURI === xml ? `xml:${node.localName}` : qualifiedName(node)
+  const name =
+    node.namespaceURI === xml ? `xml:${node.localName}` : qualifiedName(node)
   // Void-element behavior applies only to HTML elements in an HTML document.
   // XHTML inside SVG/XML, and foreign elements named <br>, must be closed.
-  const isEmptyHTMLTag = usesHTMLSerialization(node) && node.namespaceURI === html && emptyElements[name.toLowerCase()]
+  const isEmptyHTMLTag =
+    usesHTMLSerialization(node) &&
+    node.namespaceURI === html &&
+    emptyElements[name.toLowerCase()]
 
-  return '<' + [].concat(name, attrs).join(' ') + '>' + (isEmptyHTMLTag ? '' : serializeChildren(node, bindings) + '</' + name + '>')
+  return (
+    '<' +
+    [].concat(name, attrs).join(' ') +
+    '>' +
+    (isEmptyHTMLTag
+      ? ''
+      : serializeChildren(node, bindings) + '</' + name + '>')
+  )
 }
 
 export const tag = function (node) {
   // outerHTML must stand on its own. Start without bindings from DOM ancestors;
   // recursive calls receive only declarations emitted inside this output.
-  return serializeElement(node, new Map([ [ 'xml', xml ] ]))
+  return serializeElement(node, new Map([['xml', xml]]))
 }
 
 export const cloneNode = function (node) {
-
   const { prefix, localName, namespaceURI: ns, nodeValue, ownerDocument } = node
 
   // Build up the correctly cased qualified name
@@ -167,12 +209,16 @@ export const cloneNode = function (node) {
   // and we dont care about it when there are non
   const local = localName.includes(':')
 
-  const clone = new node.constructor(qualifiedName, {
-    attrs: new Set([ ...node.attrs ].map(node => node.cloneNode())),
-    nodeValue,
-    ownerDocument,
-    local
-  }, ns)
+  const clone = new node.constructor(
+    qualifiedName,
+    {
+      attrs: new Set([...node.attrs].map(node => node.cloneNode())),
+      nodeValue,
+      ownerDocument,
+      local
+    },
+    ns
+  )
 
   // Attr.cloneNode() cannot know its future owner; ownership is established
   // only after the containing element clone exists.

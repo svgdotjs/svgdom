@@ -1,21 +1,20 @@
-
 import { HTMLElement } from './HTMLElement.js'
 export class HTMLScriptElement extends HTMLElement {}
 
 Object.defineProperties(HTMLScriptElement.prototype, {
   src: {
-    get () {
+    get() {
       return this.getAttribute('src')
     },
-    set (val) {
+    set(val) {
       this.setAttribute('src', val)
     }
   },
   type: {
-    get () {
+    get() {
       return this.getAttribute('type')
     },
-    set (val) {
+    set(val) {
       this.setAttribute('type', val)
     }
   }

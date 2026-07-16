@@ -4,26 +4,26 @@ export class HTMLLinkElement extends HTMLElement {}
 
 Object.defineProperties(HTMLLinkElement.prototype, {
   href: {
-    get () {
+    get() {
       return this.getAttribute('href')
     },
-    set (val) {
+    set(val) {
       this.setAttribute('href', val)
     }
   },
   rel: {
-    get () {
+    get() {
       return this.getAttribute('rel')
     },
-    set (val) {
+    set(val) {
       this.setAttribute('rel', val)
     }
   },
   type: {
-    get () {
+    get() {
       return this.getAttribute('type')
     },
-    set (val) {
+    set(val) {
       this.setAttribute('type', val)
     }
   }

@@ -1,8 +1,8 @@
 const radians = function (d) {
-  return d % 360 * Math.PI / 180
+  return ((d % 360) * Math.PI) / 180
 }
 
-export function matrixFactory (a, b, c, d, e, f) {
+export function matrixFactory(a, b, c, d, e, f) {
   var r = new SVGMatrix()
   r.a = a
   r.b = b
@@ -14,12 +14,12 @@ export function matrixFactory (a, b, c, d, e, f) {
 }
 
 export class SVGMatrix {
-  constructor () {
+  constructor() {
     this.a = this.d = 1
     this.b = this.c = this.e = this.f = 0
   }
 
-  inverse () {
+  inverse() {
     // Get the current parameters out of the matrix
     var a = this.a
     var b = this.b
@@ -53,7 +53,7 @@ export class SVGMatrix {
     return this
   }
 
-  multiply (m) {
+  multiply(m) {
     var r = new SVGMatrix()
     r.a = this.a * m.a + this.c * m.b + this.e * 0
     r.b = this.b * m.a + this.d * m.b + this.f * 0
@@ -64,40 +64,43 @@ export class SVGMatrix {
     return r
   }
 
-  rotate (r, x, y) {
-    r = r % 360 * Math.PI / 180
-    return this.multiply(matrixFactory(
-      Math.cos(r),
-      Math.sin(r),
-      -Math.sin(r),
-      Math.cos(r),
-      x ? -Math.cos(r) * x + Math.sin(r) * y + x : 0,
-      y ? -Math.sin(r) * x - Math.cos(r) * y + y : 0
-    ))
+  rotate(r, x, y) {
+    r = ((r % 360) * Math.PI) / 180
+    return this.multiply(
+      matrixFactory(
+        Math.cos(r),
+        Math.sin(r),
+        -Math.sin(r),
+        Math.cos(r),
+        x ? -Math.cos(r) * x + Math.sin(r) * y + x : 0,
+        y ? -Math.sin(r) * x - Math.cos(r) * y + y : 0
+      )
+    )
   }
 
-  scale (scaleX, scaleY = scaleX) {
+  scale(scaleX, scaleY = scaleX) {
     return this.multiply(matrixFactory(scaleX, 0, 0, scaleY, 0, 0))
   }
 
-  skew (x, y) {
-    return this.multiply(matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0))
+  skew(x, y) {
+    return this.multiply(
+      matrixFactory(1, Math.tan(radians(y)), Math.tan(radians(x)), 1, 0, 0)
+    )
   }
 
-  skewX (x) {
+  skewX(x) {
     return this.skew(x, 0)
   }
 
-  skewY (y) {
+  skewY(y) {
     return this.skew(0, y)
   }
 
-  toString () {
+  toString() {
     return 'SVGMatrix'
   }
 
-  translate (x = 0, y = 0) {
+  translate(x = 0, y = 0) {
     return this.multiply(matrixFactory(1, 0, 0, 1, x, y))
   }
-
 }

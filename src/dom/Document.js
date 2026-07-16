@@ -15,7 +15,13 @@ import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
-import { svg, html, normalizeNamespace, validateAndExtract, validateName } from '../utils/namespaces.js'
+import {
+  svg,
+  html,
+  normalizeNamespace,
+  validateAndExtract,
+  validateName
+} from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 import { SVGRectElement } from './svg/SVGRectElement.js'
@@ -25,8 +31,12 @@ import { SVGEllipseElement } from './svg/SVGEllipseElement.js'
 import { SVGForeignObjectElement } from './svg/SVGForeignObjectElement.js'
 import { SVGImageElement } from './svg/SVGImageElement.js'
 
-function getChildByTagName (parent, name) {
-  for (let child = parent.firstChild; child != null; child = child.nextSibling) {
+function getChildByTagName(parent, name) {
+  for (
+    let child = parent.firstChild;
+    child != null;
+    child = child.nextSibling
+  ) {
     if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === name) {
       return child
     }
@@ -34,57 +44,57 @@ function getChildByTagName (parent, name) {
   return null
 }
 
-const getSVGElementForName = (name) => {
+const getSVGElementForName = name => {
   switch (name.toLowerCase()) {
-  case 'svg':
-    return SVGSVGElement
-  case 'path':
-    return SVGPathElement
-  case 'circle':
-    return SVGCircleElement
-  case 'ellipse':
-    return SVGEllipseElement
-  case 'line':
-    return SVGLineElement
-  case 'rect':
-    return SVGRectElement
-  case 'foreignobject':
-    return SVGForeignObjectElement
-  case 'image':
-    return SVGImageElement
-  case 'text':
-  case 'tspan':
-  case 'tref':
-  case 'altglyph':
-  case 'textpath':
-    return SVGTextContentElement
-  default:
-    return SVGGraphicsElement
+    case 'svg':
+      return SVGSVGElement
+    case 'path':
+      return SVGPathElement
+    case 'circle':
+      return SVGCircleElement
+    case 'ellipse':
+      return SVGEllipseElement
+    case 'line':
+      return SVGLineElement
+    case 'rect':
+      return SVGRectElement
+    case 'foreignobject':
+      return SVGForeignObjectElement
+    case 'image':
+      return SVGImageElement
+    case 'text':
+    case 'tspan':
+    case 'tref':
+    case 'altglyph':
+    case 'textpath':
+      return SVGTextContentElement
+    default:
+      return SVGGraphicsElement
   }
 }
 
-const getHTMLElementForName = (name) => {
+const getHTMLElementForName = name => {
   switch (name.toLowerCase()) {
-  case 'img':
-    return HTMLImageElement
-  case 'link':
-    return HTMLLinkElement
-  case 'script':
-    return HTMLScriptElement
-  default:
-    return HTMLElement
+    case 'img':
+      return HTMLImageElement
+    case 'link':
+      return HTMLLinkElement
+    case 'script':
+      return HTMLScriptElement
+    default:
+      return HTMLElement
   }
 }
 
 const getElementForNamespace = (ns, name) => {
   switch (ns) {
-  case svg:
-    return getSVGElementForName(name)
-  case html:
-  case null:
-  case '':
-  default:
-    return getHTMLElementForName(name)
+    case svg:
+      return getSVGElementForName(name)
+    case html:
+    case null:
+    case '':
+    default:
+      return getHTMLElementForName(name)
   }
 }
 
@@ -97,20 +107,26 @@ const supportedFeatures = {
 }
 
 export const DOMImplementation = {
-  hasFeature (feature, version) {
+  hasFeature(feature, version) {
     const f = supportedFeatures[(feature || '').toLowerCase()]
     return (f && f[version || '']) || false
   },
 
-  createDocumentType (qualifiedName, publicId, systemId) {
-    return new DocumentType(qualifiedName, { publicId, systemId, ownerDocument: this })
+  createDocumentType(qualifiedName, publicId, systemId) {
+    return new DocumentType(qualifiedName, {
+      publicId,
+      systemId,
+      ownerDocument: this
+    })
   },
 
-  createDocument (namespace, qualifiedName, doctype) {
+  createDocument(namespace, qualifiedName, doctype) {
     const doc = new Document(namespace)
     if (doctype) {
       if (doctype.ownerDocument) {
-        throw new Error('the object is in the wrong Document, a call to importNode is required')
+        throw new Error(
+          'the object is in the wrong Document, a call to importNode is required'
+        )
       }
       doctype.ownerDocument = doc
       doc.appendChild(doctype)
@@ -121,7 +137,7 @@ export const DOMImplementation = {
     return doc
   },
 
-  createHTMLDocument (titleText = '') {
+  createHTMLDocument(titleText = '') {
     const d = new Document(html)
     const root = d.createElement('html')
     const head = d.createElement('head')
@@ -137,7 +153,7 @@ export const DOMImplementation = {
 }
 
 export class Document extends Node {
-  constructor (ns) {
+  constructor(ns) {
     super('#document', {}, ns)
     this.nodeType = Node.DOCUMENT_NODE
     this.implementation = DOMImplementation
@@ -145,50 +161,53 @@ export class Document extends Node {
   }
 
   // https://dom.spec.whatwg.org/#dom-document-createattribute
-  createAttribute (localName) {
+  createAttribute(localName) {
     if (this.namespaceURI === html) {
       localName = localName.toLowerCase()
     }
     return this.createAttributeNS(null, localName, true)
   }
 
-  createAttributeNS (ns, qualifiedName, local = false) {
+  createAttributeNS(ns, qualifiedName, local = false) {
     // `local` is used by createAttribute()/setAttribute(): in that API a colon
     // belongs to the local name and does not introduce a namespace prefix.
     if (local) {
       ns = normalizeNamespace(ns)
       qualifiedName = validateName(qualifiedName)
     } else {
-      ;[ ns ] = validateAndExtract(ns, qualifiedName)
+      ;[ns] = validateAndExtract(ns, qualifiedName)
     }
 
     return new Attr(qualifiedName, { ownerDocument: this, local }, ns)
   }
 
-  createCDATASection (text) {
+  createCDATASection(text) {
     if (this.namespaceURI === html) throw new Error('Not Supported Error')
 
     text = String(text)
     if (text.includes(']]>')) throw new Error('Invalid Character Error')
-    return new CDATASection('#cdata-section', { nodeValue: text, ownerDocument: this })
+    return new CDATASection('#cdata-section', {
+      nodeValue: text,
+      ownerDocument: this
+    })
   }
 
-  createComment (text) {
+  createComment(text) {
     return new Comment('#comment', { nodeValue: text, ownerDocument: this })
   }
 
-  createDocumentFragment (name) {
+  createDocumentFragment(_name) {
     return new DocumentFragment('#document-fragment', { ownerDocument: this })
   }
 
-  createElement (localName) {
+  createElement(localName) {
     // svgdom historically inherits the document namespace here. This differs
     // from browser XML DOMs, but keeps the convenient SVG creation API stable.
     if (this.namespaceURI === html) localName = String(localName).toLowerCase()
     return this.createElementNS(this.namespaceURI, localName, true)
   }
 
-  createElementNS (ns, qualifiedName, local = false) {
+  createElementNS(ns, qualifiedName, local = false) {
     let localName
     // See createAttributeNS(): non-namespace creation deliberately keeps the
     // complete supplied name as the local name.
@@ -197,37 +216,43 @@ export class Document extends Node {
       qualifiedName = validateName(qualifiedName)
       localName = qualifiedName
     } else {
-      ;[ ns, , localName ] = validateAndExtract(ns, qualifiedName)
+      ;[ns, , localName] = validateAndExtract(ns, qualifiedName)
     }
 
     // Concrete SVG/HTML classes are selected by local name, not by a possibly
     // prefixed qualified name such as `svg:rect`.
     const Element = getElementForNamespace(ns, localName)
 
-    return new Element(qualifiedName, {
-      ownerDocument: this,
-      local
-    }, ns)
+    return new Element(
+      qualifiedName,
+      {
+        ownerDocument: this,
+        local
+      },
+      ns
+    )
   }
 
-  createTextNode (text) {
+  createTextNode(text) {
     return new Text('#text', { nodeValue: text, ownerDocument: this })
   }
 
-  get compatMode () {
+  get compatMode() {
     return 'CSS1Compat' // always be in standards-mode
   }
 
-  get body () {
+  get body() {
     return getChildByTagName(this.documentElement, 'BODY')
   }
 
-  get head () {
+  get head() {
     return getChildByTagName(this.documentElement, 'HEAD')
   }
 
-  get documentElement () {
-    return this.childNodes.find(node => node.nodeType === Node.ELEMENT_NODE) || null
+  get documentElement() {
+    return (
+      this.childNodes.find(node => node.nodeType === Node.ELEMENT_NODE) || null
+    )
   }
 }
 

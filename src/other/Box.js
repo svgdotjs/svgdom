@@ -2,18 +2,23 @@ import * as regex from '../utils/regex.js'
 import { Point } from './Point.js'
 
 export class Box {
-  constructor (source) {
-    var base = [ 0, 0, 0, 0 ]
-    source = typeof source === 'string' ? source.split(regex.delimiter).map(parseFloat)
-      : Array.isArray(source) ? source
-      : typeof source === 'object' ? [
-        source.left != null ? source.left : source.x,
-        source.top != null ? source.top : source.y,
-        source.width,
-        source.height
-      ]
-      : arguments.length === 4 ? [].slice.call(arguments)
-      : base
+  constructor(source) {
+    var base = [0, 0, 0, 0]
+    source =
+      typeof source === 'string'
+        ? source.split(regex.delimiter).map(parseFloat)
+        : Array.isArray(source)
+          ? source
+          : typeof source === 'object'
+            ? [
+                source.left != null ? source.left : source.x,
+                source.top != null ? source.top : source.y,
+                source.width,
+                source.height
+              ]
+            : arguments.length === 4
+              ? [].slice.call(arguments)
+              : base
 
     this.x = this.left = source[0]
     this.y = this.top = source[1]
@@ -24,20 +29,21 @@ export class Box {
   }
 
   // Merge rect box with another, return a new instance
-  merge (box) {
+  merge(box) {
     if (box instanceof NoBox) return new Box(this)
 
     var x = Math.min(this.x, box.x)
     var y = Math.min(this.y, box.y)
 
     return new Box(
-      x, y,
+      x,
+      y,
       Math.max(this.x + this.width, box.x + box.width) - x,
       Math.max(this.y + this.height, box.y + box.height) - y
     )
   }
 
-  transform (m) {
+  transform(m) {
     var xMin = Infinity
     var xMax = -Infinity
     var yMin = Infinity
@@ -58,21 +64,17 @@ export class Box {
       yMax = Math.max(yMax, p.y)
     })
 
-    return new Box(
-      xMin, yMin,
-      xMax - xMin,
-      yMax - yMin
-    )
+    return new Box(xMin, yMin, xMax - xMin, yMax - yMin)
   }
 }
 
 export class NoBox extends Box {
   // NoBox has no valid values so it cant be merged
-  merge (box) {
+  merge(box) {
     return box instanceof NoBox ? new NoBox() : new Box(box)
   }
 
-  transform (m) {
+  transform(_m) {
     return new NoBox()
   }
 }

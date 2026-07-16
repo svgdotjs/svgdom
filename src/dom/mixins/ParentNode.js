@@ -5,13 +5,20 @@ import { nodesToNode } from '../../utils/nodesToNode.js'
 
 // https://dom.spec.whatwg.org/#parentnode
 const ParentNode = {
-  matchWithScope (query, scope) {
+  matchWithScope(query, scope) {
     return new CssQuery(query).matches(this, scope)
   },
 
-  query (query, scope, single = false) {
-
-    const iter = new NodeIterator(scope, NodeFilter.SHOW_ELEMENT, (node) => node.matchWithScope(query, scope) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE, false)
+  query(query, scope, single = false) {
+    const iter = new NodeIterator(
+      scope,
+      NodeFilter.SHOW_ELEMENT,
+      node =>
+        node.matchWithScope(query, scope)
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_IGNORE,
+      false
+    )
 
     const nodes = []
     for (const node of iter) {
@@ -22,15 +29,15 @@ const ParentNode = {
     return nodes
   },
 
-  querySelectorAll (query) {
+  querySelectorAll(query) {
     return this.query(query, this)
   },
 
-  querySelector (query) {
+  querySelector(query) {
     return this.query(query, this, true)[0] || null
   },
 
-  closest (query) {
+  closest(query) {
     const cssQuery = new CssQuery(query)
     let node = this
     while (node) {
@@ -42,18 +49,18 @@ const ParentNode = {
     return null
   },
 
-  prepend (...nodes) {
+  prepend(...nodes) {
     const node = nodesToNode(nodes, this.ownerDocument)
 
     this.insertBefore(node, this.firstChild)
   },
 
-  append (...nodes) {
+  append(...nodes) {
     const node = nodesToNode(nodes, this.ownerDocument)
     this.appendChild(node)
   },
 
-  replaceChildren (...nodes) {
+  replaceChildren(...nodes) {
     while (this.firstChild) {
       this.removeChild(this.firstChild)
     }
@@ -63,12 +70,14 @@ const ParentNode = {
 
 Object.defineProperties(ParentNode, {
   children: {
-    get () {
-      return this.childNodes.filter(function (node) { return node.nodeType === node.ELEMENT_NODE })
+    get() {
+      return this.childNodes.filter(function (node) {
+        return node.nodeType === node.ELEMENT_NODE
+      })
     }
   },
   firstElementChild: {
-    get () {
+    get() {
       for (const node of this.childNodes) {
         if (node && node.nodeType === node.ELEMENT_NODE) {
           return node
@@ -78,7 +87,7 @@ Object.defineProperties(ParentNode, {
     }
   },
   lastElementChild: {
-    get () {
+    get() {
       for (const node of this.childNodes.slice().reverse()) {
         if (node && node.nodeType === node.ELEMENT_NODE) {
           return node
@@ -88,7 +97,7 @@ Object.defineProperties(ParentNode, {
     }
   },
   childElementCount: {
-    get () {
+    get() {
       return this.children.length
     }
   }

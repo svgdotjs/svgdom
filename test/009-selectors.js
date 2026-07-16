@@ -127,10 +127,14 @@ describe('CssQuery - Single Selector', function () {
 
   it('matches An+B child formulas', function () {
     const parent = document.createElement('div')
-    const children = Array.from({ length: 5 }, () => document.createElement('span'))
+    const children = Array.from({ length: 5 }, () =>
+      document.createElement('span')
+    )
     children.forEach(child => parent.appendChild(child))
 
-    assert.ok(children.every(child => new CssQuery(':nth-child(n)').matches(child)))
+    assert.ok(
+      children.every(child => new CssQuery(':nth-child(n)').matches(child))
+    )
     assert.ok(new CssQuery(':nth-child(2n + 1)').matches(children[0]))
     assert.ok(new CssQuery(':nth-child(2n + 1)').matches(children[2]))
     assert.ok(!new CssQuery(':nth-child(2n + 1)').matches(children[1]))
@@ -181,7 +185,11 @@ describe('CssQuery - Single Selector', function () {
 
     assert.ok(new CssQuery(':is(div, span.first)').matches(first))
     assert.ok(new CssQuery(':where(.first, .second)').matches(second))
-    assert.ok(new CssQuery('span:is(.first, .second):not(.second):first-child').matches(first))
+    assert.ok(
+      new CssQuery('span:is(.first, .second):not(.second):first-child').matches(
+        first
+      )
+    )
     assert.ok(new CssQuery(':not(:is(.first, .second))').matches(parent))
     assert.ok(!new CssQuery(':not(:is(.first, .second))').matches(first))
   })
@@ -239,7 +247,9 @@ describe('CssQuery - Single Selector', function () {
     assert.ok(new CssQuery(':has(rect)').matches(section))
     assert.ok(new CssQuery(':has(> p, > img)').matches(section))
     assert.ok(new CssQuery(':has(> :is(img, rect))').matches(section))
-    assert.ok(new CssQuery(':not(:has(> rect)):has(:is(img, rect))').matches(section))
+    assert.ok(
+      new CssQuery(':not(:has(> rect)):has(:is(img, rect))').matches(section)
+    )
     assert.ok(!new CssQuery(':has(> rect)').matches(section))
   })
 
@@ -283,7 +293,9 @@ describe('CssQuery - Single Selector', function () {
 
   it('filters siblings with the of selector in :nth-child()', function () {
     const parent = document.createElement('ul')
-    const children = Array.from({ length: 4 }, () => document.createElement('li'))
+    const children = Array.from({ length: 4 }, () =>
+      document.createElement('li')
+    )
 
     children[0].setAttribute('class', 'important')
     children[1].setAttribute('hidden', '')
@@ -293,8 +305,12 @@ describe('CssQuery - Single Selector', function () {
 
     assert.ok(new CssQuery(':nth-child(2 of .important)').matches(children[2]))
     assert.ok(!new CssQuery(':nth-child(2 of .important)').matches(children[0]))
-    assert.ok(new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[2]))
-    assert.ok(!new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[3]))
+    assert.ok(
+      new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[2])
+    )
+    assert.ok(
+      !new CssQuery(':nth-last-child(1 of :not([hidden]))').matches(children[3])
+    )
   })
 })
 

@@ -12,6 +12,7 @@ All notable changes to svgdom will be documented in this file.
 ### Changed
 
 - Moved development and dependency management from npm to pnpm.
+- Separated semantic linting with ESLint from code formatting with Prettier.
 
 ### Fixed
 

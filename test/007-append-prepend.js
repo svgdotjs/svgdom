@@ -22,7 +22,10 @@ describe('append', function () {
   })
 
   it('appends multiple nodes', function () {
-    svgElement.append(svgElement.ownerDocument.createElementNS(svg, 'circle'), svgElement.ownerDocument.createElementNS(svg, 'circle'))
+    svgElement.append(
+      svgElement.ownerDocument.createElementNS(svg, 'circle'),
+      svgElement.ownerDocument.createElementNS(svg, 'circle')
+    )
     assert.strictEqual(svgElement.children.length, 3)
     assert.strictEqual(svgElement.children[1].tagName, 'circle')
     assert.strictEqual(svgElement.children[2].tagName, 'circle')
@@ -46,7 +49,10 @@ describe('prepend', function () {
   })
 
   it('prepends multiple nodes', function () {
-    svgElement.prepend(svgElement.ownerDocument.createElementNS(svg, 'circle'), svgElement.ownerDocument.createElementNS(svg, 'circle'))
+    svgElement.prepend(
+      svgElement.ownerDocument.createElementNS(svg, 'circle'),
+      svgElement.ownerDocument.createElementNS(svg, 'circle')
+    )
     assert.strictEqual(svgElement.children.length, 3)
     assert.strictEqual(svgElement.children[0].tagName, 'circle')
     assert.strictEqual(svgElement.children[1].tagName, 'circle')

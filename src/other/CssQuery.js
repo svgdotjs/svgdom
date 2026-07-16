@@ -5,7 +5,7 @@ import { html } from '../utils/namespaces.js'
 class InvalidSelectorError extends Error {}
 
 export class CssQuery {
-  constructor (query) {
+  constructor(query) {
     if (CssQuery.cache.has(query)) {
       this.queries = CssQuery.cache.get(query)
       return
@@ -22,10 +22,9 @@ export class CssQuery {
     }
     CssQuery.cache.set(query, queries)
     CssQuery.cacheKeys.push(query)
-
   }
 
-  matches (node, scope) {
+  matches(node, scope) {
     for (let i = this.queries.length; i--;) {
       if (this.matchHelper(this.queries[i], node, scope)) {
         return true
@@ -34,11 +33,13 @@ export class CssQuery {
     return false
   }
 
-  matchHelper (query, node, scope) {
+  matchHelper(query, node, scope) {
     query = query.slice()
     const last = query.pop()
 
-    if (!new CssQueryNode(last[1]).matches(node, scope)) { return false }
+    if (!new CssQueryNode(last[1]).matches(node, scope)) {
+      return false
+    }
 
     if (!query.length) return true
 
@@ -50,23 +51,28 @@ export class CssQuery {
     }
 
     if (last[0] === '>') {
-      return !!node.parentNode && this.matchHelper(query, node.parentNode, scope)
+      return (
+        !!node.parentNode && this.matchHelper(query, node.parentNode, scope)
+      )
     }
 
     if (last[0] === '~') {
       while ((node = node.previousSibling)) {
-        if (this.matchHelper(query, node, scope)) { return true }
+        if (this.matchHelper(query, node, scope)) {
+          return true
+        }
       }
       return false
     }
 
     if (last[0] === '%') {
       while ((node = node.parentNode)) {
-        if (this.matchHelper(query, node, scope)) { return true }
+        if (this.matchHelper(query, node, scope)) {
+          return true
+        }
       }
       return false
     }
-
   }
 }
 
@@ -106,13 +112,11 @@ const nth = (node, arr, value) => {
   return Number.isInteger(n) && n >= 0
 }
 
-const elementChildren = node => node
-  ? node.childNodes.filter(child => child.nodeType === 1)
-  : []
+const elementChildren = node =>
+  node ? node.childNodes.filter(child => child.nodeType === 1) : []
 
-const elementSiblings = node => node.parentNode
-  ? elementChildren(node.parentNode)
-  : [ node ]
+const elementSiblings = node =>
+  node.parentNode ? elementChildren(node.parentNode) : [node]
 
 const sameType = (a, b) =>
   a.localName === b.localName && a.namespaceURI === b.namespaceURI
@@ -143,7 +147,7 @@ const nthChild = (argument, node, scope, fromEnd = false) => {
 const lower = a => a.toLowerCase()
 
 // checks if a and b are equal. Is insensitive when i is true
-const eq = (a, b, i) => i ? lower(a) === lower(b) : a === b
+const eq = (a, b, i) => (i ? lower(a) === lower(b) : a === b)
 
 const escapeSequenceEnd = (string, index) => {
   let end = index + 1
@@ -168,7 +172,7 @@ const tokenizeSelector = selector => {
 
   const pushToken = () => {
     if (!token) return
-    pairs.push([ relation, token ])
+    pairs.push([relation, token])
     token = ''
     relation = '%'
   }
@@ -257,13 +261,12 @@ const parseEscapedIdentifier = identifier => {
     }
 
     const codePoint = parseInt(hex[0], 16)
-    const invalidCodePoint = codePoint === 0
-      || (codePoint >= 0xD800 && codePoint <= 0xDFFF)
-      || codePoint > 0x10FFFF
+    const invalidCodePoint =
+      codePoint === 0 ||
+      (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
+      codePoint > 0x10ffff
 
-    result += invalidCodePoint
-      ? '\uFFFD'
-      : String.fromCodePoint(codePoint)
+    result += invalidCodePoint ? '\uFFFD' : String.fromCodePoint(codePoint)
 
     index += hex[0].length - 1
     if (identifier[index + 1] === '\r' && identifier[index + 2] === '\n') {
@@ -386,7 +389,8 @@ const extractPseudos = selector => {
         }
       }
 
-      if (depth) throw new InvalidSelectorError(`Unclosed pseudo-class :${name[0]}()`)
+      if (depth)
+        throw new InvalidSelectorError(`Unclosed pseudo-class :${name[0]}()`)
       argument = selector.slice(argumentStart, end)
       end++
     }
@@ -403,11 +407,12 @@ const extractPseudos = selector => {
 // [b] (passed)   is the value of the attribute
 const attributeMatcher = {
   '=': (i, a, b) => eq(a, b, i),
-  '~=': (i, a, b) => b.split(regex.delimiter).filter(el => eq(el, a, i)).length > 0,
+  '~=': (i, a, b) =>
+    b.split(regex.delimiter).filter(el => eq(el, a, i)).length > 0,
   '|=': (i, a, b) => eq(b.split(regex.delimiter)[0], a, i),
-  '^=': (i, a, b) => i ? lower(b).startsWith(lower(a)) : b.startsWith(a),
-  '$=': (i, a, b) => i ? lower(b).endsWith(lower(a)) : b.endsWith(a),
-  '*=': (i, a, b) => i ? lower(b).includes(lower(a)) : b.includes(a),
+  '^=': (i, a, b) => (i ? lower(b).startsWith(lower(a)) : b.startsWith(a)),
+  '$=': (i, a, b) => (i ? lower(b).endsWith(lower(a)) : b.endsWith(a)),
+  '*=': (i, a, b) => (i ? lower(b).includes(lower(a)) : b.includes(a)),
   '*': (i, a, b) => b != null
 }
 
@@ -418,11 +423,12 @@ const getAttributeValue = (prefix, name, node) => {
   return node.getAttribute(prefix + ':' + name)
 }
 
-const isEmpty = node => !node.childNodes.some(child => {
-  if (child.nodeType === 1) return true
-  if (child.nodeType !== 3 && child.nodeType !== 4) return false
-  return /[^ \n\r\t\f]/.test(child.data || '')
-})
+const isEmpty = node =>
+  !node.childNodes.some(child => {
+    if (child.nodeType === 1) return true
+    if (child.nodeType !== 3 && child.nodeType !== 4) return false
+    return /[^ \n\r\t\f]/.test(child.data || '')
+  })
 
 const matchesRelativeSelector = (selector, node) => {
   const queries = tokenizeSelector(selector)
@@ -432,12 +438,9 @@ const matchesRelativeSelector = (selector, node) => {
   }
 
   const query = Object.create(CssQuery.prototype)
-  query.queries = queries.map(pairs => [
-    [ '%', ':scope' ],
-    ...pairs
-  ])
+  query.queries = queries.map(pairs => [['%', ':scope'], ...pairs])
 
-  const nodes = [ node.getRootNode() ]
+  const nodes = [node.getRootNode()]
   while (nodes.length) {
     const candidate = nodes.pop()
     if (candidate.nodeType === 1 && query.matches(candidate, node)) return true
@@ -454,7 +457,7 @@ const matchesForgivingSelectorList = (selector, node, scope) => {
     if (!pairs.length) continue
 
     const query = Object.create(CssQuery.prototype)
-    query.queries = [ pairs ]
+    query.queries = [pairs]
 
     try {
       if (query.matches(node, scope)) matches = true
@@ -488,16 +491,16 @@ const pseudoMatcher = {
   },
   empty: (a, n) => isEmpty(n),
   root: (a, n) => n.ownerDocument.documentElement === n,
-  not: (a, n, s) => !(new CssQuery(a)).matches(n, s),
+  not: (a, n, s) => !new CssQuery(a).matches(n, s),
   is: (a, n, s) => matchesForgivingSelectorList(a, n, s),
   where: (a, n, s) => matchesForgivingSelectorList(a, n, s),
   has: (a, n) => matchesRelativeSelector(a, n),
-  matches: (a, n, s) => (new CssQuery(a)).matches(n, s),
+  matches: (a, n, s) => new CssQuery(a).matches(n, s),
   scope: (a, n, s) => n === s
 }
 
 export class CssQueryNode {
-  constructor (node) {
+  constructor(node) {
     this.tag = ''
     this.id = ''
     this.classList = []
@@ -531,7 +534,11 @@ export class CssQueryNode {
     node = parsedPseudos.remainder
 
     // match attributes
-    while ((matches = /\[([\w-*]+\|)?([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(node))) {
+    while (
+      (matches = /\[([\w-*]+\|)?([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(
+        node
+      ))
+    ) {
       const prefix = matches[1] ? matches[1].split('|')[0] : null
       this.attrs.push({
         name: matches[2],
@@ -542,37 +549,49 @@ export class CssQueryNode {
           removeQuotes((matches[5] || '').trim()) // attribute value
         )
       })
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
+      node =
+        node.slice(0, matches.index) +
+        node.slice(matches.index + matches[0].length)
     }
 
     // match classes
     while ((matches = /\.([\w-]+)/g.exec(node))) {
       this.classList.push(matches[1])
-      node = node.slice(0, matches.index) + node.slice(matches.index + matches[0].length)
+      node =
+        node.slice(0, matches.index) +
+        node.slice(matches.index + matches[0].length)
     }
 
     if (node) throw new InvalidSelectorError(`Invalid selector: ${node}`)
   }
 
-  matches (node, scope) {
+  matches(node, scope) {
     let i
 
     if (node.nodeType !== 1) return false
 
     // HTML type selectors are case-insensitive, but foreign elements in the
     // same document retain their namespace's casing rules.
-    const tag = node.namespaceURI === html && node.ownerDocument?.namespaceURI === html
-      ? this.tag.toUpperCase()
-      : this.tag
+    const tag =
+      node.namespaceURI === html && node.ownerDocument?.namespaceURI === html
+        ? this.tag.toUpperCase()
+        : this.tag
 
-    if (tag && tag !== node.nodeName && tag !== '*') { return false }
+    if (tag && tag !== node.nodeName && tag !== '*') {
+      return false
+    }
 
     if (this.id && this.id !== node.id) {
       return false
     }
 
-    const classList = (node.getAttribute('class') || '').split(regex.delimiter).filter(el => !!el.length)
-    if (this.classList.filter(className => classList.indexOf(className) < 0).length) {
+    const classList = (node.getAttribute('class') || '')
+      .split(regex.delimiter)
+      .filter(el => !!el.length)
+    if (
+      this.classList.filter(className => classList.indexOf(className) < 0)
+        .length
+    ) {
       return false
     }
 
@@ -591,5 +610,4 @@ export class CssQueryNode {
 
     return true
   }
-
 }

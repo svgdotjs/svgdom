@@ -25,14 +25,14 @@ import { camelCase } from '../utils/strUtils.js'
 import * as defaults from '../utils/defaults.js'
 
 export class Window extends EventTarget {
-  constructor () {
+  constructor() {
     super()
     this.document = new Document()
     this.document.defaultView = this
     this.self = this
     const doc = this.document
     this.Image = class {
-      constructor (width, height) {
+      constructor(width, height) {
         const img = doc.createElement('img')
         if (width != null) img.setAttribute('width', width)
         if (height != null) img.setAttribute('height', height)
@@ -41,22 +41,18 @@ export class Window extends EventTarget {
     }
   }
 
-  getComputedStyle (node) {
+  getComputedStyle(node) {
     return {
       // FIXME: Currently this function treats every given attr
       // as inheritable from its parents which is ofc not always true
       // but good enough for svg.js
-      getPropertyValue (attr) {
+      getPropertyValue(attr) {
         let value
         let cur = node
 
         do {
           value = cur.style[attr] || cur.getAttribute(attr)
-        } while (
-          value == null
-          && (cur = cur.parentNode)
-          && cur.nodeType === 1
-        )
+        } while (value == null && (cur = cur.parentNode) && cur.nodeType === 1)
 
         return value || defaults[camelCase(attr)] || null
       }

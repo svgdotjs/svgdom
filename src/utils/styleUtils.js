@@ -36,11 +36,17 @@ const scan = (value, callback) => {
     else if (character === ']' && brackets) brackets--
     else if (character === '{') braces++
     else if (character === '}' && braces) braces--
-    else if (!parentheses && !brackets && !braces && callback(character, i) === false) return
+    else if (
+      !parentheses &&
+      !brackets &&
+      !braces &&
+      callback(character, i) === false
+    )
+      return
   }
 }
 
-const splitDeclarations = (cssText) => {
+const splitDeclarations = cssText => {
   const declarations = []
   let start = 0
 
@@ -54,7 +60,7 @@ const splitDeclarations = (cssText) => {
   return declarations
 }
 
-const declarationColon = (declaration) => {
+const declarationColon = declaration => {
   let colon = -1
 
   scan(declaration, (character, index) => {
@@ -66,13 +72,12 @@ const declarationColon = (declaration) => {
   return colon
 }
 
-const withoutCommentsAndWhitespace = (value) => value
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/\s/g, '')
+const withoutCommentsAndWhitespace = value =>
+  value.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s/g, '')
 
-const withoutComments = (value) => value.replace(/\/\*[\s\S]*?\*\//g, '')
+const withoutComments = value => value.replace(/\/\*[\s\S]*?\*\//g, '')
 
-export const splitStylePriority = (value) => {
+export const splitStylePriority = value => {
   let importantIndex = -1
 
   scan(value, (character, index) => {
@@ -92,34 +97,41 @@ export const splitStylePriority = (value) => {
   }
 }
 
-export const normalizeStylePropertyName = (name) => {
+export const normalizeStylePropertyName = name => {
   name = String(name).trim()
   if (name.startsWith('--')) return name
   if (name === 'cssFloat') return 'float'
   return decamelize(name).toLowerCase()
 }
 
-export const parseStyleDeclarations = (cssText) => {
+export const parseStyleDeclarations = cssText => {
   const parsed = []
 
   for (const declaration of splitDeclarations(String(cssText))) {
     const colon = declarationColon(declaration)
     if (colon === -1) continue
 
-    const name = normalizeStylePropertyName(withoutComments(declaration.slice(0, colon)))
+    const name = normalizeStylePropertyName(
+      withoutComments(declaration.slice(0, colon))
+    )
     if (!name) continue
 
     const parsedValue = splitStylePriority(declaration.slice(colon + 1))
     if (!name.startsWith('--') && !parsedValue.value) continue
 
-    const existingIndex = parsed.findIndex(({ name: existingName }) => existingName === name)
+    const existingIndex = parsed.findIndex(
+      ({ name: existingName }) => existingName === name
+    )
     if (existingIndex === -1) {
       parsed.push({ name, ...parsedValue })
       continue
     }
 
     const existing = parsed[existingIndex]
-    const winner = existing.priority && !parsedValue.priority ? existing : { name, ...parsedValue }
+    const winner =
+      existing.priority && !parsedValue.priority
+        ? existing
+        : { name, ...parsedValue }
 
     // A duplicate declaration is represented once, at the end of the block.
     // An earlier important value still wins over a later non-important value.
@@ -130,6 +142,10 @@ export const parseStyleDeclarations = (cssText) => {
   return parsed
 }
 
-export const serializeStyleDeclarations = (declarations) => declarations
-  .map(({ name, value, priority }) => `${name}: ${value}${priority ? ' !important' : ''};`)
-  .join(' ')
+export const serializeStyleDeclarations = declarations =>
+  declarations
+    .map(
+      ({ name, value, priority }) =>
+        `${name}: ${value}${priority ? ' !important' : ''};`
+    )
+    .join(' ')

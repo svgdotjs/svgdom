@@ -1,7 +1,11 @@
-/* global describe, it */
-
 import assert from 'assert'
-import { createDocument, createHTMLDocument, createSVGDocument, Document, HTMLParser } from '../main-module.js'
+import {
+  createDocument,
+  createHTMLDocument,
+  createSVGDocument,
+  Document,
+  HTMLParser
+} from '../main-module.js'
 import { SVGRectElement } from '../src/dom/svg/SVGRectElement.js'
 
 const svg = 'http://www.w3.org/2000/svg'
@@ -15,22 +19,52 @@ describe('namespaces', () => {
     const emptyNamespace = Object('')
 
     assert.strictEqual(document.createElementNS('', 'item').namespaceURI, null)
-    assert.strictEqual(document.createAttributeNS('', 'value').namespaceURI, null)
-    assert.strictEqual(document.createElementNS('urn:test', 'é:item').localName, 'item')
-    assert.strictEqual(document.createElementNS(null, '\u3001').localName, '\u3001')
-    assert.strictEqual(document.createAttributeNS(xml, 'xml:lang').prefix, 'xml')
+    assert.strictEqual(
+      document.createAttributeNS('', 'value').namespaceURI,
+      null
+    )
+    assert.strictEqual(
+      document.createElementNS('urn:test', 'é:item').localName,
+      'item'
+    )
+    assert.strictEqual(
+      document.createElementNS(null, '\u3001').localName,
+      '\u3001'
+    )
+    assert.strictEqual(
+      document.createAttributeNS(xml, 'xml:lang').prefix,
+      'xml'
+    )
 
     const svgDocument = createSVGDocument()
     assert(svgDocument.createElementNS(svg, 's:rect') instanceof SVGRectElement)
     assert(svgDocument.createElement('rect') instanceof SVGRectElement)
     assert.strictEqual(svgDocument.createElement('rect').namespaceURI, svg)
 
-    assert.throws(() => document.createElementNS(null, 'p:item'), /Namespace Error/)
-    assert.throws(() => document.createElementNS(emptyNamespace, 'p:item'), /Namespace Error/)
-    assert.throws(() => document.createAttributeNS(emptyNamespace, 'p:item'), /Namespace Error/)
-    assert.throws(() => document.createElementNS('urn:test', 'a:b:c'), /Namespace Error/)
-    assert.throws(() => document.createElementNS(null, 'not valid'), /Invalid Character Error/)
-    assert.throws(() => document.createAttributeNS(xmlns, 'value'), /Namespace Error/)
+    assert.throws(
+      () => document.createElementNS(null, 'p:item'),
+      /Namespace Error/
+    )
+    assert.throws(
+      () => document.createElementNS(emptyNamespace, 'p:item'),
+      /Namespace Error/
+    )
+    assert.throws(
+      () => document.createAttributeNS(emptyNamespace, 'p:item'),
+      /Namespace Error/
+    )
+    assert.throws(
+      () => document.createElementNS('urn:test', 'a:b:c'),
+      /Namespace Error/
+    )
+    assert.throws(
+      () => document.createElementNS(null, 'not valid'),
+      /Invalid Character Error/
+    )
+    assert.throws(
+      () => document.createAttributeNS(xmlns, 'value'),
+      /Namespace Error/
+    )
   })
 
   it('looks up inherited, default, and prefixed namespace declarations', () => {
@@ -93,10 +127,18 @@ describe('namespaces', () => {
     root.appendChild(first)
     root.appendChild(plain)
 
-    assert.deepStrictEqual(document.getElementsByTagNameNS('urn:one', 'item'), [ first ])
-    assert.deepStrictEqual(document.getElementsByTagNameNS('*', 'item'), [ first, second, plain ])
-    assert.deepStrictEqual(document.getElementsByTagNameNS('urn:two', '*'), [ second ])
-    assert.deepStrictEqual(document.getElementsByTagNameNS('', 'item'), [ plain ])
+    assert.deepStrictEqual(document.getElementsByTagNameNS('urn:one', 'item'), [
+      first
+    ])
+    assert.deepStrictEqual(document.getElementsByTagNameNS('*', 'item'), [
+      first,
+      second,
+      plain
+    ])
+    assert.deepStrictEqual(document.getElementsByTagNameNS('urn:two', '*'), [
+      second
+    ])
+    assert.deepStrictEqual(document.getElementsByTagNameNS('', 'item'), [plain])
   })
 
   it('updates and replaces namespaced attributes by namespace and local name', () => {
@@ -126,7 +168,10 @@ describe('namespaces', () => {
     assert.strictEqual(second.ownerElement, null)
 
     const clone = root.cloneNode()
-    assert.strictEqual(clone.getAttributeNodeNS('urn:value', 'value').ownerElement, clone)
+    assert.strictEqual(
+      clone.getAttributeNodeNS('urn:value', 'value').ownerElement,
+      clone
+    )
   })
 
   it('rejects attributes created by another document', () => {
@@ -135,8 +180,14 @@ describe('namespaces', () => {
     const plain = firstDocument.createAttribute('plain')
     const namespaced = firstDocument.createAttributeNS('urn:value', 'v:value')
 
-    assert.throws(() => secondDocument.documentElement.setAttributeNode(plain), /Wrong Document Error/)
-    assert.throws(() => secondDocument.documentElement.setAttributeNodeNS(namespaced), /Wrong Document Error/)
+    assert.throws(
+      () => secondDocument.documentElement.setAttributeNode(plain),
+      /Wrong Document Error/
+    )
+    assert.throws(
+      () => secondDocument.documentElement.setAttributeNodeNS(namespaced),
+      /Wrong Document Error/
+    )
     assert.strictEqual(plain.ownerElement, null)
     assert.strictEqual(namespaced.ownerElement, null)
   })
@@ -174,11 +225,17 @@ describe('namespaces', () => {
   it('rejects namespace-null xmlns attributes during XML serialization', () => {
     const plainDocument = createDocument(null, 'root')
     plainDocument.documentElement.setAttribute('xmlns', 'urn:pretend')
-    assert.throws(() => plainDocument.documentElement.outerHTML, /Invalid State Error/)
+    assert.throws(
+      () => plainDocument.documentElement.outerHTML,
+      /Invalid State Error/
+    )
 
     const namespacedDocument = createDocument('urn:root', 'root')
     namespacedDocument.documentElement.setAttribute('xmlns', 'urn:pretend')
-    assert.throws(() => namespacedDocument.documentElement.outerHTML, /Invalid State Error/)
+    assert.throws(
+      () => namespacedDocument.documentElement.outerHTML,
+      /Invalid State Error/
+    )
   })
 
   it('uses the document namespace for lightweight HTML behavior', () => {
@@ -206,7 +263,10 @@ describe('namespaces', () => {
     const parsed = new Document(null)
     HTMLParser(markup, parsed)
     assert.strictEqual(parsed.documentElement.namespaceURI, 'urn:test')
-    assert.strictEqual(parsed.documentElement.getAttributeNS('urn:attribute', 'value'), 'yes')
+    assert.strictEqual(
+      parsed.documentElement.getAttributeNS('urn:attribute', 'value'),
+      'yes'
+    )
 
     const htmlDocument = createHTMLDocument()
     assert.strictEqual(htmlDocument.createElement('br').outerHTML, '<br>')
@@ -224,7 +284,10 @@ describe('namespaces', () => {
 
     const parsed = new Document(null)
     HTMLParser(markup, parsed)
-    assert.strictEqual(parsed.documentElement.firstChild.firstChild.namespaceURI, 'http://www.w3.org/1999/xhtml')
+    assert.strictEqual(
+      parsed.documentElement.firstChild.firstChild.namespaceURI,
+      'http://www.w3.org/1999/xhtml'
+    )
   })
 
   it('serializes colliding attribute prefixes without rebinding earlier names', () => {
@@ -238,8 +301,14 @@ describe('namespaces', () => {
     HTMLParser(markup, parsed)
 
     assert.strictEqual(parsed.documentElement.namespaceURI, 'urn:element')
-    assert.strictEqual(parsed.documentElement.getAttributeNS('urn:first', 'first'), 'one')
-    assert.strictEqual(parsed.documentElement.getAttributeNS('urn:second', 'second'), 'two')
+    assert.strictEqual(
+      parsed.documentElement.getAttributeNS('urn:first', 'first'),
+      'one'
+    )
+    assert.strictEqual(
+      parsed.documentElement.getAttributeNS('urn:second', 'second'),
+      'two'
+    )
   })
 
   it('serializes descendant outerHTML with self-contained namespace bindings', () => {
@@ -257,7 +326,10 @@ describe('namespaces', () => {
     const parsedChild = new Document(null)
     HTMLParser(childMarkup, parsedChild)
     assert.strictEqual(parsedChild.documentElement.namespaceURI, 'urn:root')
-    assert.strictEqual(parsedChild.documentElement.getAttributeNS('urn:q', 'value'), 'yes')
+    assert.strictEqual(
+      parsedChild.documentElement.getAttributeNS('urn:q', 'value'),
+      'yes'
+    )
 
     const rootMarkup = root.outerHTML
     assert.strictEqual(rootMarkup.match(/xmlns="urn:root"/g).length, 1)
@@ -296,7 +368,8 @@ describe('namespaces', () => {
     assert.strictEqual(root.firstChild.namespaceURI, 'urn:group')
     assert.strictEqual(root.firstChild.firstChild.namespaceURI, 'urn:group')
 
-    root.innerHTML = '<group xmlns=""><item xmlns="urn:item"><plain xmlns=""/></item></group>'
+    root.innerHTML =
+      '<group xmlns=""><item xmlns="urn:item"><plain xmlns=""/></item></group>'
     assert.strictEqual(root.firstChild.namespaceURI, null)
     assert.strictEqual(root.firstChild.firstChild.namespaceURI, 'urn:item')
     assert.strictEqual(root.firstChild.firstChild.firstChild.namespaceURI, null)
@@ -305,7 +378,8 @@ describe('namespaces', () => {
   it('does not confuse user content with the synthetic fragment wrapper', () => {
     const document = createSVGDocument()
     const root = document.documentElement
-    root.innerHTML = '<svgdom:wrapper xmlns:svgdom="urn:user"><svgdom:child/></svgdom:wrapper>'
+    root.innerHTML =
+      '<svgdom:wrapper xmlns:svgdom="urn:user"><svgdom:child/></svgdom:wrapper>'
 
     assert.strictEqual(root.children.length, 1)
     assert.strictEqual(root.firstChild.nodeName, 'svgdom:wrapper')
@@ -331,8 +405,14 @@ describe('namespaces', () => {
     assert.strictEqual(parsed.data, '<fragment>&text')
     assert.match(root.outerHTML, /<!\[CDATA\[<fragment>&text\]\]>/)
 
-    assert.throws(() => document.createCDATASection('bad]]>data'), /Invalid Character Error/)
-    assert.throws(() => createHTMLDocument().createCDATASection('data'), /Not Supported Error/)
+    assert.throws(
+      () => document.createCDATASection('bad]]>data'),
+      /Invalid Character Error/
+    )
+    assert.throws(
+      () => createHTMLDocument().createCDATASection('data'),
+      /Not Supported Error/
+    )
 
     parsed.data = 'bad]]>data'
     assert.throws(() => root.outerHTML, /Invalid State Error/)
@@ -344,7 +424,10 @@ describe('namespaces', () => {
     assert.strictEqual(xmlElement.outerHTML, '<xml:item></xml:item>')
 
     document.documentElement.setAttributeNS(xml, 'p:lang', 'en')
-    assert.strictEqual(document.documentElement.outerHTML, '<root xml:lang="en"></root>')
+    assert.strictEqual(
+      document.documentElement.outerHTML,
+      '<root xml:lang="en"></root>'
+    )
 
     const parsed = new Document(null)
     HTMLParser(xmlElement.outerHTML, parsed)

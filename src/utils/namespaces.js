@@ -1,4 +1,3 @@
-
 export const svg = 'http://www.w3.org/2000/svg'
 export const xlink = 'http://www.w3.org/1999/xlink'
 export const html = 'http://www.w3.org/1999/xhtml'
@@ -10,10 +9,12 @@ export const xmlns = 'http://www.w3.org/2000/xmlns/'
 // These are the complete XML 1.0 (Fifth Edition) NameStartChar and NameChar
 // ranges; keeping both checks also distinguishes malformed names from invalid
 // namespace/prefix combinations.
-// eslint-disable-next-line no-misleading-character-class
-const namePattern = /^[:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}][-.:A-Z_a-z0-9\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}]*$/u
-// eslint-disable-next-line no-misleading-character-class
-const ncNamePattern = /^[A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}][-.A-Z_a-z0-9\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}]*$/u
+/* eslint-disable no-misleading-character-class -- XML specifies these exact Unicode ranges. */
+const namePattern =
+  /^[:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}][-.:A-Z_a-z0-9\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}]*$/u
+const ncNamePattern =
+  /^[A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}][-.A-Z_a-z0-9\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u{10000}-\u{EFFFF}]*$/u
+/* eslint-enable no-misleading-character-class */
 
 // DOM namespace APIs treat the empty string as no namespace.
 export const normalizeNamespace = namespace => {
@@ -73,7 +74,10 @@ export const validateAndExtract = (namespace, qualifiedName) => {
     throw new Error('Namespace Error')
   }
 
-  if ((prefix === 'xmlns' || qualifiedName === 'xmlns') && namespace !== xmlns) {
+  if (
+    (prefix === 'xmlns' || qualifiedName === 'xmlns') &&
+    namespace !== xmlns
+  ) {
     throw new Error('Namespace Error')
   }
 
@@ -81,5 +85,5 @@ export const validateAndExtract = (namespace, qualifiedName) => {
     throw new Error('Namespace Error')
   }
 
-  return [ namespace, prefix, localName ]
+  return [namespace, prefix, localName]
 }

@@ -20,20 +20,23 @@ const nodeTypes = {
 }
 
 export class Node extends EventTarget {
-  constructor (name = '', props = {}, ns = null) {
+  constructor(name = '', props = {}, ns = null) {
     super()
 
     // If props.local is true, the element was Node was created with the non-namespace function
     // that means whatever was passed as name is the local name even though it might look like a prefix
     if (name.includes(':') && !props.local) {
-      ;[ this.prefix, this.localName ] = name.split(':')
+      ;[this.prefix, this.localName] = name.split(':')
     } else {
       this.localName = name
       this.prefix = null
     }
 
     // Follow spec and uppercase nodeName for html
-    this.nodeName = ns === html && props.ownerDocument?.namespaceURI === html ? name.toUpperCase() : name
+    this.nodeName =
+      ns === html && props.ownerDocument?.namespaceURI === html
+        ? name.toUpperCase()
+        : name
 
     this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
@@ -59,11 +62,11 @@ export class Node extends EventTarget {
     }
   }
 
-  appendChild (node) {
+  appendChild(node) {
     return this.insertBefore(node)
   }
 
-  cloneNode (deep = false) {
+  cloneNode(deep = false) {
     const clone = cloneNode(this)
 
     if (deep) {
@@ -76,7 +79,7 @@ export class Node extends EventTarget {
     return clone
   }
 
-  contains (node) {
+  contains(node) {
     if (node === this) return false
 
     while (node.parentNode) {
@@ -86,16 +89,16 @@ export class Node extends EventTarget {
     return false
   }
 
-  getRootNode () {
+  getRootNode() {
     if (!this.parentNode || this.nodeType === Node.DOCUMENT_NODE) return this
     return this.parentNode.getRootNode()
   }
 
-  hasChildNodes () {
+  hasChildNodes() {
     return !!this.childNodes.length
   }
 
-  insertBefore (node, before) {
+  insertBefore(node, before) {
     let index = this.childNodes.indexOf(before)
     if (index === -1) {
       index = this.childNodes.length
@@ -122,11 +125,11 @@ export class Node extends EventTarget {
     return node
   }
 
-  isDefaultNamespace (namespaceURI) {
+  isDefaultNamespace(namespaceURI) {
     return this.lookupNamespaceURI(null) === normalizeNamespace(namespaceURI)
   }
 
-  isEqualNode (node) {
+  isEqualNode(node) {
     this.normalize()
     node.normalize()
 
@@ -141,9 +144,11 @@ export class Node extends EventTarget {
     // dont check children recursively when the count doesnt event add up
     if (!bool) return false
 
-    bool = bool && !this.childNodes.reduce((last, curr, index) => {
-      return last && curr.isEqualNode(node.childNodes[index])
-    }, true)
+    bool =
+      bool &&
+      !this.childNodes.reduce((last, curr, index) => {
+        return last && curr.isEqualNode(node.childNodes[index])
+      }, true)
 
     // FIXME: Use attr nodes
     /* bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
@@ -160,7 +165,10 @@ export class Node extends EventTarget {
     The notations NamedNodeMaps are equal.
     */
 
-    if (this.nodeType === Node.DOCUMENT_TYPE_NODE && node.nodeType === Node.DOCUMENT_TYPE_NODE) {
+    if (
+      this.nodeType === Node.DOCUMENT_TYPE_NODE &&
+      node.nodeType === Node.DOCUMENT_TYPE_NODE
+    ) {
       bool = bool && this.publicId === node.publicId
       bool = bool && this.systemId === node.systemId
       bool = bool && this.internalSubset === node.internalSubset
@@ -169,117 +177,143 @@ export class Node extends EventTarget {
     return bool
   }
 
-  isSameNode (node) {
+  isSameNode(node) {
     return this === node
   }
 
-  lookupNamespacePrefix (namespaceURI, originalElement) {
+  lookupNamespacePrefix(namespaceURI, originalElement) {
     // `originalElement` prevents returning an ancestor prefix that has been
     // rebound between that ancestor and the node where lookup began.
     originalElement = originalElement || this
 
-    if (this.namespaceURI === namespaceURI && this.prefix
-         && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
+    if (
+      this.namespaceURI === namespaceURI &&
+      this.prefix &&
+      originalElement.lookupNamespaceURI(this.prefix) === namespaceURI
+    ) {
       return this.prefix
     }
 
     for (const attr of this.attrs) {
-      if (attr.namespaceURI === xmlns && attr.prefix === 'xmlns'
-          && attr.value === namespaceURI
-          && originalElement.lookupNamespaceURI(attr.localName) === namespaceURI) {
+      if (
+        attr.namespaceURI === xmlns &&
+        attr.prefix === 'xmlns' &&
+        attr.value === namespaceURI &&
+        originalElement.lookupNamespaceURI(attr.localName) === namespaceURI
+      ) {
         return attr.localName
       }
     }
 
     if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
-      return this.parentNode.lookupNamespacePrefix(namespaceURI, originalElement)
+      return this.parentNode.lookupNamespacePrefix(
+        namespaceURI,
+        originalElement
+      )
     }
     return null
   }
 
-  lookupNamespaceURI (prefix) {
+  lookupNamespaceURI(prefix) {
     prefix = normalizeNamespace(prefix)
 
     switch (this.nodeType) {
-    case Node.ELEMENT_NODE:
-      // These two prefixes are implicitly bound and need no xmlns attribute.
-      if (prefix === 'xml') return xml
-      if (prefix === 'xmlns') return xmlns
+      case Node.ELEMENT_NODE:
+        // These two prefixes are implicitly bound and need no xmlns attribute.
+        if (prefix === 'xml') return xml
+        if (prefix === 'xmlns') return xmlns
 
-      if (this.namespaceURI != null && this.prefix === prefix) {
-        return this.namespaceURI
-      }
-
-      for (const attr of this.attrs) {
-        // Namespace declarations are Attr nodes in the XMLNS namespace. attrs
-        // is a Set, so inspect the nodes rather than treating it like a Map.
-        if (attr.namespaceURI !== xmlns) continue
-
-        if (attr.prefix === 'xmlns' && attr.localName === prefix) {
-          return attr.value || null
+        if (this.namespaceURI != null && this.prefix === prefix) {
+          return this.namespaceURI
         }
 
-        if (attr.prefix === null && attr.localName === 'xmlns' && prefix === null) {
-          return attr.value || null
-        }
-      }
+        for (const attr of this.attrs) {
+          // Namespace declarations are Attr nodes in the XMLNS namespace. attrs
+          // is a Set, so inspect the nodes rather than treating it like a Map.
+          if (attr.namespaceURI !== xmlns) continue
 
-      // Namespace scope follows parent elements; Document itself introduces no
-      // additional bindings.
-      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
-        return this.parentNode.lookupNamespaceURI(prefix)
-      }
-      return null
-    case Node.DOCUMENT_NODE:
-      return this.documentElement ? this.documentElement.lookupNamespaceURI(prefix) : null
-    case Node.ENTITY_NODE:
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-      return null
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.lookupNamespaceURI(prefix)
-      }
-      return null
-    default:
-      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
-        return this.parentNode.lookupNamespaceURI(prefix)
-      }
-      return null
+          if (attr.prefix === 'xmlns' && attr.localName === prefix) {
+            return attr.value || null
+          }
+
+          if (
+            attr.prefix === null &&
+            attr.localName === 'xmlns' &&
+            prefix === null
+          ) {
+            return attr.value || null
+          }
+        }
+
+        // Namespace scope follows parent elements; Document itself introduces no
+        // additional bindings.
+        if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
+          return this.parentNode.lookupNamespaceURI(prefix)
+        }
+        return null
+      case Node.DOCUMENT_NODE:
+        return this.documentElement
+          ? this.documentElement.lookupNamespaceURI(prefix)
+          : null
+      case Node.ENTITY_NODE:
+      case Node.NOTATION_NODE:
+      case Node.DOCUMENT_TYPE_NODE:
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        return null
+      case Node.ATTRIBUTE_NODE:
+        if (this.ownerElement) {
+          return this.ownerElement.lookupNamespaceURI(prefix)
+        }
+        return null
+      default:
+        if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
+          return this.parentNode.lookupNamespaceURI(prefix)
+        }
+        return null
     }
   }
 
-  lookupPrefix (namespaceURI) {
+  lookupPrefix(namespaceURI) {
     namespaceURI = normalizeNamespace(namespaceURI)
     if (namespaceURI === null) return null
 
     const type = this.nodeType
 
     switch (type) {
-    case Node.ELEMENT_NODE:
-      return this.lookupNamespacePrefix(namespaceURI, this)
-    case Node.DOCUMENT_NODE:
-      return this.documentElement ? this.documentElement.lookupNamespacePrefix(namespaceURI, this.documentElement) : null
-    case Node.ENTITY_NODE :
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-      return null // type is unknown
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.lookupNamespacePrefix(namespaceURI, this.ownerElement)
-      }
-      return null
-    default:
-      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
-        return this.parentNode.lookupNamespacePrefix(namespaceURI, this.parentNode)
-      }
-      return null
+      case Node.ELEMENT_NODE:
+        return this.lookupNamespacePrefix(namespaceURI, this)
+      case Node.DOCUMENT_NODE:
+        return this.documentElement
+          ? this.documentElement.lookupNamespacePrefix(
+              namespaceURI,
+              this.documentElement
+            )
+          : null
+      case Node.ENTITY_NODE:
+      case Node.NOTATION_NODE:
+      case Node.DOCUMENT_FRAGMENT_NODE:
+      case Node.DOCUMENT_TYPE_NODE:
+        return null // type is unknown
+      case Node.ATTRIBUTE_NODE:
+        if (this.ownerElement) {
+          return this.ownerElement.lookupNamespacePrefix(
+            namespaceURI,
+            this.ownerElement
+          )
+        }
+        return null
+      default:
+        if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
+          return this.parentNode.lookupNamespacePrefix(
+            namespaceURI,
+            this.parentNode
+          )
+        }
+        return null
     }
   }
 
-  normalize () {
+  normalize() {
     const childNodes = []
     for (const node of this.childNodes) {
       const last = childNodes.shift()
@@ -297,7 +331,9 @@ export class Node extends EventTarget {
         }
 
         if (last.nodeType === Node.TEXT_NODE) {
-          const merged = this.ownerDocument.createTextNode(last.data + node.data)
+          const merged = this.ownerDocument.createTextNode(
+            last.data + node.data
+          )
           childNodes.push(merged)
           continue
         }
@@ -331,8 +367,7 @@ export class Node extends EventTarget {
     // }, null)
   }
 
-  removeChild (node) {
-
+  removeChild(node) {
     node.parentNode = null
     // Object.setPrototypeOf(node, null)
     const index = this.childNodes.indexOf(node)
@@ -341,24 +376,28 @@ export class Node extends EventTarget {
     return node
   }
 
-  replaceChild (newChild, oldChild) {
+  replaceChild(newChild, oldChild) {
     const before = oldChild.nextSibling
     this.removeChild(oldChild)
     this.insertBefore(newChild, before)
     return oldChild
   }
 
-  get nextSibling () {
-    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
+  get nextSibling() {
+    const child =
+      this.parentNode &&
+      this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) + 1]
     return child || null
   }
 
-  get previousSibling () {
-    const child = this.parentNode && this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
+  get previousSibling() {
+    const child =
+      this.parentNode &&
+      this.parentNode.childNodes[this.parentNode.childNodes.indexOf(this) - 1]
     return child || null
   }
 
-  get textContent () {
+  get textContent() {
     if (this.nodeType === Node.TEXT_NODE) return this.data
     if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
     if (this.nodeType === Node.COMMENT_NODE) return this.data
@@ -368,8 +407,12 @@ export class Node extends EventTarget {
     }, '')
   }
 
-  set textContent (text) {
-    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.CDATA_SECTION_NODE || this.nodeType === Node.COMMENT_NODE) {
+  set textContent(text) {
+    if (
+      this.nodeType === Node.TEXT_NODE ||
+      this.nodeType === Node.CDATA_SECTION_NODE ||
+      this.nodeType === Node.COMMENT_NODE
+    ) {
       this.data = text
       return
     }
@@ -377,11 +420,11 @@ export class Node extends EventTarget {
     this.appendChild(this.ownerDocument.createTextNode(text))
   }
 
-  get lastChild () {
+  get lastChild() {
     return this.childNodes[this.childNodes.length - 1] || null
   }
 
-  get firstChild () {
+  get firstChild() {
     return this.childNodes[0] || null
   }
 }

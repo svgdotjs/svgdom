@@ -16,7 +16,8 @@ export const pathLetters = /[MLHVCSQTAZ]/gi
 export const isPathLetter = /[MLHVCSQTAZ]/i
 
 // matches 0.154.23.45
-export const numbersWithDots = /((\d?\.\d+(?:e[+-]?\d+)?)((?:\.\d+(?:e[+-]?\d+)?)+))+/gi
+export const numbersWithDots =
+  /((\d?\.\d+(?:e[+-]?\d+)?)((?:\.\d+(?:e[+-]?\d+)?)+))+/gi
 
 // matches .
 export const dots = /\./g

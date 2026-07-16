@@ -1,10 +1,8 @@
-export const NonDocumentTypeChildNode = {
-
-}
+export const NonDocumentTypeChildNode = {}
 
 Object.defineProperties(NonDocumentTypeChildNode, {
   previousElementSibling: {
-    get () {
+    get() {
       let node = this
       while ((node = node.previousSibling)) {
         if (node.nodeType === node.ELEMENT_NODE) {
@@ -16,7 +14,7 @@ Object.defineProperties(NonDocumentTypeChildNode, {
   },
 
   nextElementSibling: {
-    get () {
+    get() {
       let node = this
       while ((node = node.nextSibling)) {
         if (node.nodeType === node.ELEMENT_NODE) {

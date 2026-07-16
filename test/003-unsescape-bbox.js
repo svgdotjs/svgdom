@@ -1,5 +1,3 @@
-/* global describe, it */
-
 import { createSVGWindow } from '../main-module.js'
 import assert from 'assert'
 import { getSegments } from '../src/utils/bboxUtils.js'
