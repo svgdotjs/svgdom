@@ -1,0 +1,5 @@
+# Activate once per clone with: git config --local include.path ../.gitconfig
+[blame]
+	ignoreRevsFile = .git-blame-ignore-revs
+	markIgnoredLines = true
+	markUnblamableLines = true
