@@ -2,6 +2,7 @@ import * as defaults from './src/utils/defaults.js'
 
 export * from './src/dom/Attr.js'
 export * from './src/dom/CharacterData.js'
+export * from './src/dom/CSSStyleDeclaration.js'
 export * from './src/dom/Comment.js'
 export * from './src/dom/CustomEvent.js'
 export * from './src/dom/Document.js'

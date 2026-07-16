@@ -1,4 +1,5 @@
 import { decamelize } from '../utils/strUtils.js'
+import { parseStyleDeclarations } from './styleUtils.js'
 
 export const objectToMap = function (obj) {
   if (obj instanceof Map) return new Map(obj)
@@ -29,7 +30,5 @@ export const mapToCss = function (myMap) {
 }
 
 export const cssToMap = function (css) {
-  return new Map(css.split(/\s*;\s*/).filter(function (el) { return !!el }).map(function (el) {
-    return el.split(/\s*:\s*/)
-  }))
+  return new Map(parseStyleDeclarations(css).map(({ name, value }) => [ name, value ]))
 }

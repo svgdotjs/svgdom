@@ -6,11 +6,11 @@ import { HTMLParser } from './html/HTMLParser.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
-import { cssToMap, mapToCss } from '../utils/mapUtils.js'
-import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/strUtils.js'
+import { htmlEntities, cdata, comment } from '../utils/strUtils.js'
 import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
 import { ChildNode } from './mixins/ChildNode.js'
 import { html, normalizeNamespace, validateAndExtract, validateName } from '../utils/namespaces.js'
+import { createCSSStyleDeclaration } from './CSSStyleDeclaration.js'
 
 const getAttributeByNsAndLocalName = (el, ns, localName) => {
   ns = normalizeNamespace(ns)
@@ -46,71 +46,12 @@ const attachAttribute = (element, node, oldAttribute) => {
   return oldAttribute || null
 }
 
-// This Proxy proxies all access to node.style to the css saved in the attribute
-const getStyleProxy = (node) => {
-
-  return new Proxy(node, {
-    get (target, key) {
-      const styles = target.getAttribute('style') || ''
-      const styleMap = cssToMap(styles)
-
-      if (key === 'cssText') {
-        return styles
-      }
-
-      if (key === 'setProperty') {
-        return function (propertyName, value = '', priority = '') {
-          node.style[propertyName] = value + (priority ? ` !${priority}` : '')
-        }
-      }
-
-      if (key === 'removeProperty') {
-        return function (propertyName) {
-          const styles = node.getAttribute('style') || ''
-          const styleMap = cssToMap(styles)
-          styleMap.delete(decamelize(propertyName))
-          node.setAttribute('style', mapToCss(styleMap))
-        }
-      }
-
-      if (key === 'getPropertyValue') {
-        return function (propertyName) {
-          return node.style[propertyName] ?? ''
-        }
-      }
-
-      key = decamelize(key)
-      if (!styleMap.has(key)) return ''
-
-      return styleMap.get(key)
-    },
-    set (target, key, value) {
-      key = decamelize(key)
-
-      if (key === 'css-text') {
-        // ensure correct spacing and syntax by converting back and forth
-        target.setAttribute('style', mapToCss(cssToMap(value)))
-        return true
-      } else {
-        value = hexToRGB(value.toString())
-        const styles = target.getAttribute('style') || ''
-        const styleMap = cssToMap(styles)
-        styleMap.set(key, value)
-
-        target.setAttribute('style', mapToCss(styleMap))
-
-        return true
-      }
-    }
-  })
-}
-
 // https://dom.spec.whatwg.org/#dom-element-setattributens
 export class Element extends Node {
   constructor (name, props, ns) {
     super(name, props, ns)
 
-    this.style = getStyleProxy(this)
+    this.style = createCSSStyleDeclaration(this)
     this.tagName = this.nodeName
   }
 

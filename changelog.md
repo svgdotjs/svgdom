@@ -7,6 +7,7 @@ All notable changes to svgdom will be documented in this file.
 ### Added
 
 - Added selector support for `:empty`, `:has()`, `:is()`, `:where()`, nested functional pseudo-classes, and the `of <selector>` syntax for `:nth-child()` and `:nth-last-child()`.
+- Added a `CSSStyleDeclaration` implementation for `Element.style` with `cssText`, custom properties, priorities, ordered enumeration, and synchronized style attributes.
 
 ### Fixed
 
