@@ -11,3 +11,4 @@ All notable changes to svgdom will be documented in this file.
 ### Fixed
 
 - Structural child pseudo-classes now count only element siblings and correctly support `An+B` formulas, including negative coefficients and whitespace.
+- Fixed namespace-aware DOM creation, lookup, fragment parsing, and XML serialization, including inherited bindings, prefix collisions, namespaced attributes, CDATA, and foreign elements.

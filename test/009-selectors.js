@@ -4,6 +4,7 @@ import assert from 'assert'
 import { CssQuery } from '../src/other/CssQuery.js'
 import { describe, it } from 'mocha'
 import { createHTMLDocument } from '../main-module.js'
+import { svg } from '../src/utils/namespaces.js'
 
 const document = createHTMLDocument()
 
@@ -16,6 +17,16 @@ describe('CssQuery - Single Selector', function () {
 
     assert.ok(query.matches(trueCase))
     assert.ok(!query.matches(falseCase))
+  })
+
+  it('does not mutate tag casing while matching foreign elements', function () {
+    const query = new CssQuery('linearGradient')
+    const htmlElement = document.createElement('linearGradient')
+    const svgElement = document.createElementNS(svg, 'linearGradient')
+
+    assert.ok(query.matches(htmlElement))
+    assert.ok(query.matches(svgElement))
+    assert.ok(!new CssQuery('lineargradient').matches(svgElement))
   })
 
   it('parses a simple selector with a class', function () {

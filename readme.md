@@ -59,6 +59,14 @@ const main = async () => {
 main()
 ```
 
+## Intentional DOM deviations
+
+svgdom favors a small, convenient API for headless SVG use over complete browser DOM conformance. In particular:
+
+- `document.createElement(name)` inherits the document namespace. For example, `createSVGDocument().createElement('rect')` creates an `SVGRectElement` in the SVG namespace. In a browser XML DOM, `createElement()` creates an element without a namespace and `createElementNS()` is required instead. Use `createElementNS()` when the namespace must be explicit.
+- HTML behavior is inferred from the document namespace. A document whose namespace is `http://www.w3.org/1999/xhtml` receives HTML name casing, case-insensitive HTML type selectors, HTML void-element serialization, and the HTML restriction on CDATA. This also means that `createDocument(HTML_NAMESPACE, 'html')` is treated like an HTML document for these operations, whereas the browser DOM specifies an XML document.
+- svgdom does not currently implement the forgiving HTML parsing algorithm. `HTMLParser` and `innerHTML` use a strict XML parser, so markup must be well-formed and HTML tag-soup recovery, optional end tags, and similar parsing behavior are not supported.
+
 ## Fonts
 
 In order to calculate bounding boxes for text the font needs to be loaded first. `svgdom` loads `Open Sans-Regular` by default when no font file for the specified font was found.

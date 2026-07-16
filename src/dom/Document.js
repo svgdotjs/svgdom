@@ -1,6 +1,7 @@
 import { Node } from './Node.js'
 import { Comment } from './Comment.js'
 import { Text } from './Text.js'
+import { CDATASection } from './CDATASection.js'
 import { Attr } from './Attr.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { HTMLLinkElement } from './html/HTMLLinkElement.js'
@@ -14,7 +15,7 @@ import { SVGPathElement } from './svg/SVGPathElement.js'
 import { SVGTextContentElement } from './svg/SVGTextContentElement.js'
 import { SVGGraphicsElement } from './svg/SVGGraphicsElement.js'
 import { ParentNode } from './mixins/ParentNode.js'
-import { svg, html } from '../utils/namespaces.js'
+import { svg, html, normalizeNamespace, validateAndExtract, validateName } from '../utils/namespaces.js'
 import { DocumentType } from './DocumentType.js'
 import { NonElementParentNode } from './mixins/NonElementParentNode.js'
 import { SVGRectElement } from './svg/SVGRectElement.js'
@@ -47,7 +48,7 @@ const getSVGElementForName = (name) => {
     return SVGLineElement
   case 'rect':
     return SVGRectElement
-  case 'foreignObject':
+  case 'foreignobject':
     return SVGForeignObjectElement
   case 'image':
     return SVGImageElement
@@ -152,7 +153,24 @@ export class Document extends Node {
   }
 
   createAttributeNS (ns, qualifiedName, local = false) {
+    // `local` is used by createAttribute()/setAttribute(): in that API a colon
+    // belongs to the local name and does not introduce a namespace prefix.
+    if (local) {
+      ns = normalizeNamespace(ns)
+      qualifiedName = validateName(qualifiedName)
+    } else {
+      ;[ ns ] = validateAndExtract(ns, qualifiedName)
+    }
+
     return new Attr(qualifiedName, { ownerDocument: this, local }, ns)
+  }
+
+  createCDATASection (text) {
+    if (this.namespaceURI === html) throw new Error('Not Supported Error')
+
+    text = String(text)
+    if (text.includes(']]>')) throw new Error('Invalid Character Error')
+    return new CDATASection('#cdata-section', { nodeValue: text, ownerDocument: this })
   }
 
   createComment (text) {
@@ -164,11 +182,27 @@ export class Document extends Node {
   }
 
   createElement (localName) {
+    // svgdom historically inherits the document namespace here. This differs
+    // from browser XML DOMs, but keeps the convenient SVG creation API stable.
+    if (this.namespaceURI === html) localName = String(localName).toLowerCase()
     return this.createElementNS(this.namespaceURI, localName, true)
   }
 
   createElementNS (ns, qualifiedName, local = false) {
-    const Element = getElementForNamespace(ns, qualifiedName)
+    let localName
+    // See createAttributeNS(): non-namespace creation deliberately keeps the
+    // complete supplied name as the local name.
+    if (local) {
+      ns = normalizeNamespace(ns)
+      qualifiedName = validateName(qualifiedName)
+      localName = qualifiedName
+    } else {
+      ;[ ns, , localName ] = validateAndExtract(ns, qualifiedName)
+    }
+
+    // Concrete SVG/HTML classes are selected by local name, not by a possibly
+    // prefixed qualified name such as `svg:rect`.
+    const Element = getElementForNamespace(ns, localName)
 
     return new Element(qualifiedName, {
       ownerDocument: this,
@@ -193,7 +227,7 @@ export class Document extends Node {
   }
 
   get documentElement () {
-    return this.lastChild
+    return this.childNodes.find(node => node.nodeType === Node.ELEMENT_NODE) || null
   }
 }
 

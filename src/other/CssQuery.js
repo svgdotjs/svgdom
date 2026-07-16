@@ -559,12 +559,13 @@ export class CssQueryNode {
 
     if (node.nodeType !== 1) return false
 
-    // Always this extra code for html -.-
-    if (node.namespaceURI === html) {
-      this.tag = this.tag.toUpperCase()
-    }
+    // HTML type selectors are case-insensitive, but foreign elements in the
+    // same document retain their namespace's casing rules.
+    const tag = node.namespaceURI === html && node.ownerDocument?.namespaceURI === html
+      ? this.tag.toUpperCase()
+      : this.tag
 
-    if (this.tag && this.tag !== node.nodeName && this.tag !== '*') { return false }
+    if (tag && tag !== node.nodeName && tag !== '*') { return false }
 
     if (this.id && this.id !== node.id) {
       return false

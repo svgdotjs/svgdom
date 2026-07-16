@@ -2,7 +2,7 @@ import { extend, extendStatic } from '../utils/objectCreationUtils.js'
 
 import { EventTarget } from './EventTarget.js'
 import { cloneNode } from '../utils/tagUtils.js'
-import { html } from '../utils/namespaces.js'
+import { html, normalizeNamespace, xml, xmlns } from '../utils/namespaces.js'
 
 const nodeTypes = {
   ELEMENT_NODE: 1,
@@ -33,7 +33,7 @@ export class Node extends EventTarget {
     }
 
     // Follow spec and uppercase nodeName for html
-    this.nodeName = ns === html ? name.toUpperCase() : name
+    this.nodeName = ns === html && props.ownerDocument?.namespaceURI === html ? name.toUpperCase() : name
 
     this.namespaceURI = ns
     this.nodeType = Node.ELEMENT_NODE
@@ -123,41 +123,7 @@ export class Node extends EventTarget {
   }
 
   isDefaultNamespace (namespaceURI) {
-    switch (this.nodeType) {
-    case Node.ELEMENT_NODE:
-      if (!this.prefix) {
-        return this.namespaceURI === namespaceURI
-      }
-
-      if (this.hasAttribute('xmlns')) {
-        return this.getAttribute('xmlns')
-      }
-
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-
-      return false
-    case Node.DOCUMENT_NODE:
-      return this.documentElement.isDefaultNamespace(namespaceURI)
-    case Node.ENTITY_NODE:
-    case Node.NOTATION_NODE:
-    case Node.DOCUMENT_TYPE_NODE:
-    case Node.DOCUMENT_FRAGMENT_NODE:
-      return false
-    case Node.ATTRIBUTE_NODE:
-      if (this.ownerElement) {
-        return this.ownerElement.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.isDefaultNamespace(namespaceURI)
-      }
-      return false
-    }
+    return this.lookupNamespaceURI(null) === normalizeNamespace(namespaceURI)
   }
 
   isEqualNode (node) {
@@ -208,60 +174,64 @@ export class Node extends EventTarget {
   }
 
   lookupNamespacePrefix (namespaceURI, originalElement) {
-    if (this.namespaceURI && this.namespaceURI === namespaceURI && this.prefix
+    // `originalElement` prevents returning an ancestor prefix that has been
+    // rebound between that ancestor and the node where lookup began.
+    originalElement = originalElement || this
+
+    if (this.namespaceURI === namespaceURI && this.prefix
          && originalElement.lookupNamespaceURI(this.prefix) === namespaceURI) {
       return this.prefix
     }
 
-    for (const [ key, val ] of this.attrs.entries()) {
-      if (!key.includes(':')) continue
-
-      const [ attrPrefix, name ] = key.split(':')
-      if (attrPrefix === 'xmlns' && val === namespaceURI && originalElement.lookupNamespaceURI(name) === namespaceURI) {
-        return name
+    for (const attr of this.attrs) {
+      if (attr.namespaceURI === xmlns && attr.prefix === 'xmlns'
+          && attr.value === namespaceURI
+          && originalElement.lookupNamespaceURI(attr.localName) === namespaceURI) {
+        return attr.localName
       }
     }
 
-    // EntityReferences may have to be skipped to get to it
-    if (this.parentNode) {
+    if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
       return this.parentNode.lookupNamespacePrefix(namespaceURI, originalElement)
     }
     return null
   }
 
   lookupNamespaceURI (prefix) {
+    prefix = normalizeNamespace(prefix)
+
     switch (this.nodeType) {
     case Node.ELEMENT_NODE:
+      // These two prefixes are implicitly bound and need no xmlns attribute.
+      if (prefix === 'xml') return xml
+      if (prefix === 'xmlns') return xmlns
+
       if (this.namespaceURI != null && this.prefix === prefix) {
-        // Note: prefix could be "null" in this case we are looking for default namespace
         return this.namespaceURI
       }
 
-      for (const [ key, val ] of this.attrs.entries()) {
-        if (!key.includes(':')) continue
+      for (const attr of this.attrs) {
+        // Namespace declarations are Attr nodes in the XMLNS namespace. attrs
+        // is a Set, so inspect the nodes rather than treating it like a Map.
+        if (attr.namespaceURI !== xmlns) continue
 
-        const [ attrPrefix, name ] = key.split(':')
-        if (attrPrefix === 'xmlns' && name === prefix) {
-          if (val != null) {
-            return val
-          }
-          return null
-          // FIXME: Look up if prefix or attrPrefix
-        } else if (name === 'xmlns' && prefix == null) {
-          if (val != null) {
-            return val
-          }
-          return null
+        if (attr.prefix === 'xmlns' && attr.localName === prefix) {
+          return attr.value || null
+        }
+
+        if (attr.prefix === null && attr.localName === 'xmlns' && prefix === null) {
+          return attr.value || null
         }
       }
 
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
+      // Namespace scope follows parent elements; Document itself introduces no
+      // additional bindings.
+      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
         return this.parentNode.lookupNamespaceURI(prefix)
       }
       return null
     case Node.DOCUMENT_NODE:
-      return this.documentElement.lookupNamespaceURI(prefix)
+      return this.documentElement ? this.documentElement.lookupNamespaceURI(prefix) : null
     case Node.ENTITY_NODE:
     case Node.NOTATION_NODE:
     case Node.DOCUMENT_TYPE_NODE:
@@ -273,8 +243,7 @@ export class Node extends EventTarget {
       }
       return null
     default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
+      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
         return this.parentNode.lookupNamespaceURI(prefix)
       }
       return null
@@ -282,9 +251,8 @@ export class Node extends EventTarget {
   }
 
   lookupPrefix (namespaceURI) {
-    if (!namespaceURI) {
-      return null
-    }
+    namespaceURI = normalizeNamespace(namespaceURI)
+    if (namespaceURI === null) return null
 
     const type = this.nodeType
 
@@ -292,7 +260,7 @@ export class Node extends EventTarget {
     case Node.ELEMENT_NODE:
       return this.lookupNamespacePrefix(namespaceURI, this)
     case Node.DOCUMENT_NODE:
-      return this.documentElement.lookupNamespacePrefix(namespaceURI)
+      return this.documentElement ? this.documentElement.lookupNamespacePrefix(namespaceURI, this.documentElement) : null
     case Node.ENTITY_NODE :
     case Node.NOTATION_NODE:
     case Node.DOCUMENT_FRAGMENT_NODE:
@@ -300,13 +268,12 @@ export class Node extends EventTarget {
       return null // type is unknown
     case Node.ATTRIBUTE_NODE:
       if (this.ownerElement) {
-        return this.ownerElement.lookupNamespacePrefix(namespaceURI)
+        return this.ownerElement.lookupNamespacePrefix(namespaceURI, this.ownerElement)
       }
       return null
     default:
-      // EntityReferences may have to be skipped to get to it
-      if (this.parentNode) {
-        return this.parentNode.lookupNamespacePrefix(namespaceURI)
+      if (this.parentNode && this.parentNode.nodeType === Node.ELEMENT_NODE) {
+        return this.parentNode.lookupNamespacePrefix(namespaceURI, this.parentNode)
       }
       return null
     }

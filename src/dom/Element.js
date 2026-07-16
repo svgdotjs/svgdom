@@ -10,39 +10,10 @@ import { cssToMap, mapToCss } from '../utils/mapUtils.js'
 import { hexToRGB, decamelize, htmlEntities, cdata, comment } from '../utils/strUtils.js'
 import { NonDocumentTypeChildNode } from './mixins/NonDocumentTypeChildNode.js'
 import { ChildNode } from './mixins/ChildNode.js'
-import { html, xml, xmlns } from '../utils/namespaces.js'
-
-const validateAndExtract = (ns, name) => {
-  let prefix = null
-  let localname = name
-
-  if (!ns) ns = null
-
-  if (name.includes(':')) {
-    [ prefix, localname ] = name.split(':')
-  }
-
-  if (!ns && prefix) {
-    throw new Error('Namespace Error')
-  }
-
-  if (prefix === 'xml' && ns !== xml) {
-    throw new Error('Namespace Error')
-  }
-
-  if ((prefix === 'xmlns' || name === 'xmlns') && ns !== xmlns) {
-    throw new Error('Namespace Error')
-  }
-
-  if (prefix !== 'xmlns' && name !== 'xmlns' && ns === xmlns) {
-    throw new Error('Namespace Error')
-  }
-
-  return [ ns, prefix, localname ]
-}
+import { html, normalizeNamespace, validateAndExtract, validateName } from '../utils/namespaces.js'
 
 const getAttributeByNsAndLocalName = (el, ns, localName) => {
-  if (!ns) ns = null
+  ns = normalizeNamespace(ns)
   return [ ...el.attrs ].find((node) => node.localName === localName && node.namespaceURI === ns)
 }
 
@@ -52,6 +23,27 @@ const getAttributeByQualifiedName = (el, qualifiedName) => {
   }
 
   return [ ...el.attrs ].find((node) => node.name === qualifiedName)
+}
+
+const attachAttribute = (element, node, oldAttribute) => {
+  if (node.ownerDocument && node.ownerDocument !== element.ownerDocument) {
+    throw new Error('Wrong Document Error')
+  }
+
+  if (node.ownerElement && node.ownerElement !== element) {
+    throw new Error('Attribute is already in use by another element')
+  }
+
+  if (oldAttribute === node) return node
+
+  if (oldAttribute) {
+    element.attrs.delete(oldAttribute)
+    oldAttribute.ownerElement = null
+  }
+
+  element.attrs.add(node)
+  node.ownerElement = element
+  return oldAttribute || null
 }
 
 // This Proxy proxies all access to node.style to the css saved in the attribute
@@ -168,6 +160,7 @@ export class Element extends Node {
 
   removeAttributeNode (node) {
     if (!this.attrs.delete(node)) throw new Error('Attribute cannot be removed because it was not found on the element')
+    node.ownerElement = null
     return node
   }
 
@@ -180,19 +173,10 @@ export class Element extends Node {
     return attr
   }
 
-  /* The setAttribute(qualifiedName, value) method, when invoked, must run these steps:
-
-    If qualifiedName does not match the Name production in XML, then throw an "InvalidCharacterError" DOMException.
-
-    If this is in the HTML namespace and its node document is an HTML document, then set qualifiedName to qualifiedName in ASCII lowercase.
-
-    Let attribute be the first attribute in this’s attribute list whose qualified name is qualifiedName, and null otherwise.
-
-    If attribute is null, create an attribute whose local name is qualifiedName, value is value, and node document is this’s node document, then append this attribute to this, and then return.
-
-    Change attribute to value.
-  */
+  // Namespace-unaware attributes are identified by their qualified name.
   setAttribute (qualifiedName, value) {
+    qualifiedName = validateName(qualifiedName)
+
     // We have to do that here because we cannot check if `this` is in the correct namespace
     // when doing it in createAttribute
     if (this.namespaceURI === html && this.ownerDocument.namespaceURI === html) {
@@ -209,39 +193,32 @@ export class Element extends Node {
     attr.value = value
   }
 
-  /*
-    Let namespace, prefix, and localName be the result of passing namespace and qualifiedName to validate and extract.
-
-    Set an attribute value for this using localName, value, and also prefix and namespace.
-
-    If prefix is not given, set it to null.
-    If namespace is not given, set it to null.
-    Let attribute be the result of getting an attribute given namespace, localName, and element.
-    If attribute is null, create an attribute whose namespace is namespace, namespace prefix is prefix, local name is localName, value is value, and node document is element’s node document, then append this attribute to element, and then return.
-
-    Change attribute to value.
-  */
-
   setAttributeNode (node) {
-    this.attrs.add(node)
-    node.ownerElement = this
+    // The non-namespace variant replaces by qualified name.
+    return attachAttribute(this, node, this.getAttributeNode(node.name))
+  }
+
+  setAttributeNodeNS (node) {
+    // Prefixes are aliases and therefore do not participate in identity here.
+    return attachAttribute(this, node, this.getAttributeNodeNS(node.namespaceURI, node.localName))
   }
 
   // call is: d.setAttributeNS('http://www.mozilla.org/ns/specialspace', 'spec:align', 'center');
   setAttributeNS (namespace, name, value) {
-
-    // eslint-disable-next-line
     const [ ns, prefix, localName ] = validateAndExtract(namespace, name)
 
     let attr = this.getAttributeNodeNS(ns, localName)
     if (!attr) {
       attr = this.ownerDocument.createAttributeNS(ns, name)
-      this.setAttributeNode(attr) // setAttributeNodeNS is a synonym of setAttributeNode
+      this.setAttributeNodeNS(attr)
     }
 
+    // An existing attribute keeps its identity, but its requested prefix and
+    // qualified name must still change (for example a:value -> b:value).
+    attr.prefix = prefix
+    attr.localName = localName
+    attr.nodeName = name
     attr.value = value
-
-    this.attrs.add(attr)
   }
 
   get attributes () {
