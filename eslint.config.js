@@ -4,7 +4,7 @@ import globals from 'globals'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist/**', 'index.js', 'index.cjs', '.reify-cache/**']),
+  globalIgnores(['index.js', 'index.cjs', '.reify-cache/**']),
   js.configs.recommended,
   {
     files: ['**/*.js'],

@@ -171,13 +171,9 @@ describe('svg document', () => {
     assert(svgDoc.createComment('xxx'))
   })
 
-  wrappedIt.skip('should have ownerSVGElement property for nodes', () => {
-    // this will not work with documents, embedded into html
-    // but should work with svg docs as media <object>
-    if (svgDoc.documentElement.nodeName === 'svg') {
-      assert(svgRoot.ownerSVGElement)
-    }
-    // assert(svgRoot.ownerSVGElement === svgRoot);
+  wrappedIt('should expose the nearest owner SVG element', () => {
+    assert.strictEqual(svgRoot.ownerSVGElement, null)
+    assert.strictEqual(svgRoot.querySelector('#g-1').ownerSVGElement, svgRoot)
   })
 
   wrappedIt('transform: rotate', () => {

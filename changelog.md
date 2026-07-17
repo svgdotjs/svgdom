@@ -4,6 +4,13 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+## 0.1.26 - 2026-07-17
+
+### Changed
+
+- Raised the minimum supported Node.js version to 22.13, allowing CommonJS consumers to load svgdom directly with `require()`.
+- Updated `image-size` and Mocha, removed the obsolete webpack toolchain, and patched transitive test dependencies.
+
 ## 0.1.25 - 2026-07-16
 
 ### Added
