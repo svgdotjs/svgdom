@@ -56,12 +56,16 @@ export const textBBox = function (text, x, y, details) {
     fontHeight > font.unitsPerEm ? fontHeight : fontHeight + font.lineGap
 
   const height = (lineHeight / font.unitsPerEm) * fontSize
-  const width =
+  const glyphWidth =
     (font
       .layout(text)
       .glyphs.reduce((last, curr) => last + curr.advanceWidth, 0) /
       font.unitsPerEm) *
     fontSize
+  const width =
+    glyphWidth +
+    (parseFloat(details.letterSpacing) || 0) *
+      Math.max(0, Array.from(text).length - 1)
 
   // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/text-anchor
   let xAdjust = 0

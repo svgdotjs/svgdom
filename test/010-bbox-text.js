@@ -38,4 +38,16 @@ describe('bbox-text', () => {
 
     assert(Math.abs(text.getBBox().y - text2.getBBox().y) < 1)
   })
+  it('includes letter-spacing in text bounding boxes', () => {
+    const svgDoc = createSVGWindow().document
+    const text = svgDoc.createElement('text')
+    text.style.fontSize = '20px'
+    text.textContent = 'TEST'
+    svgDoc.documentElement.appendChild(text)
+
+    const width = text.getBBox().width
+    text.setAttribute('letter-spacing', '5')
+
+    assert(Math.abs(text.getBBox().width - width - 15) < 1e-9)
+  })
 })

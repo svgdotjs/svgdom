@@ -279,6 +279,7 @@ const getFontDetails = node => {
   let fontFamily = null
   let textAnchor = null
   let dominantBaseline = null
+  let letterSpacing = null
 
   const textContentElements = [
     'text',
@@ -304,6 +305,10 @@ const getFontDetails = node => {
       dominantBaseline =
         node.style.dominantBaseline || node.getAttribute('dominant-baseline')
     }
+    if (!letterSpacing) {
+      letterSpacing =
+        node.style.letterSpacing || node.getAttribute('letter-spacing')
+    }
     // TODO: check for alignment-baseline in tspan, tref, textPath, altGlyph
     // TODO: alignment-adjust, baseline-shift
     /*
@@ -319,6 +324,7 @@ const getFontDetails = node => {
   return {
     fontFamily,
     fontSize,
+    letterSpacing,
     textAnchor: textAnchor || 'start',
     // TODO: use central for writing-mode === horizontal https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dominant-baseline
     dominantBaseline: dominantBaseline || 'alphabetical'
