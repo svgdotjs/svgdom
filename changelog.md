@@ -4,6 +4,8 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+## 0.1.27 - 2026-07-18
+
 ### Changed
 
 - Documented common server-side, testing, and asset-pipeline use cases for svgdom.
