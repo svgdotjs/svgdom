@@ -242,9 +242,11 @@ export class Arc {
     const divisor1 = rxQuad * p1_.y ** 2
     const divisor2 = ryQuad * p1_.x ** 2
     const dividend = rxQuad * ryQuad - divisor1 - divisor2
+    const centerTolerance =
+      Number.EPSILON * 8 * Math.max(rxQuad * ryQuad, divisor1 + divisor2, 1)
 
     let c_
-    if (Math.abs(dividend) < 1e-15) {
+    if (dividend <= centerTolerance) {
       c_ = new Point(0, 0)
     } else {
       c_ = new Point((rx * p1_.y) / ry, (-ry * p1_.x) / rx).mul(
@@ -388,17 +390,73 @@ export class Arc {
   length() {
     if (this.p1.equals(this.p2)) return 0
 
-    const length = this.p2.sub(this.p1).abs()
-
-    const ret = this.splitAt(0.5)
-    const len1 = ret[0].p2.sub(ret[0].p1).abs()
-    const len2 = ret[1].p2.sub(ret[1].p1).abs()
-
-    if (len1 + len2 - length < 0.00001) {
-      return len1 + len2
+    const start = (this.theta / 180) * Math.PI
+    const end = (this.theta2 / 180) * Math.PI
+    const speed = angle => {
+      const sin = Math.sin(angle)
+      const cos = Math.cos(angle)
+      const dx = -this.cosφ * this.rx * sin - this.sinφ * this.ry * cos
+      const dy = -this.sinφ * this.rx * sin + this.cosφ * this.ry * cos
+      return Math.hypot(dx, dy)
     }
 
-    return ret[0].length() + ret[1].length()
+    const simpson = (a, b, fa, fm, fb) => ((b - a) / 6) * (fa + 4 * fm + fb)
+    const integrate = (a, b, fa, fm, fb, estimate, tolerance, depth) => {
+      const middle = (a + b) / 2
+      const leftMiddle = (a + middle) / 2
+      const rightMiddle = (middle + b) / 2
+      const leftValue = speed(leftMiddle)
+      const rightValue = speed(rightMiddle)
+      const left = simpson(a, middle, fa, leftValue, fm)
+      const right = simpson(middle, b, fm, rightValue, fb)
+      const error = left + right - estimate
+
+      if (depth === 0 || Math.abs(error) <= 15 * tolerance) {
+        return left + right + error / 15
+      }
+
+      return (
+        integrate(
+          a,
+          middle,
+          fa,
+          leftValue,
+          fm,
+          left,
+          tolerance / 2,
+          depth - 1
+        ) +
+        integrate(
+          middle,
+          b,
+          fm,
+          rightValue,
+          fb,
+          right,
+          tolerance / 2,
+          depth - 1
+        )
+      )
+    }
+
+    const middle = (start + end) / 2
+    const startValue = speed(start)
+    const middleValue = speed(middle)
+    const endValue = speed(end)
+    const estimate = simpson(start, end, startValue, middleValue, endValue)
+
+    return Math.abs(
+      integrate(
+        start,
+        end,
+        startValue,
+        middleValue,
+        endValue,
+        estimate,
+        1e-9 * Math.max(1, Math.abs(estimate)),
+        20
+      )
+    )
   }
 
   pointAt(t) {
