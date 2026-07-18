@@ -584,26 +584,29 @@ class Cubic {
     const a = 3 * (-p1 + 3 * p2 - 3 * p3 + p4)
     const b = 6 * (p1 - 2 * p2 + p3)
     const c = 3 * (p2 - p1)
+    const coefficientTolerance =
+      Number.EPSILON * 64 * Math.max(Math.abs(a), Math.abs(b), Math.abs(c), 1)
 
-    if (a === 0)
+    if (Math.abs(a) <= coefficientTolerance) {
+      if (Math.abs(b) <= coefficientTolerance) return []
       return [-c / b].filter(function (el) {
         return el > 0 && el < 1
       })
+    }
 
-    if (b * b - 4 * a * c < 0) return []
-    if (b * b - 4 * a * c === 0)
-      return [Math.round((-b / (2 * a)) * 100000) / 100000].filter(
-        function (el) {
-          return el > 0 && el < 1
-        }
-      )
+    const discriminant = b * b - 4 * a * c
+    const discriminantTolerance =
+      Number.EPSILON * 64 * Math.max(b * b, Math.abs(4 * a * c), 1)
+    if (discriminant < -discriminantTolerance) return []
+    if (Math.abs(discriminant) <= discriminantTolerance) {
+      return [-b / (2 * a)].filter(function (el) {
+        return el > 0 && el < 1
+      })
+    }
 
-    return [
-      Math.round(((-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a)) * 100000) /
-        100000,
-      Math.round(((-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a)) * 100000) /
-        100000
-    ].filter(function (el) {
+    // Avoid cancellation when b and sqrt(discriminant) are nearly equal.
+    const q = -(b + Math.sign(b || 1) * Math.sqrt(discriminant)) / 2
+    return [q / a, c / q].filter(function (el) {
       return el > 0 && el < 1
     })
   }
