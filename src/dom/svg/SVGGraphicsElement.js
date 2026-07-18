@@ -61,7 +61,7 @@ export class SVGGraphicsElement extends SVGElement {
 
     let m = this.matrixify()
 
-    if (this.parentNode && this.parentNode.nodeName !== '#document') {
+    if (this.parentNode && typeof this.parentNode.getScreenCTM === 'function') {
       m = this.parentNode.getScreenCTM().multiply(m)
     }
 

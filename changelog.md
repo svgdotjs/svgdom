@@ -4,6 +4,10 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed `getBoundingClientRect()` for SVG elements embedded under plain HTML parents.
+
 ## 0.1.26 - 2026-07-17
 
 ### Changed
