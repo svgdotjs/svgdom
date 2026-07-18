@@ -4,6 +4,8 @@
 
 While this dom implementation was designed to run svg.js on node, it now is much more feature complete and can be used by anyone needing an xml, svg or html dom.
 
+Typical uses include generating SVG files on a server, testing SVG code without a browser, and building asset-pipeline tools that inspect or transform SVG geometry.
+
 ## Get started with svg.js v3.x
 
 _for older versions of svg.js checkout older versions of svgdom_
