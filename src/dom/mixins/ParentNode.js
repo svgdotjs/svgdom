@@ -51,19 +51,25 @@ const ParentNode = {
   },
 
   prepend(...nodes) {
-    const node = nodesToNode(nodes, this.ownerDocument)
+    const document =
+      this.nodeType === this.DOCUMENT_NODE ? this : this.ownerDocument
+    const node = nodesToNode(nodes, document)
 
     this.insertBefore(node, this.firstChild)
   },
 
   append(...nodes) {
-    const node = nodesToNode(nodes, this.ownerDocument)
+    const document =
+      this.nodeType === this.DOCUMENT_NODE ? this : this.ownerDocument
+    const node = nodesToNode(nodes, document)
     this.appendChild(node)
   },
 
   replaceChildren(...nodes) {
     const document =
       this.nodeType === this.DOCUMENT_NODE ? this : this.ownerDocument
+    // Keep nodes separate for the mutation planner. Building a fragment here
+    // would detach existing children before replacement validation succeeds.
     replaceAllChildren(this, nodesToNodes(nodes, document))
   }
 }

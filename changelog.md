@@ -16,6 +16,7 @@ All notable changes to svgdom will be documented in this file.
 - Corrected SVG absolute length conversion factors to use the 96 dpi CSS basis.
 - Preserved zero-valued rotation centers in SVG matrix transformations.
 - Made `getElementsByClassName()` handle missing and multiple classes consistently.
+- Normalized all `ParentNode` and `ChildNode` variadic arguments and preserved insertion positions when nodes move.
 
 ## 0.1.27 - 2026-07-18
 
