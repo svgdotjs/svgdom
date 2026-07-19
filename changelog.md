@@ -15,6 +15,7 @@ All notable changes to svgdom will be documented in this file.
 - Made `outerHTML` replacement atomic for attached elements and a no-op for detached elements.
 - Corrected SVG absolute length conversion factors to use the 96 dpi CSS basis.
 - Preserved zero-valued rotation centers in SVG matrix transformations.
+- Made `getElementsByClassName()` handle missing and multiple classes consistently.
 
 ## 0.1.27 - 2026-07-18
 

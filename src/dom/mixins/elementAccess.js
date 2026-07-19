@@ -3,8 +3,10 @@ import { NodeIterator } from '../../utils/NodeIterator.js'
 import { normalizeNamespace } from '../../utils/namespaces.js'
 
 const hasClass = (node, name) => {
-  const classList = node.className.split(/\s+/)
-  return classList.includes(name)
+  const requested = String(name).trim().split(/\s+/).filter(Boolean)
+  if (!requested.length) return false
+  const classList = (node.className || '').split(/\s+/).filter(Boolean)
+  return requested.every(className => classList.includes(className))
 }
 
 const elementAccess = {

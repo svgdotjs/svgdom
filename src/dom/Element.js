@@ -183,7 +183,7 @@ export class Element extends Node {
   }
 
   get className() {
-    return this.getAttribute('class')
+    return this.getAttribute('class') || ''
   }
 
   set className(c) {
