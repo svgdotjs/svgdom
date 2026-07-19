@@ -12,7 +12,6 @@ const hasClass = (node, name) => {
 const elementAccess = {
   getElementsByTagName(name) {
     name = String(name)
-    // const document = this.ownerDocument
     const iter = new NodeIterator(
       this,
       NodeFilter.SHOW_ELEMENT,
@@ -22,7 +21,6 @@ const elementAccess = {
           : NodeFilter.FILTER_IGNORE,
       false
     )
-    // const iter = document.createNodeIterator(this, 1, (node) => node.nodeName === name ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE)
     return [...iter]
   },
 
@@ -31,7 +29,6 @@ const elementAccess = {
     ns = ns === '*' ? '*' : normalizeNamespace(ns)
     name = String(name)
 
-    // const document = this.ownerDocument
     const iter = new NodeIterator(
       this,
       NodeFilter.SHOW_ELEMENT,
@@ -44,12 +41,10 @@ const elementAccess = {
       },
       false
     )
-    // const iter = document.createNodeIterator(this, 1, (node) => node.isNamespace(ns) && node.nodeName === name ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE)
     return [...iter]
   },
 
   getElementsByClassName(name) {
-    // const document = this.ownerDocument
     const iter = new NodeIterator(
       this,
       NodeFilter.SHOW_ELEMENT,
@@ -59,7 +54,6 @@ const elementAccess = {
           : NodeFilter.FILTER_IGNORE,
       false
     )
-    // const iter = document.createNodeIterator(this, 1, (node) => hasClass(node, name) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_IGNORE)
     return [...iter]
   }
 }

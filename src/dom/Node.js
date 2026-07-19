@@ -227,13 +227,6 @@ export class Node extends EventTarget {
     this.ownerDocument = props.ownerDocument || null
     this.parentNode = null
 
-    // this.namespaces = {}
-    // if (this.prefix) {
-    //   this.namespaces[this.prefix] = ns
-    // } else {
-    //   this.namespaces.default = ns
-    // }
-
     if (props.childNodes) {
       for (let i = 0, il = props.childNodes.length; i < il; ++i) {
         this.appendChild(props.childNodes[i])

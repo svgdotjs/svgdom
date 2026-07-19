@@ -1,8 +1,6 @@
 import { imageSizeFromFile } from 'image-size/fromFile'
 import { Event } from '../Event.js'
 import { HTMLElement } from './HTMLElement.js'
-// import { getFileBufferFromURL } from '../../utils/fileUrlToBuffer.js'
-// import path from 'path'
 
 export class HTMLImageElement extends HTMLElement {
   constructor(...args) {
@@ -20,8 +18,6 @@ Object.defineProperties(HTMLImageElement.prototype, {
     },
     set(val) {
       this.setAttribute('src', val)
-      // const url = path.resolve(this.ownerDocument.defaultView.location, val)
-      // getFileBufferFromURL(url, (buffer) => {
       imageSizeFromFile(val)
         .then(size => {
           this.naturalWidth = size.width
@@ -32,7 +28,6 @@ Object.defineProperties(HTMLImageElement.prototype, {
         .catch(() => {
           this.dispatchEvent(new Event('error'))
         })
-      // })
     }
   },
   height: {

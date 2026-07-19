@@ -30,7 +30,6 @@ const getPathSegments = (node, rbox) => {
       return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
     case 'svg':
     case 'symbol':
-      // return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
       if (rbox) {
         return pathUtils.getPathSegments(pathUtils.pathFrom.rect(node))
       }
@@ -205,72 +204,6 @@ const getPositionDetailsFor = (node, pos, dx, dy, boxes) => {
     pos.x += boxes[boxes.length - 1].width
   }
 }
-
-/*
-// this function is passing dx and dy values by references. Dont assign new values to it
-const textIterator = function (node, pos = { x: 0, y: 0 }, dx = [ 0 ], dy = [ 0 ]) {
-
-  var x = parseFloat(node.getAttribute('x'))
-  var y = parseFloat(node.getAttribute('y'))
-
-  pos.x = isNaN(x) ? pos.x : x
-  pos.y = isNaN(y) ? pos.y : y
-
-  var dx0 = (node.getAttribute('dx') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
-  var dy0 = (node.getAttribute('dy') || '').split(regex.delimiter).filter(num => num !== '').map(parseFloat)
-  var boxes = []
-  var data = ''
-
-  // TODO: eventually replace only as much values as we have text chars (node.textContent.length) because we could end up adding to much
-  // replace initial values with node values if present
-  dx.splice(0, dx0.length, ...dx0)
-  dy.splice(0, dy0.length, ...dy0)
-
-  var i = 0
-  var il = node.childNodes.length
-
-  // iterate through all children
-  for (; i < il; ++i) {
-
-    // shift next child
-    pos.x += dx.shift() || 0
-    pos.y += dy.shift() || 0
-
-    // text
-    if (node.childNodes[i].nodeType === node.TEXT_NODE) {
-
-      // get text data
-      data = node.childNodes[i].data
-
-      let j = 0
-      const jl = data.length
-
-      // if it is more than one dx/dy single letters are moved by the amount (https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/dx)
-      if (dy.length || dx.length) {
-        for (;j < jl; j++) {
-          boxes.push(textUtils.textBBox(data.substr(j, 1), pos.x, pos.y, getFontDetails(node)))
-
-          pos.x += dx.shift() || 0
-          pos.y += dy.shift() || 0
-
-          if (!dy.length && !dx.length) break
-        }
-      }
-
-      // in case it was only one dx/dy or no more dx/dy move the rest of the text
-
-      boxes.push(textUtils.textBBox(data.substr(j), pos.x, pos.y, getFontDetails(node)))
-      pos.x += boxes[boxes.length - 1].width
-
-    // element
-    } else {
-      // in case of element, recursively call function again with new start values
-      boxes = boxes.concat(textIterator(node.childNodes[i], pos, dx, dy))
-    }
-  }
-
-  return boxes
-} */
 
 const getFontDetails = node => {
   if (node.nodeType === node.TEXT_NODE) node = node.parentNode

@@ -29,14 +29,5 @@ export default defineConfig([
       globals: globals.mocha
     }
   },
-  {
-    files: ['test/001-svg-dom.js'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        puppeteer: 'readonly'
-      }
-    }
-  },
   eslintConfigPrettier
 ])

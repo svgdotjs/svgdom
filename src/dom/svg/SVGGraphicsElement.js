@@ -65,8 +65,6 @@ export class SVGGraphicsElement extends SVGElement {
       m = this.parentNode.getScreenCTM().multiply(m)
     }
 
-    // let m = this.getScreenCTM()
-
     // There are a few extra rules regarding rbox and the <svg> element
     // Namely this is:
     // BBox is calculated as normal for container elements

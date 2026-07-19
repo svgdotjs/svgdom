@@ -1,84 +1,11 @@
-// import puppeteer from 'puppeteer'
 import assert from 'assert'
-// import { DOMParser, XMLSerializer, DOMImplementation } from 'xmldom'
 import { createSVGDocument } from '../main-module.js'
-// import fs from 'fs'
 
-// var svgString
 let svgDoc
 let svgRoot
 
-// function makeEl (nodeName, attrs = {}) {
-//   var svgNS = 'http://www.w3.org/2000/svg'
-//   var el = this.createElementNS(svgNS, nodeName)
-//   Object.keys(attrs).forEach(attrName => { el.setAttribute(attrName, attrs[attrName]) })
-//   return el
-// }
-
-let browser, page
-
-const testEnv = process.env.TEST_BROWSER ? 'browser' : 'node'
-
-function wrappedIt(message, testFn) {
-  if (testEnv === 'browser') {
-    return it(message, () => page.evaluate(testFn)) // page.evaluate will return promise
-  }
-  return it(message, testFn)
-}
-
-wrappedIt.skip = function (message, testFn) {
-  return it.skip(message, testFn)
-}
-
-wrappedIt.only = function (message, testFn) {
-  if (testEnv === 'browser') {
-    return it.only(message, () => page.evaluate(testFn)) // page.evaluate will return promise
-  }
-  return it.only(message, testFn)
-}
-
 describe('svg document', () => {
-  before(async () => {
-    if (testEnv === 'browser') {
-      const crConfig = {
-        headless: false, // replace with false to check rendering
-        args: [
-          '--disable-infobars',
-          '--disable-gpu'
-          // '--disable-web-security',
-          // '--user-data-dir'
-        ]
-      }
-
-      if (process.env.CHROMIUM_PATH) {
-        crConfig.executablePath =
-          process.env.CHROMIUM_PATH + '/Contents/MacOS/Chromium'
-      }
-
-      browser = await puppeteer.launch(crConfig)
-      page = await browser.newPage()
-
-      await page.goto('about:blank', { waitUntil: 'load' })
-
-      await page.evaluate(() => {
-        window.assert = function (check, message) {
-          if (!check) throw message || 'Assertion failed'
-        }
-
-        window.assert.strictEqual = function (value1, value2, message) {
-          if (value1 !== value2) throw message || 'Assertion failed'
-        }
-      })
-    }
-  })
-
-  after(async () => {
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-    await delay(1000)
-    browser && browser.close()
-  })
-
-  beforeEach(async () => {
+  beforeEach(() => {
     function prepare() {
       const svgNS = 'http://www.w3.org/2000/svg'
 
@@ -140,43 +67,26 @@ describe('svg document', () => {
       g.appendChild(text)
     }
 
-    if (testEnv === 'browser') {
-      await page.evaluate(() => {
-        const svgNS = 'http://www.w3.org/2000/svg'
-        const svg = (window.svgRoot = document.createElementNS(svgNS, 'svg'))
-        svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
-        svg.setAttribute('height', '200')
-        svg.setAttribute('width', '400')
-        svg.setAttribute('viewPort', '0 0 200 400')
-        svg.setAttribute('style', 'background-color: #eee')
+    svgDoc = createSVGDocument()
+    svgRoot = svgDoc.documentElement
 
-        document.body.appendChild(svg)
-        window.svgDoc = document
-      })
-
-      await page.evaluate(prepare)
-    } else {
-      svgDoc = createSVGDocument()
-      svgRoot = svgDoc.documentElement
-
-      prepare()
-    }
+    prepare()
   })
 
-  wrappedIt('should have children method for nodes', () => {
+  it('should have children method for nodes', () => {
     assert(svgRoot.children)
   })
 
-  wrappedIt('should have createComment method', () => {
+  it('should have createComment method', () => {
     assert(svgDoc.createComment('xxx'))
   })
 
-  wrappedIt('should expose the nearest owner SVG element', () => {
+  it('should expose the nearest owner SVG element', () => {
     assert.strictEqual(svgRoot.ownerSVGElement, null)
     assert.strictEqual(svgRoot.querySelector('#g-1').ownerSVGElement, svgRoot)
   })
 
-  wrappedIt('transform: rotate', () => {
+  it('transform: rotate', () => {
     const circle = svgRoot.querySelector('#circle-1')
     const g = circle.parentNode
 
@@ -204,7 +114,7 @@ describe('svg document', () => {
     assert.strictEqual(bbox1.height, bbox3.height)
   })
 
-  wrappedIt('transforms', () => {
+  it('transforms', () => {
     const rect = svgRoot.querySelector('#rect-1')
 
     const x = 0
@@ -267,7 +177,7 @@ describe('svg document', () => {
     assert.strictEqual(bbox.height, height * 2)
   })
 
-  wrappedIt('transform: translateX', () => {
+  it('transform: translateX', () => {
     const rect = svgRoot.querySelector('#rect-1')
 
     const bbox1 = rect.getBBox()
@@ -292,7 +202,7 @@ describe('svg document', () => {
     assert.strictEqual(bbox1.width, bbox3.width - 15)
   })
 
-  wrappedIt('transform: scaleXY', () => {
+  it('transform: scaleXY', () => {
     const rect = svgRoot.querySelector('#rect-1')
 
     const bbox1 = rect.getBBox()
@@ -309,7 +219,7 @@ describe('svg document', () => {
     assert.strictEqual(bbox3.width, 20)
   })
 
-  wrappedIt('exposed style attribute on attributes enumeration', () => {
+  it('exposed style attribute on attributes enumeration', () => {
     const connector = svgRoot.querySelector('#rect-1')
 
     assert.strictEqual(connector.getAttribute('style'), null)
@@ -327,7 +237,7 @@ describe('svg document', () => {
     )
   })
 
-  wrappedIt('should match [attr^=startsWith] css selector', () => {
+  it('should match [attr^=startsWith] css selector', () => {
     const connector = svgRoot.querySelector('[id^=rect-1]')
 
     assert(connector)
@@ -339,7 +249,7 @@ describe('svg document', () => {
     assert.strictEqual(connectors.length, 2)
   })
 
-  wrappedIt('closest() should find ancestors', () => {
+  it('closest() should find ancestors', () => {
     const rect1 = svgRoot.querySelector('#rect-1')
 
     assert.strictEqual(rect1.closest('svg').localName, 'svg')
@@ -365,7 +275,7 @@ describe('svg document', () => {
     )
   })
 
-  wrappedIt('text-anchor should affect bbox', () => {
+  it('text-anchor should affect bbox', () => {
     const text = svgRoot.querySelector('#text-1')
 
     assert(text)
