@@ -10,6 +10,7 @@ All notable changes to svgdom will be documented in this file.
 - Kept `CharacterData.data` and `nodeValue` synchronized and corrected range-based mutation methods.
 - Corrected recursive node normalization and structural equality without mutating compared trees.
 - Made document types safely assignable, reusable after failed document creation, and metadata-preserving.
+- Preserved node subtype state, ownership, attributes, and namespace-unaware names when cloning.
 
 ## 0.1.27 - 2026-07-18
 

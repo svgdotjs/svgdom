@@ -198,31 +198,69 @@ export const tag = function (node) {
   return serializeElement(node, new Map([['xml', xml]]))
 }
 
-export const cloneNode = function (node) {
-  const { prefix, localName, namespaceURI: ns, nodeValue, ownerDocument } = node
+const cloneShallow = (node, document) => {
+  switch (node.nodeType) {
+    case node.DOCUMENT_NODE:
+      return new node.constructor(node.namespaceURI)
+    case node.DOCUMENT_TYPE_NODE:
+      return new node.constructor(node.name, {
+        publicId: node.publicId,
+        systemId: node.systemId,
+        internalSubset: node.internalSubset,
+        ownerDocument: document
+      })
+    case node.DOCUMENT_FRAGMENT_NODE:
+      return document.createDocumentFragment()
+    case node.ELEMENT_NODE:
+      // Namespace-unaware factories keep a colon in localName; routing such a
+      // name through the namespace-aware path would reinterpret it as a prefix.
+      return node.prefix === null && node.localName.includes(':')
+        ? document.createElementNS(node.namespaceURI, node.localName, true)
+        : document.createElementNS(node.namespaceURI, qualifiedName(node))
+    case node.ATTRIBUTE_NODE:
+      return node.prefix === null && node.localName.includes(':')
+        ? document.createAttributeNS(node.namespaceURI, node.localName, true)
+        : document.createAttributeNS(node.namespaceURI, qualifiedName(node))
+    case node.TEXT_NODE:
+      return document.createTextNode(node.data)
+    case node.CDATA_SECTION_NODE:
+      return document.createCDATASection(node.data)
+    case node.COMMENT_NODE:
+      return document.createComment(node.data)
+    default:
+      return new node.constructor(
+        qualifiedName(node),
+        { nodeValue: node.nodeValue, ownerDocument: document },
+        node.namespaceURI
+      )
+  }
+}
 
-  // Build up the correctly cased qualified name
-  const qualifiedName = (prefix ? prefix + ':' : '') + localName
+export const cloneNode = function (node, deep = false, document) {
+  const isDocument = node.nodeType === node.DOCUMENT_NODE
+  const targetDocument = isDocument
+    ? null
+    : document === undefined
+      ? node.ownerDocument
+      : document
+  const clone = cloneShallow(node, targetDocument)
+  const childDocument = isDocument ? clone : targetDocument
 
-  // Check if node was created using non-namespace function which can lead to : in the localName.
-  // This check allows false negatives because `local` only matters IF there are : in the localName
-  // and we dont care about it when there are non
-  const local = localName.includes(':')
+  if (node.nodeType === node.ATTRIBUTE_NODE) {
+    clone.value = node.value
+  }
 
-  const clone = new node.constructor(
-    qualifiedName,
-    {
-      attrs: new Set([...node.attrs].map(node => node.cloneNode())),
-      nodeValue,
-      ownerDocument,
-      local
-    },
-    ns
-  )
+  if (node.nodeType === node.ELEMENT_NODE) {
+    for (const attr of node.attrs) {
+      clone.setAttributeNodeNS(cloneNode(attr, false, childDocument))
+    }
+  }
 
-  // Attr.cloneNode() cannot know its future owner; ownership is established
-  // only after the containing element clone exists.
-  for (const attr of clone.attrs) attr.ownerElement = clone
+  if (deep) {
+    for (const child of node.childNodes) {
+      clone.appendChild(cloneNode(child, true, childDocument))
+    }
+  }
 
   return clone
 }

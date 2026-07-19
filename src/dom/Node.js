@@ -246,16 +246,7 @@ export class Node extends EventTarget {
   }
 
   cloneNode(deep = false) {
-    const clone = cloneNode(this)
-
-    if (deep) {
-      this.childNodes.forEach(function (el) {
-        const node = el.cloneNode(deep)
-        clone.appendChild(node)
-      })
-    }
-
-    return clone
+    return cloneNode(this, deep)
   }
 
   contains(node) {
