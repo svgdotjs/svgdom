@@ -4,6 +4,10 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Composed DOM interfaces explicitly and removed the internal `query()` and `matchWithScope()` helpers from the public Element surface.
+
 ### Fixed
 
 - Preserved DOM tree mutation invariants by validating edits atomically, adopting cross-document subtrees, and maintaining parent and owner links.

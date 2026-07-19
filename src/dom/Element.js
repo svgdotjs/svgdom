@@ -1,6 +1,5 @@
 import { Node } from './Node.js'
 
-import { ParentNode } from './mixins/ParentNode.js'
 import { elementAccess } from './mixins/elementAccess.js'
 import { parseFragment } from './html/HTMLParser.js'
 import { mixin } from '../utils/objectCreationUtils.js'
@@ -15,6 +14,8 @@ import {
   validateName
 } from '../utils/namespaces.js'
 import { createCSSStyleDeclaration } from './CSSStyleDeclaration.js'
+import { CssQuery } from '../other/CssQuery.js'
+import { ParentNode } from './mixins/ParentNode.js'
 
 const getAttributeByNsAndLocalName = (el, ns, localName) => {
   ns = normalizeNamespace(ns)
@@ -94,7 +95,17 @@ export class Element extends Node {
   }
 
   matches(query) {
-    return this.matchWithScope(query, this)
+    return new CssQuery(query).matches(this, this)
+  }
+
+  closest(query) {
+    const cssQuery = new CssQuery(query)
+    for (let node = this; node; node = node.parentNode) {
+      if (node.nodeType === Node.ELEMENT_NODE && cssQuery.matches(node, this)) {
+        return node
+      }
+    }
+    return null
   }
 
   removeAttribute(qualifiedName) {

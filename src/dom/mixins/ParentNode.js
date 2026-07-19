@@ -5,49 +5,34 @@ import { nodesToNode, nodesToNodes } from '../../utils/nodesToNode.js'
 import { replaceAllChildren } from '../Node.js'
 
 // https://dom.spec.whatwg.org/#parentnode
+const runQuery = (root, selector, single = false) => {
+  const cssQuery = new CssQuery(selector)
+  const iter = new NodeIterator(
+    root,
+    NodeFilter.SHOW_ELEMENT,
+    node =>
+      cssQuery.matches(node, root)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_IGNORE,
+    false
+  )
+
+  const nodes = []
+  for (const node of iter) {
+    nodes.push(node)
+    if (single) break
+  }
+
+  return nodes
+}
+
 const ParentNode = {
-  matchWithScope(query, scope) {
-    return new CssQuery(query).matches(this, scope)
-  },
-
-  query(query, scope, single = false) {
-    const iter = new NodeIterator(
-      scope,
-      NodeFilter.SHOW_ELEMENT,
-      node =>
-        node.matchWithScope(query, scope)
-          ? NodeFilter.FILTER_ACCEPT
-          : NodeFilter.FILTER_IGNORE,
-      false
-    )
-
-    const nodes = []
-    for (const node of iter) {
-      nodes.push(node)
-      if (single) return nodes
-    }
-
-    return nodes
-  },
-
   querySelectorAll(query) {
-    return this.query(query, this)
+    return runQuery(this, query)
   },
 
   querySelector(query) {
-    return this.query(query, this, true)[0] || null
-  },
-
-  closest(query) {
-    const cssQuery = new CssQuery(query)
-    let node = this
-    while (node) {
-      if (cssQuery.matches(node, this)) {
-        return node
-      }
-      node = node.parentNode
-    }
-    return null
+    return runQuery(this, query, true)[0] || null
   },
 
   prepend(...nodes) {
