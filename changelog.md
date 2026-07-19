@@ -9,6 +9,7 @@ All notable changes to svgdom will be documented in this file.
 - Composed DOM interfaces explicitly and removed the internal `query()` and `matchWithScope()` helpers from the public Element surface.
 - Separated selector parsing from matching, bounded selector caching, and tightened combinator, pseudo-class, and attribute matching.
 - Removed obsolete implementation scaffolding, legacy bundle code, and unused geometry helpers.
+- Removed the obsolete Reify test hook and its dependencies.
 
 ### Fixed
 

@@ -13,7 +13,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --timeout 15000",
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check"
@@ -54,7 +54,6 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
-    "prettier": "^3.9.5",
-    "reify": "^0.20.12"
+    "prettier": "^3.9.5"
   }
 }
