@@ -91,11 +91,12 @@ export const HTMLParser = function (str, el) {
     throw e
   }
 
-  parser.ondoctype = () => {
+  parser.ondoctype = declaration => {
     if (currentTag !== document) {
       throw new Error('Doctype can only be appended to document')
     }
-    currentTag.appendChild(document.implementation.createDocumentType())
+    const name = declaration.trim().match(/^\S+/)?.[0]
+    currentTag.appendChild(document.implementation.createDocumentType(name))
   }
 
   parser.ontext = str => currentTag.appendChild(document.createTextNode(str))

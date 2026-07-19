@@ -113,27 +113,35 @@ export const DOMImplementation = {
   },
 
   createDocumentType(qualifiedName, publicId, systemId) {
-    return new DocumentType(qualifiedName, {
-      publicId,
-      systemId,
-      ownerDocument: this
+    return new DocumentType(validateName(qualifiedName), {
+      publicId: String(publicId ?? ''),
+      systemId: String(systemId ?? ''),
+      ownerDocument: null
     })
   },
 
   createDocument(namespace, qualifiedName, doctype) {
     const doc = new Document(namespace)
     if (doctype) {
+      if (!(doctype instanceof DocumentType)) {
+        throw new Error('Hierarchy Request Error')
+      }
       if (doctype.ownerDocument) {
         throw new Error(
           'the object is in the wrong Document, a call to importNode is required'
         )
       }
-      doctype.ownerDocument = doc
+    }
+
+    // Construct the root before consuming a caller-owned doctype so invalid
+    // qualified names leave that doctype detached and reusable.
+    const root = qualifiedName
+      ? doc.createElementNS(namespace, qualifiedName)
+      : null
+    if (doctype) {
       doc.appendChild(doctype)
     }
-    if (qualifiedName) {
-      doc.appendChild(doc.createElementNS(namespace, qualifiedName))
-    }
+    if (root) doc.appendChild(root)
     return doc
   },
 

@@ -9,6 +9,7 @@ All notable changes to svgdom will be documented in this file.
 - Preserved DOM tree mutation invariants by validating edits atomically, adopting cross-document subtrees, and maintaining parent and owner links.
 - Kept `CharacterData.data` and `nodeValue` synchronized and corrected range-based mutation methods.
 - Corrected recursive node normalization and structural equality without mutating compared trees.
+- Made document types safely assignable, reusable after failed document creation, and metadata-preserving.
 
 ## 0.1.27 - 2026-07-18
 
