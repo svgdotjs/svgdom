@@ -250,11 +250,8 @@ export class Node extends EventTarget {
   }
 
   contains(node) {
-    if (node === this) return false
-
-    while (node.parentNode) {
-      if (node === this) return true
-      node = node.parentNode
+    for (let current = node; current; current = current.parentNode) {
+      if (current === this) return true
     }
     return false
   }

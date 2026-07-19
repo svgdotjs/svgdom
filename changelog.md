@@ -18,6 +18,7 @@ All notable changes to svgdom will be documented in this file.
 - Made `getElementsByClassName()` handle missing and multiple classes consistently.
 - Normalized all `ParentNode` and `ChildNode` variadic arguments and preserved insertion positions when nodes move.
 - Made `Document.head` and `Document.body` return `null` for empty, partial, and non-HTML trees.
+- Made `Node.contains()` include the node itself and handle detached nodes correctly.
 
 ## 0.1.27 - 2026-07-18
 
