@@ -4,6 +4,10 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Added CI coverage for supported Node.js versions, linting, formatting, and pinned svg.js integration.
+
 ### Changed
 
 - Composed DOM interfaces explicitly and removed the internal `query()` and `matchWithScope()` helpers from the public Element surface.

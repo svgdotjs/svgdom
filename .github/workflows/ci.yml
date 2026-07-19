@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.13.0, 24]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm format:check
+
+  svg-js-integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out svgdom
+        uses: actions/checkout@v6
+        with:
+          path: svgdom
+
+      - name: Check out svg.js 3.2.7
+        uses: actions/checkout@v6
+        with:
+          repository: svgdotjs/svg.js
+          ref: 7e06420e056de92c4839f03b4406605850b04168
+          path: svg.js
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.13.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install svgdom dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: svgdom
+
+      - name: Install svg.js dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: svg.js
+
+      - name: Link the checked-out svgdom into svg.js
+        run: |
+          unlink node_modules/svgdom
+          ln -s "$GITHUB_WORKSPACE/svgdom" node_modules/svgdom
+        working-directory: svg.js
+
+      - name: Test svg.js with svgdom
+        run: pnpm test:svgdom
+        working-directory: svg.js
