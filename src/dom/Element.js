@@ -2,7 +2,7 @@ import { Node } from './Node.js'
 
 import { ParentNode } from './mixins/ParentNode.js'
 import { elementAccess } from './mixins/elementAccess.js'
-import { HTMLParser } from './html/HTMLParser.js'
+import { HTMLParser, parseFragment } from './html/HTMLParser.js'
 import { DocumentFragment } from './DocumentFragment.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
@@ -211,11 +211,8 @@ export class Element extends Node {
   }
 
   set innerHTML(str) {
-    while (this.firstChild) {
-      this.removeChild(this.firstChild)
-    }
-    // The parser adds the html to this
-    HTMLParser(str, this)
+    const fragment = parseFragment(str, this)
+    this.replaceChildren(fragment)
   }
 
   get outerHTML() {

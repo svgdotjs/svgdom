@@ -1,11 +1,39 @@
 import sax from 'sax'
 import { namespaceDeclarationPrefix } from '../../utils/namespaces.js'
+import { validateDocumentChildren } from '../Node.js'
 
 const escapeAttribute = value =>
   String(value)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
+
+const quotedValue = String.raw`(?:"([^"]*)"|'([^']*)')`
+
+// sax exposes the declaration as one string. Capture the external identifiers
+// first, then retain the bracket contents separately as the internal subset.
+const parseDoctype = declaration => {
+  declaration = declaration.trim()
+  const name = declaration.match(/^\S+/)?.[0]
+  let publicId = ''
+  let systemId = ''
+
+  const publicMatch = declaration.match(
+    new RegExp(`^\\S+\\s+PUBLIC\\s+${quotedValue}\\s+${quotedValue}`, 'i')
+  )
+  if (publicMatch) {
+    publicId = publicMatch[1] ?? publicMatch[2]
+    systemId = publicMatch[3] ?? publicMatch[4]
+  } else {
+    const systemMatch = declaration.match(
+      new RegExp(`^\\S+\\s+SYSTEM\\s+${quotedValue}`, 'i')
+    )
+    if (systemMatch) systemId = systemMatch[1] ?? systemMatch[2]
+  }
+
+  const subset = declaration.match(/\[([\s\S]*)\]\s*$/)
+  return { name, publicId, systemId, internalSubset: subset?.[1] ?? null }
+}
 
 // SAX parses fragments inside a synthetic wrapper and cannot see the real DOM
 // ancestors. Reconstruct their in-scope bindings so inherited prefixes and the
@@ -40,16 +68,33 @@ const namespaceBindings = el => {
   return bindings
 }
 
-// TODO: Its an XMLParser not HTMLParser!!
-export const HTMLParser = function (str, el) {
-  let currentTag = el
+const parse = function (str, el) {
+  str = String(str)
   let document = el.ownerDocument
   let cdata = null
   let wrapperName = null
   let depth = 0
+  const isDocument = el.nodeType === el.DOCUMENT_NODE
+  // Build a detached candidate tree first. SAX errors and document hierarchy
+  // failures therefore leave the destination exactly as it was before parsing.
+  const staging = isDocument
+    ? { childNodes: [] }
+    : document.createDocumentFragment()
+  let currentTag = staging
+  const parents = []
+
+  const appendNode = node => {
+    // A plain staging list is used for documents because a DocumentFragment
+    // cannot legally own a doctype; fragments can use normal tree operations.
+    if (currentTag === staging && isDocument) {
+      staging.childNodes.push(node)
+    } else {
+      currentTag.appendChild(node)
+    }
+  }
 
   // sax expects a root element but we also missuse it to parse fragments
-  if (el.nodeType !== el.DOCUMENT_NODE) {
+  if (!isDocument) {
     const bindings = namespaceBindings(el)
     let wrapperPrefix = 'svgdom'
     // Do not steal a prefix that is meaningful in the real scope or appears in
@@ -92,15 +137,25 @@ export const HTMLParser = function (str, el) {
   }
 
   parser.ondoctype = declaration => {
-    if (currentTag !== document) {
+    if (!isDocument || currentTag !== staging) {
       throw new Error('Doctype can only be appended to document')
     }
-    const name = declaration.trim().match(/^\S+/)?.[0]
-    currentTag.appendChild(document.implementation.createDocumentType(name))
+    const { name, publicId, systemId, internalSubset } =
+      parseDoctype(declaration)
+    const doctype = document.implementation.createDocumentType(
+      name,
+      publicId,
+      systemId
+    )
+    doctype.internalSubset = internalSubset
+    appendNode(doctype)
   }
 
-  parser.ontext = str => currentTag.appendChild(document.createTextNode(str))
-  parser.oncomment = str => currentTag.appendChild(document.createComment(str))
+  parser.ontext = str => {
+    if (isDocument && currentTag === staging && !str.trim()) return
+    appendNode(document.createTextNode(str))
+  }
+  parser.oncomment = str => appendNode(document.createComment(str))
 
   parser.onopentag = node => {
     // Only the first SAX element is synthetic. A user element with the same
@@ -120,7 +175,10 @@ export const HTMLParser = function (str, el) {
       newElement.setAttributeNS(node.uri, name, node.value)
     }
 
-    currentTag.appendChild(newElement)
+    appendNode(newElement)
+    // SAX reports a stream of open/close events, so this stack reconstructs the
+    // parent that receives subsequent text, comments, and child elements.
+    parents.push(currentTag)
     currentTag = newElement
   }
 
@@ -128,7 +186,7 @@ export const HTMLParser = function (str, el) {
     depth--
     if (wrapperName !== null && depth === 0) return
 
-    currentTag = currentTag.parentNode
+    currentTag = parents.pop()
   }
 
   parser.onopencdata = () => {
@@ -140,8 +198,25 @@ export const HTMLParser = function (str, el) {
   }
 
   parser.onclosecdata = () => {
-    currentTag.appendChild(cdata)
+    appendNode(cdata)
   }
 
-  parser.write(str)
+  parser.write(str).close()
+  return staging
+}
+
+// This is intentionally a strict XML parser despite the historical public name.
+export const parseFragment = (str, element) => parse(str, element)
+
+export const HTMLParser = function (str, el) {
+  const staging = parse(str, el)
+  if (el.nodeType === el.DOCUMENT_NODE) {
+    // Validate the combined old and new children before publishing any parsed
+    // node; appendChild then supplies the normal ownership and parent links.
+    validateDocumentChildren(el.childNodes.concat(staging.childNodes))
+    for (const node of staging.childNodes) el.appendChild(node)
+  } else {
+    el.appendChild(staging)
+  }
+  return el
 }

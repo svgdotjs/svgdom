@@ -11,6 +11,7 @@ All notable changes to svgdom will be documented in this file.
 - Corrected recursive node normalization and structural equality without mutating compared trees.
 - Made document types safely assignable, reusable after failed document creation, and metadata-preserving.
 - Preserved node subtype state, ownership, attributes, and namespace-unaware names when cloning.
+- Made XML fragment and document parsing transactional while retaining namespaces, CDATA, and doctype metadata.
 
 ## 0.1.27 - 2026-07-18
 
