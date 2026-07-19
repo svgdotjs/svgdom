@@ -14,12 +14,22 @@ const htmlEntities = function (str) {
     .replace(/"/g, '&quot;')
 }
 
-const emptyElements = {
-  br: true,
-  hr: true,
-  img: true,
-  link: true
-}
+const voidElements = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+])
 
 const qualifiedName = node =>
   (node.prefix ? node.prefix + ':' : '') + node.localName
@@ -180,7 +190,7 @@ const serializeElement = (node, inheritedBindings) => {
   const isEmptyHTMLTag =
     usesHTMLSerialization(node) &&
     node.namespaceURI === html &&
-    emptyElements[name.toLowerCase()]
+    voidElements.has(node.localName.toLowerCase())
 
   return (
     '<' +
@@ -238,6 +248,8 @@ const cloneShallow = (node, document) => {
 
 export const cloneNode = function (node, deep = false, document) {
   const isDocument = node.nodeType === node.DOCUMENT_NODE
+  // A cloned Document owns its cloned descendants. Other clones retain their
+  // source document unless an internal recursive/import target is supplied.
   const targetDocument = isDocument
     ? null
     : document === undefined
