@@ -8,3 +8,4 @@ spec/
 /index.js
 /index.cjs
 .reify-cache
+/backlog/

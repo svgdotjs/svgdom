@@ -1,7 +1,8 @@
 import { CssQuery } from '../../other/CssQuery.js'
 import { NodeIterator } from '../../utils/NodeIterator.js'
 import { NodeFilter } from '../NodeFilter.js'
-import { nodesToNode } from '../../utils/nodesToNode.js'
+import { nodesToNode, nodesToNodes } from '../../utils/nodesToNode.js'
+import { replaceAllChildren } from '../Node.js'
 
 // https://dom.spec.whatwg.org/#parentnode
 const ParentNode = {
@@ -61,10 +62,9 @@ const ParentNode = {
   },
 
   replaceChildren(...nodes) {
-    while (this.firstChild) {
-      this.removeChild(this.firstChild)
-    }
-    this.append(...nodes)
+    const document =
+      this.nodeType === this.DOCUMENT_NODE ? this : this.ownerDocument
+    replaceAllChildren(this, nodesToNodes(nodes, document))
   }
 }
 

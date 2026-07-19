@@ -4,6 +4,10 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Preserved DOM tree mutation invariants by validating edits atomically, adopting cross-document subtrees, and maintaining parent and owner links.
+
 ## 0.1.27 - 2026-07-18
 
 ### Changed

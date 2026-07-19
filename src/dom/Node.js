@@ -19,6 +19,177 @@ const nodeTypes = {
   NOTATION_NODE: 12
 }
 
+const domError = (message, code) => Object.assign(new Error(message), { code })
+const hierarchyError = () => domError('Hierarchy Request Error', 3)
+const notFoundError = () => domError('Not Found Error', 8)
+const wrongDocumentError = () => domError('Wrong Document Error', 4)
+
+const associatedDocument = node =>
+  node.nodeType === Node.DOCUMENT_NODE ? node : node.ownerDocument
+
+const canHaveChildren = node =>
+  node.nodeType === Node.DOCUMENT_NODE ||
+  node.nodeType === Node.DOCUMENT_FRAGMENT_NODE ||
+  node.nodeType === Node.ELEMENT_NODE
+
+const insertableNodeTypes = new Set([
+  nodeTypes.ELEMENT_NODE,
+  nodeTypes.TEXT_NODE,
+  nodeTypes.CDATA_SECTION_NODE,
+  nodeTypes.PROCESSING_INSTRUCTION_NODE,
+  nodeTypes.COMMENT_NODE,
+  nodeTypes.DOCUMENT_TYPE_NODE
+])
+
+const setOwnerDocument = (node, document) => {
+  if (!document || node.nodeType === Node.DOCUMENT_NODE) return
+  node.ownerDocument = document
+  for (const attr of node.attrs) {
+    attr.ownerDocument = document
+  }
+  for (const child of node.childNodes) {
+    setOwnerDocument(child, document)
+  }
+}
+
+export const validateDocumentChildren = children => {
+  const allowed = new Set([
+    Node.ELEMENT_NODE,
+    Node.COMMENT_NODE,
+    Node.DOCUMENT_TYPE_NODE
+  ])
+  if (children.some(node => !allowed.has(node.nodeType))) {
+    throw hierarchyError()
+  }
+
+  const elements = children.filter(node => node.nodeType === Node.ELEMENT_NODE)
+  const doctypes = children.filter(
+    node => node.nodeType === Node.DOCUMENT_TYPE_NODE
+  )
+  if (elements.length > 1 || doctypes.length > 1) throw hierarchyError()
+  if (
+    elements.length &&
+    doctypes.length &&
+    children.indexOf(doctypes[0]) > children.indexOf(elements[0])
+  ) {
+    throw hierarchyError()
+  }
+}
+
+const validateInsertedNodes = (parent, nodes, childrenAfterInsertion) => {
+  if (!canHaveChildren(parent)) throw hierarchyError()
+  if (nodes.some(node => !insertableNodeTypes.has(node.nodeType))) {
+    throw hierarchyError()
+  }
+  for (const node of nodes) {
+    for (let ancestor = parent; ancestor; ancestor = ancestor.parentNode) {
+      if (ancestor === node) throw hierarchyError()
+    }
+  }
+  if (parent.nodeType === Node.DOCUMENT_NODE) {
+    validateDocumentChildren(childrenAfterInsertion)
+  } else if (nodes.some(node => node.nodeType === Node.DOCUMENT_TYPE_NODE)) {
+    throw hierarchyError()
+  }
+}
+
+const insertionPlan = (
+  parent,
+  node,
+  before,
+  replacedNode = null,
+  replaceAll = false
+) => {
+  const suppliedNodes = Array.isArray(node) ? node : [node]
+  if (suppliedNodes.some(node => !(node instanceof Node))) {
+    throw hierarchyError()
+  }
+  if (before != null && before.parentNode !== parent) throw notFoundError()
+  if (replacedNode != null && replacedNode.parentNode !== parent) {
+    throw notFoundError()
+  }
+  // Validate the supplied fragment before expanding it. Otherwise inserting a
+  // fragment into itself would appear to be an empty, and therefore valid, edit.
+  for (const suppliedNode of suppliedNodes) {
+    for (let ancestor = parent; ancestor; ancestor = ancestor.parentNode) {
+      if (ancestor === suppliedNode) throw hierarchyError()
+    }
+  }
+
+  const nodes = suppliedNodes.flatMap(node =>
+    node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+      ? node.childNodes.slice()
+      : node
+  )
+  const removed = new Set(nodes)
+  const replacedNodes = replaceAll
+    ? parent.childNodes.slice()
+    : replacedNode
+      ? [replacedNode]
+      : []
+  for (const replaced of replacedNodes) removed.add(replaced)
+
+  // Calculate the final child list without mutating either tree. References
+  // that are themselves moving resolve to the next child that remains in place.
+  const remaining = parent.childNodes.filter(child => !removed.has(child))
+
+  let index
+  if (replaceAll) {
+    index = 0
+  } else if (replacedNode) {
+    const following = parent.childNodes.find(
+      (child, childIndex) =>
+        childIndex > parent.childNodes.indexOf(replacedNode) &&
+        !removed.has(child)
+    )
+    index = following ? remaining.indexOf(following) : remaining.length
+  } else if (before == null) {
+    index = remaining.length
+  } else if (removed.has(before)) {
+    const following = parent.childNodes.find(
+      (child, childIndex) =>
+        childIndex > parent.childNodes.indexOf(before) && !removed.has(child)
+    )
+    index = following ? remaining.indexOf(following) : remaining.length
+  } else {
+    index = remaining.indexOf(before)
+  }
+
+  const childrenAfterInsertion = remaining.slice()
+  childrenAfterInsertion.splice(index, 0, ...nodes)
+  validateInsertedNodes(parent, nodes, childrenAfterInsertion)
+  return { nodes, index, replacedNodes }
+}
+
+const applyInsertionPlan = (parent, plan) => {
+  const document = associatedDocument(parent)
+
+  for (const node of plan.nodes) {
+    if (node.parentNode) {
+      const index = node.parentNode.childNodes.indexOf(node)
+      if (index !== -1) node.parentNode.childNodes.splice(index, 1)
+      node.parentNode = null
+    }
+  }
+
+  for (const replacedNode of plan.replacedNodes) {
+    const index = parent.childNodes.indexOf(replacedNode)
+    if (index !== -1) parent.childNodes.splice(index, 1)
+    replacedNode.parentNode = null
+  }
+
+  for (const node of plan.nodes) {
+    setOwnerDocument(node, document)
+    node.parentNode = parent
+  }
+  parent.childNodes.splice(plan.index, 0, ...plan.nodes)
+}
+
+export const replaceAllChildren = (parent, nodes) => {
+  const plan = insertionPlan(parent, nodes, null, null, true)
+  applyInsertionPlan(parent, plan)
+}
+
 export class Node extends EventTarget {
   constructor(name = '', props = {}, ns = null) {
     super()
@@ -99,29 +270,8 @@ export class Node extends EventTarget {
   }
 
   insertBefore(node, before) {
-    let index = this.childNodes.indexOf(before)
-    if (index === -1) {
-      index = this.childNodes.length
-    }
-
-    if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-      let child
-      let oldChild = before
-      while ((child = node.childNodes.pop())) {
-        this.insertBefore(child, oldChild)
-        oldChild = child
-      }
-      return node
-    }
-
-    if (node.parentNode) {
-      node.parentNode.removeChild(node)
-    }
-
-    node.parentNode = this
-    // Object.setPrototypeOf(node.namespaces.prototype, this.namespaces.prototype)
-
-    this.childNodes.splice(index, 0, node)
+    const plan = insertionPlan(this, node, before)
+    applyInsertionPlan(this, plan)
     return node
   }
 
@@ -368,18 +518,20 @@ export class Node extends EventTarget {
   }
 
   removeChild(node) {
-    node.parentNode = null
-    // Object.setPrototypeOf(node, null)
     const index = this.childNodes.indexOf(node)
-    if (index === -1) return node
+    if (index === -1) throw notFoundError()
     this.childNodes.splice(index, 1)
+    node.parentNode = null
     return node
   }
 
   replaceChild(newChild, oldChild) {
-    const before = oldChild.nextSibling
-    this.removeChild(oldChild)
-    this.insertBefore(newChild, before)
+    if (newChild === oldChild) {
+      if (oldChild.parentNode !== this) throw notFoundError()
+      return oldChild
+    }
+    const plan = insertionPlan(this, newChild, oldChild, oldChild)
+    applyInsertionPlan(this, plan)
     return oldChild
   }
 
@@ -398,16 +550,36 @@ export class Node extends EventTarget {
   }
 
   get textContent() {
-    if (this.nodeType === Node.TEXT_NODE) return this.data
-    if (this.nodeType === Node.CDATA_SECTION_NODE) return this.data
-    if (this.nodeType === Node.COMMENT_NODE) return this.data
+    if (
+      this.nodeType === Node.TEXT_NODE ||
+      this.nodeType === Node.CDATA_SECTION_NODE ||
+      this.nodeType === Node.COMMENT_NODE
+    ) {
+      return this.data
+    }
+    if (this.nodeType === Node.ATTRIBUTE_NODE) return this.value
+    if (
+      this.nodeType !== Node.ELEMENT_NODE &&
+      this.nodeType !== Node.DOCUMENT_FRAGMENT_NODE
+    ) {
+      return null
+    }
 
-    return this.childNodes.reduce(function (last, current) {
-      return last + current.textContent
+    return this.childNodes.reduce((text, child) => {
+      if (
+        child.nodeType === Node.TEXT_NODE ||
+        child.nodeType === Node.CDATA_SECTION_NODE
+      ) {
+        return text + child.data
+      }
+      return child.nodeType === Node.ELEMENT_NODE
+        ? text + child.textContent
+        : text
     }, '')
   }
 
   set textContent(text) {
+    text = text == null ? '' : String(text)
     if (
       this.nodeType === Node.TEXT_NODE ||
       this.nodeType === Node.CDATA_SECTION_NODE ||
@@ -416,8 +588,21 @@ export class Node extends EventTarget {
       this.data = text
       return
     }
-    this.childNodes = []
-    this.appendChild(this.ownerDocument.createTextNode(text))
+    if (this.nodeType === Node.ATTRIBUTE_NODE) {
+      this.value = text
+      return
+    }
+    if (
+      this.nodeType !== Node.ELEMENT_NODE &&
+      this.nodeType !== Node.DOCUMENT_FRAGMENT_NODE
+    ) {
+      return
+    }
+    while (this.firstChild) this.removeChild(this.firstChild)
+    if (!text) return
+    const document = associatedDocument(this)
+    if (!document) throw wrongDocumentError()
+    this.appendChild(document.createTextNode(text))
   }
 
   get lastChild() {
