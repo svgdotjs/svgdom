@@ -12,6 +12,7 @@ All notable changes to svgdom will be documented in this file.
 - Made document types safely assignable, reusable after failed document creation, and metadata-preserving.
 - Preserved node subtype state, ownership, attributes, and namespace-unaware names when cloning.
 - Made XML fragment and document parsing transactional while retaining namespaces, CDATA, and doctype metadata.
+- Made `outerHTML` replacement atomic for attached elements and a no-op for detached elements.
 
 ## 0.1.27 - 2026-07-18
 

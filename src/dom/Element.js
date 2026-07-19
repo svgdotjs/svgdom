@@ -2,8 +2,7 @@ import { Node } from './Node.js'
 
 import { ParentNode } from './mixins/ParentNode.js'
 import { elementAccess } from './mixins/elementAccess.js'
-import { HTMLParser, parseFragment } from './html/HTMLParser.js'
-import { DocumentFragment } from './DocumentFragment.js'
+import { parseFragment } from './html/HTMLParser.js'
 import { mixin } from '../utils/objectCreationUtils.js'
 import { tag } from '../utils/tagUtils.js'
 import { htmlEntities, cdata, comment } from '../utils/strUtils.js'
@@ -220,10 +219,17 @@ export class Element extends Node {
   }
 
   set outerHTML(str) {
-    const well = new DocumentFragment()
-    HTMLParser(str, well)
-    this.parentNode.insertBefore(well, this)
-    this.parentNode.removeChild(this)
+    const parent = this.parentNode
+    if (!parent) return
+    // A document cannot be the fragment parsing context because the replacement
+    // may contain several nodes. Parse detached, then let replaceChild validate
+    // the final document structure atomically.
+    const context =
+      parent.nodeType === Node.DOCUMENT_NODE
+        ? this.ownerDocument.createDocumentFragment()
+        : parent
+    const fragment = parseFragment(str, context)
+    parent.replaceChild(fragment, this)
   }
 }
 
