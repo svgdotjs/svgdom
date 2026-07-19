@@ -41,6 +41,8 @@ const insertableNodeTypes = new Set([
   nodeTypes.DOCUMENT_TYPE_NODE
 ])
 
+// Tree insertion adopts nodes into the destination document. Ownership must be
+// updated for the complete subtree, including attributes that are not children.
 const setOwnerDocument = (node, document) => {
   if (!document || node.nodeType === Node.DOCUMENT_NODE) return
   node.ownerDocument = document
@@ -52,6 +54,8 @@ const setOwnerDocument = (node, document) => {
   }
 }
 
+// Callers pass the complete candidate list, not only the inserted nodes. This
+// lets replacement and parser paths enforce ordering and cardinality uniformly.
 export const validateDocumentChildren = children => {
   const allowed = new Set([
     Node.ELEMENT_NODE,
@@ -164,6 +168,8 @@ const insertionPlan = (
 const applyInsertionPlan = (parent, plan) => {
   const document = associatedDocument(parent)
 
+  // Validation is complete before this commit phase starts, so detaching a
+  // source node cannot leave either tree half-mutated after an error.
   for (const node of plan.nodes) {
     if (node.parentNode) {
       const index = node.parentNode.childNodes.indexOf(node)
@@ -178,6 +184,8 @@ const applyInsertionPlan = (parent, plan) => {
     replacedNode.parentNode = null
   }
 
+  // Adoption happens only after every old parent link has been removed. The
+  // final splice then publishes the already-consistent subtree in one step.
   for (const node of plan.nodes) {
     setOwnerDocument(node, document)
     node.parentNode = parent
@@ -280,51 +288,39 @@ export class Node extends EventTarget {
   }
 
   isEqualNode(node) {
-    this.normalize()
-    node.normalize()
-
-    let bool = this.nodeName === node.nodeName
-    bool = bool && this.localName === node.localName
-    bool = bool && this.namespaceURI === node.namespaceURI
-    bool = bool && this.prefix === node.prefix
-    bool = bool && this.nodeValue === node.nodeValue
-
-    bool = bool && this.childNodes.length === node.childNodes.length
-
-    // dont check children recursively when the count doesnt event add up
-    if (!bool) return false
-
-    bool =
-      bool &&
-      !this.childNodes.reduce((last, curr, index) => {
-        return last && curr.isEqualNode(node.childNodes[index])
-      }, true)
-
-    // FIXME: Use attr nodes
-    /* bool = bool && ![ ...this.attrs.entries() ].reduce((last, curr, index) => {
-      const [ key, val ] = node.attrs.entries()
-      return last && curr[0] === key && curr[1] === val
-    }, true) */
-
-    /*
-    TODO:
-    For two DocumentType nodes to be equal, the following conditions must also be satisfied:
-
-    The following string attributes are equal: publicId, systemId, internalSubset.
-    The entities NamedNodeMaps are equal.
-    The notations NamedNodeMaps are equal.
-    */
-
+    if (!(node instanceof Node)) return false
     if (
-      this.nodeType === Node.DOCUMENT_TYPE_NODE &&
-      node.nodeType === Node.DOCUMENT_TYPE_NODE
+      this.nodeType !== node.nodeType ||
+      this.nodeName !== node.nodeName ||
+      this.localName !== node.localName ||
+      this.namespaceURI !== node.namespaceURI ||
+      this.prefix !== node.prefix ||
+      this.nodeValue !== node.nodeValue ||
+      this.attrs.size !== node.attrs.size ||
+      this.childNodes.length !== node.childNodes.length
     ) {
-      bool = bool && this.publicId === node.publicId
-      bool = bool && this.systemId === node.systemId
-      bool = bool && this.internalSubset === node.internalSubset
+      return false
     }
 
-    return bool
+    // Attribute order is not significant even though svgdom stores attrs in a
+    // Set, so compare each attribute structurally rather than by iteration slot.
+    for (const attr of this.attrs) {
+      if (![...node.attrs].some(other => attr.isEqualNode(other))) return false
+    }
+
+    if (this.nodeType === Node.DOCUMENT_TYPE_NODE) {
+      if (
+        this.publicId !== node.publicId ||
+        this.systemId !== node.systemId ||
+        this.internalSubset !== node.internalSubset
+      ) {
+        return false
+      }
+    }
+
+    return this.childNodes.every((child, index) =>
+      child.isEqualNode(node.childNodes[index])
+    )
   }
 
   isSameNode(node) {
@@ -464,57 +460,29 @@ export class Node extends EventTarget {
   }
 
   normalize() {
-    const childNodes = []
-    for (const node of this.childNodes) {
-      const last = childNodes.shift()
-      if (!last) {
-        if (node.data) {
-          childNodes.unshift(node)
-        }
+    let index = 0
+    while (index < this.childNodes.length) {
+      const child = this.childNodes[index]
+      child.normalize()
+
+      if (child.nodeType !== Node.TEXT_NODE) {
+        index++
         continue
       }
 
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (!node.data) {
-          childNodes.unshift(last)
-          continue
-        }
-
-        if (last.nodeType === Node.TEXT_NODE) {
-          const merged = this.ownerDocument.createTextNode(
-            last.data + node.data
-          )
-          childNodes.push(merged)
-          continue
-        }
-
-        childNodes.push(last, node)
+      if (!child.data) {
+        // The next child shifts into this index and still needs processing.
+        this.removeChild(child)
+        continue
       }
+
+      while (this.childNodes[index + 1]?.nodeType === Node.TEXT_NODE) {
+        const adjacent = this.childNodes[index + 1]
+        child.appendData(adjacent.data)
+        this.removeChild(adjacent)
+      }
+      index++
     }
-
-    childNodes.forEach(node => {
-      node.parentNode = this
-    })
-    this.childNodes = childNodes
-    // this.childNodes = this.childNodes.forEach((textNodes, node) => {
-    //   // FIXME: If first node is an empty textnode, what do we do? -> spec
-    //   if (!textNodes) return [ node ]
-    //   var last = textNodes.pop()
-
-    //   if (node.nodeType === Node.TEXT_NODE) {
-    //     if (!node.data) return textNodes
-
-    //     if (last.nodeType === Node.TEXT_NODE) {
-    //       const merged = this.ownerDocument.createTextNode(last.data + ' ' + node.data)
-    //       textNodes.push(merged)
-    //       return textNodes.concat(merged)
-    //     }
-    //   } else {
-    //     textNodes.push(last, node)
-    //   }
-
-    //   return textNodes
-    // }, null)
   }
 
   removeChild(node) {
@@ -565,6 +533,8 @@ export class Node extends EventTarget {
       return null
     }
 
+    // Element textContent includes descendant text and CDATA, but comments and
+    // other non-character children do not contribute to the result.
     return this.childNodes.reduce((text, child) => {
       if (
         child.nodeType === Node.TEXT_NODE ||
