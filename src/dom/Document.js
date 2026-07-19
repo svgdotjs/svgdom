@@ -32,12 +32,18 @@ import { SVGForeignObjectElement } from './svg/SVGForeignObjectElement.js'
 import { SVGImageElement } from './svg/SVGImageElement.js'
 
 function getChildByTagName(parent, name) {
+  if (!parent) return null
+  const expectedName =
+    parent.ownerDocument?.namespaceURI === html ? name.toUpperCase() : name
   for (
     let child = parent.firstChild;
     child != null;
     child = child.nextSibling
   ) {
-    if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === name) {
+    if (
+      child.nodeType === Node.ELEMENT_NODE &&
+      child.nodeName === expectedName
+    ) {
       return child
     }
   }
@@ -256,11 +262,11 @@ export class Document extends Node {
   }
 
   get body() {
-    return getChildByTagName(this.documentElement, 'BODY')
+    return getChildByTagName(this.documentElement, 'body')
   }
 
   get head() {
-    return getChildByTagName(this.documentElement, 'HEAD')
+    return getChildByTagName(this.documentElement, 'head')
   }
 
   get documentElement() {
