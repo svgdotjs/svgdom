@@ -54,6 +54,22 @@ describe('SVGLength', function () {
     assert.strictEqual(svgLength.unitType, SVGLength.SVG_LENGTHTYPE_IN)
   })
 
+  it('uses a consistent 96dpi basis for absolute units', function () {
+    for (const value of ['1in', '2.54cm', '25.4mm', '72pt', '6pc']) {
+      svgLength.valueAsString = value
+      assert.ok(Math.abs(svgLength.value - 96) < 1e-10, value)
+    }
+  })
+
+  it('sets user-unit values while preserving absolute units', function () {
+    for (const unit of ['in', 'cm', 'mm', 'pt', 'pc']) {
+      svgLength.valueAsString = `1${unit}`
+      svgLength.value = 192
+      assert.ok(Math.abs(svgLength.value - 192) < 1e-10, unit)
+      assert.equal(svgLength.valueAsString.endsWith(unit), true)
+    }
+  })
+
   it('handles values with unknown units', function () {
     rect.setAttribute('x', '4dm')
     assert.strictEqual(svgLength.value, 0, 'value')

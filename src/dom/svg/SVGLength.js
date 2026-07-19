@@ -36,13 +36,15 @@ const unitStringByConstant = new Map(
   ])
 )
 
+// Factors convert specified absolute units to SVG user units using the CSS
+// 96dpi basis. Context-dependent units deliberately remain unsupported.
 const unitFactors = new Map([
   [unitTypes.SVG_LENGTHTYPE_NUMBER, 1],
   [unitTypes.SVG_LENGTHTYPE_PERCENTAGE, NaN],
   [unitTypes.SVG_LENGTHTYPE_EMS, NaN],
   [unitTypes.SVG_LENGTHTYPE_EXS, NaN],
   [unitTypes.SVG_LENGTHTYPE_PX, 1],
-  [unitTypes.SVG_LENGTHTYPE_CM, 6],
+  [unitTypes.SVG_LENGTHTYPE_CM, 96 / 2.54],
   [unitTypes.SVG_LENGTHTYPE_MM, 96 / 25.4],
   [unitTypes.SVG_LENGTHTYPE_IN, 96],
   [unitTypes.SVG_LENGTHTYPE_PT, 4 / 3],
