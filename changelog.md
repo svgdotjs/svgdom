@@ -7,6 +7,7 @@ All notable changes to svgdom will be documented in this file.
 ### Fixed
 
 - Preserved DOM tree mutation invariants by validating edits atomically, adopting cross-document subtrees, and maintaining parent and owner links.
+- Kept `CharacterData.data` and `nodeValue` synchronized and corrected range-based mutation methods.
 
 ## 0.1.27 - 2026-07-18
 

@@ -193,7 +193,10 @@ export class Document extends Node {
   }
 
   createComment(text) {
-    return new Comment('#comment', { nodeValue: text, ownerDocument: this })
+    return new Comment('#comment', {
+      nodeValue: String(text),
+      ownerDocument: this
+    })
   }
 
   createDocumentFragment(_name) {
@@ -234,7 +237,10 @@ export class Document extends Node {
   }
 
   createTextNode(text) {
-    return new Text('#text', { nodeValue: text, ownerDocument: this })
+    return new Text('#text', {
+      nodeValue: String(text),
+      ownerDocument: this
+    })
   }
 
   get compatMode() {
