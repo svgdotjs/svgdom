@@ -64,16 +64,20 @@ export class SVGMatrix {
     return r
   }
 
-  rotate(r, x, y) {
+  rotate(r, x = 0, y = 0) {
     r = ((r % 360) * Math.PI) / 180
+    const cos = Math.cos(r)
+    const sin = Math.sin(r)
+    // The translation terms combine T(x, y) * R(angle) * T(-x, -y), keeping
+    // the requested center fixed while the surrounding matrix is preserved.
     return this.multiply(
       matrixFactory(
-        Math.cos(r),
-        Math.sin(r),
-        -Math.sin(r),
-        Math.cos(r),
-        x ? -Math.cos(r) * x + Math.sin(r) * y + x : 0,
-        y ? -Math.sin(r) * x - Math.cos(r) * y + y : 0
+        cos,
+        sin,
+        -sin,
+        cos,
+        -cos * x + sin * y + x,
+        -sin * x - cos * y + y
       )
     )
   }

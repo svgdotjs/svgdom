@@ -14,6 +14,7 @@ All notable changes to svgdom will be documented in this file.
 - Made XML fragment and document parsing transactional while retaining namespaces, CDATA, and doctype metadata.
 - Made `outerHTML` replacement atomic for attached elements and a no-op for detached elements.
 - Corrected SVG absolute length conversion factors to use the 96 dpi CSS basis.
+- Preserved zero-valued rotation centers in SVG matrix transformations.
 
 ## 0.1.27 - 2026-07-18
 
