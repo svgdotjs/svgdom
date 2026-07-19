@@ -7,6 +7,7 @@ All notable changes to svgdom will be documented in this file.
 ### Changed
 
 - Composed DOM interfaces explicitly and removed the internal `query()` and `matchWithScope()` helpers from the public Element surface.
+- Separated selector parsing from matching, bounded selector caching, and tightened combinator, pseudo-class, and attribute matching.
 
 ### Fixed
 

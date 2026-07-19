@@ -1,27 +1,37 @@
-import { removeQuotes } from '../utils/strUtils.js'
 import * as regex from '../utils/regex.js'
 import { html } from '../utils/namespaces.js'
+import {
+  InvalidSelectorError,
+  parseCompoundSelector,
+  parseSelector
+} from './css/selectorParser.js'
 
-class InvalidSelectorError extends Error {}
+// Compile once so invalid selectors fail even for empty search roots and each
+// candidate can reuse the same attribute and pseudo-class matchers.
+const compileQueries = queries =>
+  queries.map(pairs =>
+    pairs.map(([relation, compound]) => [relation, new CssQueryNode(compound)])
+  )
 
 export class CssQuery {
   constructor(query) {
     if (CssQuery.cache.has(query)) {
       this.queries = CssQuery.cache.get(query)
+      CssQuery.cache.delete(query)
+      CssQuery.cache.set(query, this.queries)
       return
     }
 
-    const queries = tokenizeSelector(query)
+    const queries = compileQueries(parseSelector(query))
 
     this.queries = queries
 
-    // to prevent memory leaks we have to manage our cache.
-    // we delete everything which is older than 50 entries
-    if (CssQuery.cacheKeys.length > 50) {
-      CssQuery.cache.delete(CssQuery.cacheKeys.shift())
-    }
     CssQuery.cache.set(query, queries)
-    CssQuery.cacheKeys.push(query)
+    // Refresh-on-read above makes this a small LRU cache rather than an
+    // unbounded selector history retained for the lifetime of the process.
+    while (CssQuery.cache.size > 50) {
+      CssQuery.cache.delete(CssQuery.cache.keys().next().value)
+    }
   }
 
   matches(node, scope) {
@@ -34,10 +44,12 @@ export class CssQuery {
   }
 
   matchHelper(query, node, scope) {
+    // Match right-to-left: verify the candidate compound first, then follow the
+    // relation attached to it to find a candidate for the preceding compound.
     query = query.slice()
     const last = query.pop()
 
-    if (!new CssQueryNode(last[1]).matches(node, scope)) {
+    if (!last[1].matches(node, scope)) {
       return false
     }
 
@@ -77,7 +89,6 @@ export class CssQuery {
 }
 
 CssQuery.cache = new Map()
-CssQuery.cacheKeys = []
 
 const parseNth = value => {
   value = value.toLowerCase().replace(/[ \n\r\t\f]/g, '')
@@ -149,259 +160,6 @@ const lower = a => a.toLowerCase()
 // checks if a and b are equal. Is insensitive when i is true
 const eq = (a, b, i) => (i ? lower(a) === lower(b) : a === b)
 
-const escapeSequenceEnd = (string, index) => {
-  let end = index + 1
-  const hex = string.slice(end).match(/^[\da-f]{1,6}/i)
-
-  if (!hex) return Math.min(end + 1, string.length)
-
-  end += hex[0].length
-  if (string[end] === '\r' && string[end + 1] === '\n') return end + 2
-  if (/[ \n\r\t\f]/.test(string[end] || '')) end++
-  return end
-}
-
-const tokenizeSelector = selector => {
-  const queries = []
-  let pairs = []
-  let token = ''
-  let relation = '%'
-  let roundBrackets = 0
-  let squareBrackets = 0
-  let quote = ''
-
-  const pushToken = () => {
-    if (!token) return
-    pairs.push([relation, token])
-    token = ''
-    relation = '%'
-  }
-
-  for (let index = 0; index < selector.length; index++) {
-    const character = selector[index]
-
-    if (character === '\\') {
-      const end = escapeSequenceEnd(selector, index)
-      token += selector.slice(index, end)
-      index = end - 1
-      continue
-    }
-
-    if (quote) {
-      token += character
-      if (character === quote) quote = ''
-      continue
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character
-      token += character
-      continue
-    }
-
-    if (character === '(') roundBrackets++
-    else if (character === ')') roundBrackets--
-    else if (character === '[') squareBrackets++
-    else if (character === ']') squareBrackets--
-
-    if (roundBrackets || squareBrackets || '()[]'.includes(character)) {
-      token += character
-      continue
-    }
-
-    if (character === ',') {
-      pushToken()
-      queries.push(pairs)
-      pairs = []
-      relation = '%'
-      continue
-    }
-
-    if (/[ \n\r\t\f]/.test(character)) {
-      pushToken()
-      continue
-    }
-
-    if ('>~+'.includes(character)) {
-      pushToken()
-      relation = character
-      continue
-    }
-
-    token += character
-  }
-
-  pushToken()
-  queries.push(pairs)
-  return queries
-}
-
-const parseEscapedIdentifier = identifier => {
-  let result = ''
-  let index = 0
-
-  for (; index < identifier.length; index++) {
-    const character = identifier[index]
-
-    if (character !== '\\') {
-      if (!/[\w\-\u0080-\uFFFF]/.test(character)) break
-      result += character
-      continue
-    }
-
-    index++
-    if (index === identifier.length || /[\n\r\f]/.test(identifier[index])) {
-      return null
-    }
-
-    const hex = identifier.slice(index).match(/^[\da-f]{1,6}/i)
-    if (!hex) {
-      result += identifier[index]
-      continue
-    }
-
-    const codePoint = parseInt(hex[0], 16)
-    const invalidCodePoint =
-      codePoint === 0 ||
-      (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
-      codePoint > 0x10ffff
-
-    result += invalidCodePoint ? '\uFFFD' : String.fromCodePoint(codePoint)
-
-    index += hex[0].length - 1
-    if (identifier[index + 1] === '\r' && identifier[index + 2] === '\n') {
-      index += 2
-    } else if (/[ \n\r\t\f]/.test(identifier[index + 1] || '')) {
-      index++
-    }
-  }
-
-  if (!index) return null
-  return { value: result, length: index }
-}
-
-const findIdSelector = selector => {
-  let roundBrackets = 0
-  let squareBrackets = 0
-  let quote = ''
-
-  for (let index = 0; index < selector.length; index++) {
-    const character = selector[index]
-
-    if (character === '\\') {
-      index = escapeSequenceEnd(selector, index) - 1
-      continue
-    }
-
-    if (quote) {
-      if (character === quote) quote = ''
-      continue
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character
-      continue
-    }
-
-    if (character === '(') roundBrackets++
-    else if (character === ')') roundBrackets--
-    else if (character === '[') squareBrackets++
-    else if (character === ']') squareBrackets--
-    else if (character === '#' && !roundBrackets && !squareBrackets) {
-      const id = parseEscapedIdentifier(selector.slice(index + 1))
-      if (!id) return null
-      return { value: id.value, index, length: id.length + 1 }
-    }
-  }
-
-  return null
-}
-
-const extractPseudos = selector => {
-  const pseudos = []
-  let remainder = ''
-  let squareBrackets = 0
-  let quote = ''
-
-  for (let index = 0; index < selector.length; index++) {
-    const character = selector[index]
-
-    if (character === '\\') {
-      const end = escapeSequenceEnd(selector, index)
-      remainder += selector.slice(index, end)
-      index = end - 1
-      continue
-    }
-
-    if (quote) {
-      remainder += character
-      if (character === quote) quote = ''
-      continue
-    }
-
-    if (character === '"' || character === "'") {
-      quote = character
-      remainder += character
-      continue
-    }
-
-    if (character === '[') squareBrackets++
-    else if (character === ']') squareBrackets--
-
-    if (character !== ':' || squareBrackets) {
-      remainder += character
-      continue
-    }
-
-    const name = selector.slice(index + 1).match(/^[\w-]+/)
-    if (!name) {
-      remainder += character
-      continue
-    }
-
-    let end = index + name[0].length + 1
-    let argument = ''
-
-    if (selector[end] === '(') {
-      const argumentStart = ++end
-      let depth = 1
-      let argumentQuote = ''
-
-      for (; end < selector.length; end++) {
-        const argumentCharacter = selector[end]
-
-        if (argumentCharacter === '\\') {
-          end = escapeSequenceEnd(selector, end) - 1
-          continue
-        }
-
-        if (argumentQuote) {
-          if (argumentCharacter === argumentQuote) argumentQuote = ''
-          continue
-        }
-
-        if (argumentCharacter === '"' || argumentCharacter === "'") {
-          argumentQuote = argumentCharacter
-        } else if (argumentCharacter === '(') {
-          depth++
-        } else if (argumentCharacter === ')' && --depth === 0) {
-          break
-        }
-      }
-
-      if (depth)
-        throw new InvalidSelectorError(`Unclosed pseudo-class :${name[0]}()`)
-      argument = selector.slice(argumentStart, end)
-      end++
-    }
-
-    pseudos.push({ name: name[0].toLowerCase(), argument })
-    index = end - 1
-  }
-
-  return { pseudos, remainder }
-}
-
 // [i] (prebound) is true if insensitive matching is required
 // [a] (prebound) is the value the attr is compared to
 // [b] (passed)   is the value of the attribute
@@ -409,18 +167,25 @@ const attributeMatcher = {
   '=': (i, a, b) => eq(a, b, i),
   '~=': (i, a, b) =>
     b.split(regex.delimiter).filter(el => eq(el, a, i)).length > 0,
-  '|=': (i, a, b) => eq(b.split(regex.delimiter)[0], a, i),
+  '|=': (i, a, b) => eq(a, b, i) || eq(a + '-', b.slice(0, a.length + 1), i),
   '^=': (i, a, b) => (i ? lower(b).startsWith(lower(a)) : b.startsWith(a)),
   '$=': (i, a, b) => (i ? lower(b).endsWith(lower(a)) : b.endsWith(a)),
   '*=': (i, a, b) => (i ? lower(b).includes(lower(a)) : b.includes(a)),
   '*': (i, a, b) => b != null
 }
 
-const getAttributeValue = (prefix, name, node) => {
-  if (!prefix || prefix === '*') {
-    return node.getAttribute(name)
+const getAttributeValues = (prefix, name, node) => {
+  if (prefix === '*') {
+    // A wildcard namespace can expose several attributes with the same local
+    // name; the caller succeeds when any of their values matches.
+    return [...node.attrs]
+      .filter(attr => attr.localName === name)
+      .map(attr => attr.value)
   }
-  return node.getAttribute(prefix + ':' + name)
+  const attr = prefix
+    ? node.getAttributeNode(prefix + ':' + name)
+    : node.getAttributeNodeNS(null, name)
+  return attr ? [attr.value] : []
 }
 
 const isEmpty = node =>
@@ -431,14 +196,19 @@ const isEmpty = node =>
   })
 
 const matchesRelativeSelector = (selector, node) => {
-  const queries = tokenizeSelector(selector)
-  if (queries.some(pairs => !pairs.length)) {
-    console.warn('Invalid relative selector list in :has()')
+  let queries
+  try {
+    queries = parseSelector(selector, { relative: true })
+  } catch (error) {
+    if (!(error instanceof InvalidSelectorError)) throw error
     return false
   }
 
   const query = Object.create(CssQuery.prototype)
-  query.queries = queries.map(pairs => [['%', ':scope'], ...pairs])
+  const scope = parseCompoundSelector(':scope')
+  // Prefixing :scope anchors leading combinators. Matching remains right-to-left,
+  // so scan possible subjects from the root and retain the original node as scope.
+  query.queries = compileQueries(queries.map(pairs => [['%', scope], ...pairs]))
 
   const nodes = [node.getRootNode()]
   while (nodes.length) {
@@ -453,13 +223,12 @@ const matchesRelativeSelector = (selector, node) => {
 const matchesForgivingSelectorList = (selector, node, scope) => {
   let matches = false
 
-  for (const pairs of tokenizeSelector(selector)) {
-    if (!pairs.length) continue
-
-    const query = Object.create(CssQuery.prototype)
-    query.queries = [pairs]
-
+  for (const pairs of parseSelector(selector, { forgiving: true })) {
     try {
+      // Forgiving lists discard branches that parse but fail during matcher
+      // compilation, such as branches containing unsupported pseudo-classes.
+      const query = Object.create(CssQuery.prototype)
+      query.queries = compileQueries([pairs])
       if (query.matches(node, scope)) matches = true
     } catch (error) {
       if (!(error instanceof InvalidSelectorError)) throw error
@@ -500,69 +269,37 @@ const pseudoMatcher = {
 }
 
 export class CssQueryNode {
-  constructor(node) {
-    this.tag = ''
-    this.id = ''
-    this.classList = []
+  constructor(compound) {
+    if (typeof compound === 'string') compound = parseCompoundSelector(compound)
+    this.tag = compound.tag
+    this.id = compound.id
+    this.classList = compound.classList
     this.attrs = []
     this.pseudo = []
 
-    const id = findIdSelector(node)
-    if (id) {
-      this.id = id.value
-      node = node.slice(0, id.index) + node.slice(id.index + id.length)
-    }
-
-    // match the tag name
-    let matches = node.match(/^[\w-]+|^\*/)
-    if (matches) {
-      this.tag = matches[0]
-      node = node.slice(this.tag.length)
-    }
-
-    // match pseudo classes
-    const parsedPseudos = extractPseudos(node)
-    for (const pseudo of parsedPseudos.pseudos) {
+    for (const pseudo of compound.pseudos) {
       const matcher = pseudoMatcher[pseudo.name]
       if (!matcher) {
-        console.warn(`Unsupported pseudo-class :${pseudo.name}`)
-        this.pseudo.push(() => false)
-        continue
+        throw new InvalidSelectorError(
+          `Unsupported pseudo-class :${pseudo.name}`
+        )
       }
       this.pseudo.push(matcher.bind(this, pseudo.argument))
     }
-    node = parsedPseudos.remainder
 
-    // match attributes
-    while (
-      (matches = /\[([\w-*]+\|)?([\w-]+)(([=^~$|*]+)(.+?)( +[iI])?)?\]/g.exec(
-        node
-      ))
-    ) {
-      const prefix = matches[1] ? matches[1].split('|')[0] : null
-      this.attrs.push({
-        name: matches[2],
-        getValue: getAttributeValue.bind(this, prefix, matches[2]),
-        matcher: attributeMatcher[matches[4] || '*'].bind(
-          this,
-          !!matches[6], // case insensitive yes/no
-          removeQuotes((matches[5] || '').trim()) // attribute value
+    for (const attr of compound.attrs) {
+      const matcher = attributeMatcher[attr.operator]
+      if (!matcher) {
+        throw new InvalidSelectorError(
+          `Unsupported attribute operator: ${attr.operator}`
         )
+      }
+      this.attrs.push({
+        name: attr.name,
+        getValues: getAttributeValues.bind(this, attr.prefix, attr.name),
+        matcher: matcher.bind(this, attr.insensitive, attr.value)
       })
-      node =
-        node.slice(0, matches.index) +
-        node.slice(matches.index + matches[0].length)
     }
-
-    // match classes
-    while ((matches = /\.([\w-]+)/g.exec(node))) {
-      this.classList.push(matches[1])
-      node =
-        node.slice(0, matches.index) +
-        node.slice(matches.index + matches[0].length)
-    }
-
-    if (node) throw new InvalidSelectorError(`Invalid selector: ${node}`)
   }
 
   matches(node, scope) {
@@ -596,8 +333,8 @@ export class CssQueryNode {
     }
 
     for (i = this.attrs.length; i--;) {
-      const attrValue = this.attrs[i].getValue(node)
-      if (attrValue === null || !this.attrs[i].matcher(attrValue)) {
+      const attrValues = this.attrs[i].getValues(node)
+      if (!attrValues.some(this.attrs[i].matcher)) {
         return false
       }
     }

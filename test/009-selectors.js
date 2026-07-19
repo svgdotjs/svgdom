@@ -62,6 +62,17 @@ describe('CssQuery - Single Selector', function () {
     assert.ok(!query.matches(falseCase))
   })
 
+  it('matches dash-separated and namespaced attribute values', function () {
+    const element = document.createElement('div')
+    element.setAttribute('lang', 'en-US')
+    element.setAttributeNS('urn:example', 'example:href', 'target')
+
+    assert.ok(new CssQuery('[lang|=en]').matches(element))
+    assert.ok(!new CssQuery('[lang|=fr]').matches(element))
+    assert.ok(new CssQuery('[*|href=target]').matches(element))
+    assert.ok(!new CssQuery('[href=target]').matches(element))
+  })
+
   it('parses a simple selector with a pseudo-class', function () {
     const query = new CssQuery('div:first-child')
 
@@ -197,21 +208,12 @@ describe('CssQuery - Single Selector', function () {
   it('ignores invalid branches in :is() and :where()', function () {
     const element = document.createElement('div')
     element.setAttribute('class', 'match')
-    const warnings = []
-    const warn = console.warn
 
-    console.warn = warning => warnings.push(warning)
-    try {
-      assert.ok(!new CssQuery(':unsupported').matches(element))
-      assert.ok(new CssQuery(':is(.match, :unsupported)').matches(element))
-      assert.ok(new CssQuery(':is(:unsupported, .match)').matches(element))
-      assert.ok(new CssQuery(':where(.match, ???)').matches(element))
-      assert.ok(!new CssQuery(':is(.missing, ???)').matches(element))
-    } finally {
-      console.warn = warn
-    }
-
-    assert.ok(warnings.includes('Unsupported pseudo-class :unsupported'))
+    assert.throws(() => new CssQuery(':unsupported').matches(element))
+    assert.ok(new CssQuery(':is(.match, :unsupported)').matches(element))
+    assert.ok(new CssQuery(':is(:unsupported, .match)').matches(element))
+    assert.ok(new CssQuery(':where(.match, ???)').matches(element))
+    assert.ok(!new CssQuery(':is(.missing, ???)').matches(element))
   })
 
   it('matches :empty without counting comments or document whitespace', function () {
@@ -259,20 +261,11 @@ describe('CssQuery - Single Selector', function () {
     const nested = document.createElement('span')
     child.appendChild(nested)
     section.appendChild(child)
-    const warnings = []
-    const warn = console.warn
-
-    console.warn = warning => warnings.push(warning)
-    try {
-      assert.ok(!new CssQuery(':has()').matches(section))
-      assert.ok(!new CssQuery(':has( )').matches(section))
-      assert.ok(!new CssQuery(':has(.missing,)').matches(section))
-    } finally {
-      console.warn = warn
-    }
+    assert.ok(!new CssQuery(':has()').matches(section))
+    assert.ok(!new CssQuery(':has( )').matches(section))
+    assert.ok(!new CssQuery(':has(.missing,)').matches(section))
 
     assert.ok(new CssQuery(':has(div:has(span))').matches(section))
-    assert.equal(warnings.length, 3)
   })
 
   it('matches sibling-relative selectors with :has()', function () {
