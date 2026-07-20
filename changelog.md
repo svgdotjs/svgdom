@@ -4,6 +4,8 @@ All notable changes to svgdom will be documented in this file.
 
 ## Unreleased
 
+## 0.1.28 - 2026-07-20
+
 ### Added
 
 - Added CI coverage for supported Node.js versions, linting, formatting, and pinned svg.js integration.
