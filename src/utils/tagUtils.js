@@ -221,7 +221,12 @@ const cloneShallow = (node, document) => {
         ? document.createElementNS(node.namespaceURI, node.localName, true)
         : document.createElementNS(node.namespaceURI, qualifiedName(node))
     case node.ATTRIBUTE_NODE:
-      return node.prefix === null && node.localName.includes(':')
+      // An attribute without namespace and prefix was created by a
+      // namespace-unaware factory (setAttribute/createAttribute). Its name may
+      // be one that namespace validation rejects, e.g. a plain `xmlns` set by
+      // svg.js, so it must be recreated the same way and not be revalidated.
+      return node.prefix === null &&
+        (node.namespaceURI === null || node.localName.includes(':'))
         ? document.createAttributeNS(node.namespaceURI, node.localName, true)
         : document.createAttributeNS(node.namespaceURI, qualifiedName(node))
     case node.TEXT_NODE:
