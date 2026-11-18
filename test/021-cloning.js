@@ -102,5 +102,5 @@ describe('Node cloning', () => {
     assert.equal(clone.attributes[0].prefix, null)
     assert.equal(clone.attributes[0].localName, 'xmlns')
     assert.equal(clone.getAttribute('xmlns'), svgNS)
-  })    
+  })
 })
