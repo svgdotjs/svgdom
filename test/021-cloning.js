@@ -87,4 +87,20 @@ describe('Node cloning', () => {
     assert.equal(clone.attributes[0].localName, 'custom:attribute')
     assert.equal(clone.attributes[0].value, 'value')
   })
+
+  it('clones xmlns attributes created with setAttribute()', () => {
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const document = createSVGDocument()
+    const svg = document.createElementNS(svgNS, 'svg')
+    svg.setAttribute('xmlns', svgNS)
+    svg.setAttribute('version', '1.1')
+
+    const clone = svg.cloneNode(true)
+
+    assert.equal(clone.isEqualNode(svg), true)
+    assert.equal(clone.attributes[0].namespaceURI, null)
+    assert.equal(clone.attributes[0].prefix, null)
+    assert.equal(clone.attributes[0].localName, 'xmlns')
+    assert.equal(clone.getAttribute('xmlns'), svgNS)
+  })
 })
